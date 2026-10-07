@@ -1,0 +1,12 @@
+{
+  "name": "aula-encuentro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Primer recorrido de Aula Encuentro: código de materia, perfil, avatar y espacios por tema.",
+  "scripts": {
+    "test": "node --test tests/model.test.js",
+    "check": "node --check assets/app.js && node --check assets/world.js && node --check assets/model.js",
+    "start": "python3 -m http.server 4173"
+  }
+}
