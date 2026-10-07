@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#28594c">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Panel docente · Aula Encuentro</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/docente/admin.css">
+  <script type="module" src="/docente/admin.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Ir al contenido</a>
+  <header class="header"><div class="brand"><span class="brand-icon" aria-hidden="true">▦</span><span>Aula<strong>Encuentro</strong><small>Panel docente</small></span></div><a href="/">Ingreso de estudiantes ↗</a></header>
+  <main id="main">
+    <section id="login" class="login" hidden aria-labelledby="login-title">
+      <div class="login-intro"><span class="eyebrow">ESPACIO DEL DOCENTE</span><h1 id="login-title">Organiza tus clases y sus equipos.</h1><p>Ingresa con las credenciales configuradas en el servidor de Aula Encuentro.</p></div>
+      <form class="card login-card" id="login-form"><label for="username">Usuario docente</label><input id="username" autocomplete="username" required maxlength="80"><label for="password">Contraseña</label><input id="password" type="password" autocomplete="current-password" required><button class="primary" type="submit">Ingresar al panel <span aria-hidden="true">→</span></button><p id="login-error" class="error" role="alert" hidden></p></form>
+    </section>
+    <section id="dashboard" hidden aria-labelledby="dashboard-title">
+      <div class="topline"><div><span class="eyebrow">GESTIÓN DE MATERIAS</span><h1 id="dashboard-title">Mis aulas</h1><p>Organiza temas, cupos y estudiantes de cada materia.</p></div><button type="button" class="outline" id="logout">Cerrar sesión</button></div>
+      <p class="stage-note">Esta etapa prepara las materias y las listas. El ingreso real de estudiantes se habilitará cuando se conecte su activación individual al servidor.</p>
+      <div class="dashboard-grid"><aside class="card sidebar" aria-label="Materias"><div class="section-head"><h2>Materias</h2><button class="small-primary" type="button" id="show-course">+ Nueva</button></div><div id="course-list" class="course-list"></div></aside><div id="course-detail" class="detail"><div class="card empty-state"><h2>Selecciona una materia</h2><p>O crea una nueva para empezar a organizar sus espacios.</p></div></div></div>
+    </section>
+  </main>
+  <footer class="footer">Aula Encuentro · Administración de la materia <span>Los datos de estudiantes solo se consultan en este panel autenticado.</span></footer>
+  <dialog id="modal" aria-labelledby="modal-title"><div class="modal-body"><button type="button" id="modal-close" class="close" aria-label="Cerrar">×</button><div id="modal-content"></div></div></dialog>
+</body>
+</html>
