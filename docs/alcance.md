@@ -4,29 +4,33 @@
 
 Permitir que los estudiantes conformen equipos sin llenar el mensajero interno de la universidad. La experiencia será un aula en dos dimensiones, con avatares que caminan, espacios de trabajo por tema y solicitudes de conversación.
 
-## Primer incremento preparado
+## Primer incremento publicado
 
-Ingreso por código de materia como pantalla inicial, diseño del aula y recorrido demostrativo completo hasta el avatar, los equipos y la simulación de chat. El código `DEMO2026` solo identifica la prueba; no es un secreto ni una autenticación. Esta etapa no activa clases reales, cuentas, importaciones ni almacenamiento compartido.
+Ingreso por código de materia como pantalla inicial, diseño del aula y recorrido demostrativo completo hasta el avatar, los equipos y la simulación de chat. El código `DEMO2026` solo identifica la prueba; no es un secreto ni una autenticación.
+
+## Segundo incremento: gestión docente en el servidor
+
+Se añade en `server/` un panel protegido con materias, códigos generados, temas, cupos, importación XLSX/tabla, adición manual, corrección de perfiles, asignación de equipos, exportación CSV y persistencia SQLite. El servicio aún no está desplegado ni conectado al ingreso real de estudiantes. GitHub Pages mantiene visible la demostración inicial.
 
 ## Requisitos de la aplicación real
 
-| Área | Comportamiento requerido | Estado en 0.1.0 |
+| Área | Comportamiento requerido | Estado en 0.2.0 |
 | --- | --- | --- |
-| Materias | El docente crea una materia o sección y su código; todos los de esa clase usan el mismo | Entrada visual; un código de prueba |
-| Acceso | Credencial de materia y cuenta individual verificada; acceso administrativo separado | Pendiente |
-| Lista | Importar XLSX, pegar Apellido/Nombre o agregar estudiantes manualmente | Pendiente; perfiles ficticios fijos |
+| Materias | El docente crea una materia o sección y su código; todos los de esa clase usan el mismo | Panel del servidor implementado, sin desplegar; ingreso estudiantil pendiente |
+| Acceso | Credencial de materia y cuenta individual verificada; acceso administrativo separado | Acceso docente del servidor implementado; activación estudiantil pendiente |
+| Lista | Importar XLSX, pegar Apellido/Nombre o agregar estudiantes manualmente | Implementado en servidor, con vista previa |
 | Identidad | Activar un perfil precargado con validación individual; elegir un nombre no demuestra identidad | Pendiente |
 | Datos | Confirmar nombres y apellidos correctos, cédula y teléfono `XXXX-XXXX`, incluso en perfiles precargados | Formulario local de ejemplo |
 | Privacidad | Cédula y teléfono solo para el estudiante titular y docente autorizado | Datos de prueba en memoria; nunca en etiquetas ni listas |
 | Avatar | Uno provisional para cada perfil precargado y personalización después de activarlo | Personalización de prueba |
-| Espacios | Cada tema tiene un área diferenciada, instrucciones y cupo asignados por el docente | Tres áreas ficticias |
+| Espacios | Cada tema tiene un área diferenciada, instrucciones y cupo asignados por el docente | Configuración persistente en servidor; visualización real pendiente |
 | Movimiento | Teclado y clic/toque, con colisiones; recorrer un área no cambia la matrícula | Implementado localmente |
-| Equipo | Confirmación explícita, un equipo por estudiante y materia, cupos concurrentes garantizados por servidor | Reglas de prueba en una sola pestaña |
-| Persistencia | Guardar identidad, avatar y equipo al desconectarse o volver a entrar | Pendiente |
+| Equipo | Confirmación explícita, un equipo por estudiante y materia, cupos concurrentes garantizados por servidor | Asignación docente y cupos transaccionales implementados; autoinscripción pendiente |
+| Persistencia | Guardar identidad, avatar y equipo al desconectarse o volver a entrar | Materias, lista y equipo docente persistentes; perfil de estudiante pendiente |
 | Presencia | Distinguir estudiante inscrito de estudiante conectado | Pendiente |
 | Chat privado | Solicitud, aceptación o rechazo y disponibilidad | Simulación local explícita |
 | Chat del grupo | Solo para integrantes del equipo | Pendiente |
-| Administración | Crear materias, códigos, temas y cupos; importar y añadir alumnos; mover inscritos; cerrar elección; exportar | Pendiente |
+| Administración | Crear materias, códigos, temas y cupos; importar y añadir alumnos; mover inscritos; cerrar elección; exportar | Implementado en servidor; pendiente despliegue y activación de estudiantes |
 
 ## Importación de estudiantes
 
@@ -60,4 +64,4 @@ Las consultas y escrituras deben comprobar autorización en el servidor. La pert
 
 ## Próximo incremento sugerido
 
-Conectar el acceso administrativo y la creación real de materias; después integrar importación y activación individual. Mantener el enlace público abriendo en el ingreso por código. No presentar la prueba actual como lista para gestionar alumnos reales.
+Desplegar el servidor con HTTPS y almacenamiento privado. Integrar la activación individual, el formulario de datos y el avatar persistente al ingreso del estudiante, y entonces activar el uso con listas reales. Mantener el enlace público abriendo en el ingreso por código. No presentar la prueba actual como lista para gestionar alumnos reales.
