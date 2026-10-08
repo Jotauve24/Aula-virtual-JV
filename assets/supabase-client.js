@@ -52,6 +52,18 @@ export async function sendCode(email) {
   return request(`/auth/v1/otp?redirect_to=${encodeURIComponent(redirect)}`,
     { email, create_user: true });
 }
+export async function googleAvailable() {
+  if (!configured) return false;
+  const response = await fetch(endpoint('/auth/v1/settings'), {
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY }, cache: 'no-store' });
+  if (!response.ok) return false;
+  const settings = await response.json();
+  return settings.external?.google === true;
+}
+export function signInWithGoogle() {
+  const redirect = location.origin + location.pathname;
+  location.assign(endpoint(`/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirect)}`));
+}
 export async function verifyCode(email, token) {
   const data = await request('/auth/v1/verify', { email, token, type: 'email' });
   saveSession(data);

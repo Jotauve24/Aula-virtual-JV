@@ -1,4 +1,4 @@
-import { configured, sendCode, rpc, signedIn, signOut } from './supabase-client.js';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut } from './supabase-client.js';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 function show(id) { for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id; }
@@ -6,6 +6,8 @@ function alertError(value) { $('#error').textContent = value; $('#error').hidden
 async function run(task) { alertError(''); try { await task(); } catch (error) { alertError(error.message); } }
 if (!configured) { show('login'); $('#login').hidden = true; $('#setup').hidden = false; }
 else if (signedIn()) run(loadCourses); else show('login');
+if (configured) googleAvailable().then(available => { $('#google-login').hidden = !available; }).catch(() => {});
+$('#google-login').addEventListener('click', signInWithGoogle);
 $('#login').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   email = event.target.elements.email.value.trim().toLowerCase(); await sendCode(email);
   show('verify'); $('#notice').textContent = 'Revisa el correo docente y abre el enlace de ingreso en este navegador.';
