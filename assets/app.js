@@ -1,5 +1,6 @@
 import { DEMO_CODE, DEMO_PROFILES, SKINS, SHIRTS, normalizeCode, normalizeSearch, formatPhone, validateProfile, createTopics, joinTopic, escapeHTML as esc } from './model.js';
 import { avatarSVG, drawWorld, findPath, isWalkable } from './world.js';
+import { configured as liveConfigured } from './supabase-client.js';
 
 const main=document.querySelector('#main');
 const initialMarkup=main.innerHTML;
@@ -29,6 +30,10 @@ function bindLogin(){
   document.querySelector('#course-form').addEventListener('submit',event=>{
     event.preventDefault();const code=normalizeCode(input.value);input.value=code;
     if(code!==DEMO_CODE){
+      if(liveConfigured && /^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(code)){
+        sessionStorage.setItem('aula-course-code',code);
+        window.location.assign('./live.html');return;
+      }
       error.textContent=!code?'Escribe el código de tu materia para continuar.':!/^[A-Z0-9-]{4,24}$/.test(code)?'Revisa el código: utiliza entre 4 y 24 letras, números o guiones.':'Todavía no hay materias reales activas. Para conocer el aula, usa DEMO2026.';
       error.hidden=false;input.setAttribute('aria-invalid','true');input.focus();return;
     }
