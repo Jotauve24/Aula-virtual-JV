@@ -4,7 +4,7 @@
 <title>Panel docente · Aula Encuentro</title><link rel="stylesheet" href="./assets/live.css"><script type="module" src="./assets/teacher.js"></script></head>
 <body><header><a href="./">▦ Aula<strong>Encuentro</strong></a><span>Panel docente</span></header><main><h1>Mis materias</h1>
 <p id="notice">Acceso exclusivo para la cuenta docente autorizada en Supabase.</p><section id="setup" hidden>Configura Supabase antes de utilizar el panel.</section>
-<form id="login"><label>Correo docente<input name="email" type="email" autocomplete="email" required></label><button>Enviarme un enlace</button></form>
+<form id="login"><label>Correo docente<input name="email" type="email" autocomplete="email" required></label><button>Enviarme un enlace</button><button id="google-login" type="button" hidden>Entrar con Google</button></form>
 <form id="verify" hidden><p>Abre el enlace que recibiste por correo. Este panel aparecerá después de confirmar tu identidad.</p></form>
 <section id="dashboard" hidden><button id="logout" class="quiet">Cerrar sesión</button><form id="new-course"><h2>Nueva materia</h2><label>Materia y sección<input name="name" required maxlength="120"></label><button>Crear materia y código</button></form><p id="new-code" hidden></p><div id="courses"></div></section>
 <section id="detail" hidden><button id="back" class="quiet">← Mis materias</button><h2 id="course-title"></h2><p id="course-summary"></p>
