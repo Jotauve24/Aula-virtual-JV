@@ -11,9 +11,11 @@ costo mensual consultado de 0. Las dos migraciones están aplicadas y la URL y
 clave publicable están configuradas en el sitio. La clave secreta permanece
 fuera del repositorio. No importes una lista real aún.
 
-1. En Authentication > Email Templates cambia la plantilla de inicio por correo
-   para que muestre el código `{{ .Token }}`. El formulario utiliza un código
-   introducido manualmente, no un enlace mágico.
+1. En Authentication > URL Configuration configura el Site URL con
+   `https://jotauve24.github.io/Aula-virtual-JV/` y permite como redirecciones
+   `https://jotauve24.github.io/Aula-virtual-JV/docente.html` y
+   `https://jotauve24.github.io/Aula-virtual-JV/live.html`. La plantilla gratuita
+   predeterminada envía un enlace de acceso. Ábrelo en tu navegador.
 2. Abre `docente.html` y entra con tu correo verificado. El primer ingreso
    crea la cuenta de Auth, pero **no concede permiso docente**. En el editor SQL,
    autoriza expresamente tu cuenta después de comprobar el correo:
@@ -34,7 +36,7 @@ fuera del repositorio. No importes una lista real aún.
 
 - El ingreso publicado conserva `DEMO2026`. Los códigos `MAT-…` llevan a
   `live.html` **solo cuando** hay URL y clave publicable configuradas.
-- El correo se verifica por OTP. El código compartido identifica la materia;
+- El correo se verifica al abrir el enlace de ingreso. El código compartido identifica la materia;
   un correo previamente asignado vincula el perfil. Si falta, el docente debe
   aprobar la solicitud antes de mostrar datos personales o temas.
 - Cada estudiante confirma nombres, cédula, teléfono y avatar. Los compañeros
@@ -51,7 +53,7 @@ fuera del repositorio. No importes una lista real aún.
 Prueba con cuentas y datos ficticios: docente autorizado, estudiante cuyo correo
 está en la lista, solicitud pendiente, aprobación, dos estudiantes intentando
 tomar el último cupo, y acceso de otra materia. Comprueba además la plantilla
-OTP y los límites de envío del proyecto. Haz copias de seguridad y define con
+de correo y los límites de envío del proyecto. Haz copias de seguridad y define con
 la universidad si está permitido recoger cédula y teléfono en este servicio.
 
 No envíes por GitHub el archivo de alumnos, credenciales, códigos personales,
