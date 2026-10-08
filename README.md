@@ -5,6 +5,7 @@ Herramienta para organizar equipos de una materia con avatares y espacios de tra
 ## Estado actual
 
 - [Demostración para estudiantes](https://jotauve24.github.io/Aula-virtual-JV/): abre en el ingreso por código. El único código de esta demostración es **DEMO2026**. Perfiles, mensajes y equipos son ficticios y se borran al salir.
+- **Base Supabase 0.3.0 en preparación:** `live.html` y `docente.html` ofrecen ingreso por correo, materias, listas, solicitudes, temas e inscripción persistente. Requiere crear un proyecto Supabase, aplicar migraciones, autorizar la cuenta docente y configurar la URL y clave publicable. Sigue la [guía de configuración](supabase/README.md). No está conectado a una cuenta todavía; no introduzcas datos reales en la demostración.
 - **Panel docente 0.2.0:** servicio Node.js con inicio de sesión, materias y códigos generados, temas y cupos, listas importadas, asignación de equipos y almacenamiento SQLite. Está preparado en `server/` para ejecutarse en un alojamiento que admita un servidor y una base de datos privada. Aún no está desplegado y no aparece como acceso funcional en GitHub Pages.
 
 Los códigos creados por el docente se pueden verificar en el servicio, pero **todavía no activan un perfil estudiantil**. Antes de recibir datos reales se debe desplegar el servicio en HTTPS y completar la activación individual de cada estudiante. Elegir un nombre de una lista y conocer el código compartido no verifican la identidad.
@@ -41,4 +42,4 @@ Las pruebas abarcan lectura XLSX sin importar notas, acceso docente, aislamiento
 
 GitHub Pages aloja los archivos estáticos, [según su documentación](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages). Sus [límites](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits) advierten contra el envío de contraseñas en Pages. Por eso el panel y la base de datos requieren un alojamiento de servidor separado. El código del repositorio es público; nunca incluyas contraseñas, códigos individuales de activación ni listas reales en commits, capturas o incidencias de GitHub.
 
-Queda por conectar la activación individual, la confirmación de nombres, cédula y teléfono `XXXX-XXXX`, el avatar persistente y la inscripción del estudiante al tema en el servidor. También faltan presencia y chats reales. Consulta [el alcance](docs/alcance.md) para los estados y reglas acordadas.
+La ruta Supabase añade la primera versión de activación, perfil y equipo, sujeta a configurar y probar un proyecto real. Faltan la presencia, el movimiento compartido y los chats reales. Consulta [el alcance](docs/alcance.md) para los estados y reglas acordadas.

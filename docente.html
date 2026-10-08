@@ -1,0 +1,14 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+<title>Panel docente · Aula Encuentro</title><link rel="stylesheet" href="./assets/live.css"><script type="module" src="./assets/teacher.js"></script></head>
+<body><header><a href="./">▦ Aula<strong>Encuentro</strong></a><span>Panel docente</span></header><main><h1>Mis materias</h1>
+<p id="notice">Acceso exclusivo para la cuenta docente autorizada en Supabase.</p><section id="setup" hidden>Configura Supabase antes de utilizar el panel.</section>
+<form id="login"><label>Correo docente<input name="email" type="email" autocomplete="email" required></label><button>Enviarme un código</button></form>
+<form id="verify" hidden><label>Código recibido<input name="token" autocomplete="one-time-code" required></label><button>Verificar</button></form>
+<section id="dashboard" hidden><button id="logout" class="quiet">Cerrar sesión</button><form id="new-course"><h2>Nueva materia</h2><label>Materia y sección<input name="name" required maxlength="120"></label><button>Crear materia y código</button></form><p id="new-code" hidden></p><div id="courses"></div></section>
+<section id="detail" hidden><button id="back" class="quiet">← Mis materias</button><h2 id="course-title"></h2><p id="course-summary"></p>
+<form id="new-topic"><h3>Nuevo espacio de trabajo</h3><label>Tema<input name="name" required maxlength="80"></label><label>Indicaciones<input name="instructions" maxlength="1000"></label><label>Cupos<input name="capacity" type="number" min="1" max="100" required></label><button>Añadir tema</button></form>
+<form id="roster"><h3>Lista de estudiantes</h3><p>Una línea por persona: Apellido | Nombre | correo (opcional). Sin correo, el ingreso requiere tu aprobación.</p><textarea name="rows" rows="6" style="width:100%" required placeholder="Cortez Alonso | Reina del Carmen | reina@ejemplo.edu"></textarea><button>Importar lista</button></form>
+<h3>Temas</h3><div id="topic-list"></div><h3>Estudiantes</h3><div id="student-list"></div><h3>Solicitudes de activación</h3><div id="claim-list"></div><button id="registration" class="quiet"></button></section>
+<p id="error" role="alert" hidden></p></main></body></html>
