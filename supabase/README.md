@@ -11,6 +11,19 @@ costo mensual consultado de 0. Las dos migraciones están aplicadas y la URL y
 clave publicable están configuradas en el sitio. La clave secreta permanece
 fuera del repositorio. No importes una lista real aún.
 
+### Acceso docente con Google
+
+El panel muestra «Entrar con Google» únicamente después de habilitar el
+proveedor Google en Supabase. En Google Cloud crea un cliente OAuth de tipo
+«Aplicación web» con origen JavaScript
+`https://jotauve24.github.io` y URI de redirección
+`https://zzxaarehltihndazabfj.supabase.co/auth/v1/callback`. En Supabase,
+Authentication > Sign In / Providers > Google, coloca el Client ID y el Client
+Secret y habilita el proveedor. Mantén el secreto únicamente en Supabase:
+nunca lo coloques en GitHub ni lo envíes por chat. Si Google devuelve el mismo
+correo ya verificado, Supabase vincula esa identidad a la cuenta existente;
+el permiso docente sigue asociado al identificador de esa cuenta.
+
 1. En Authentication > URL Configuration configura el Site URL con
    `https://jotauve24.github.io/Aula-virtual-JV/` y permite como redirecciones
    `https://jotauve24.github.io/Aula-virtual-JV/docente.html` y
