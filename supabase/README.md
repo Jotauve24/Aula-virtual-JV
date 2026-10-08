@@ -6,16 +6,15 @@ la clave secreta y `service_role` **nunca** deben agregarse al repositorio.
 
 ## Antes de activar estudiantes
 
-1. Crea un proyecto propio en Supabase y anota su URL `https://…supabase.co` y
-   su clave **publishable** (`sb_publishable_…`). No importes una lista real aún.
-2. En el editor SQL del proyecto ejecuta, en orden, las dos migraciones de
-   `supabase/migrations/`. Revísalas en el editor antes de ejecutarlas.
-3. En Authentication > Email Templates cambia la plantilla de inicio por correo
+El proyecto **Aula Encuentro** ya está creado en la organización conectada, con
+costo mensual consultado de 0. Las dos migraciones están aplicadas y la URL y
+clave publicable están configuradas en el sitio. La clave secreta permanece
+fuera del repositorio. No importes una lista real aún.
+
+1. En Authentication > Email Templates cambia la plantilla de inicio por correo
    para que muestre el código `{{ .Token }}`. El formulario utiliza un código
    introducido manualmente, no un enlace mágico.
-4. Escribe **solo** la URL y la clave publicable en
-   `assets/supabase-config.js`. Publica esos cambios en GitHub Pages.
-5. Abre `docente.html` y entra con tu correo verificado. El primer ingreso
+2. Abre `docente.html` y entra con tu correo verificado. El primer ingreso
    crea la cuenta de Auth, pero **no concede permiso docente**. En el editor SQL,
    autoriza expresamente tu cuenta después de comprobar el correo:
 
@@ -26,7 +25,7 @@ la clave secreta y `service_role` **nunca** deben agregarse al repositorio.
 
    Sustituye ese texto por tu correo en el editor privado de Supabase. No lo
    guardes en GitHub. Vuelve a cargar el panel: ahora podrás crear materias.
-6. Crea una materia y guarda su código cuando aparece. Solo se muestra una vez.
+3. Crea una materia y guarda su código cuando aparece. Solo se muestra una vez.
    Añade temas y cupos. Pega la lista en el formato `Apellido | Nombre | correo`.
    Si no tienes el correo del estudiante, deja esa tercera columna vacía. Al
    entrar, hará una solicitud pendiente que debes asociar a su perfil.
