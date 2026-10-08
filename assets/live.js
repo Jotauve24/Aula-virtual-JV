@@ -1,4 +1,4 @@
-import { configured, sendCode, verifyCode, rpc, signedIn, signOut } from './supabase-client.js';
+import { configured, sendCode, rpc, signedIn, signOut } from './supabase-client.js';
 const $ = selector => document.querySelector(selector);
 const sections = ['login','verify','course','pending','profile','room'];
 let email = '', courseId = '', profile = null;
@@ -11,10 +11,7 @@ const savedCode = sessionStorage.getItem('aula-course-code');
 if (savedCode) { $('#course').elements.code.value = savedCode; sessionStorage.removeItem('aula-course-code'); }
 $('#login').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   email = event.target.elements.email.value.trim().toLowerCase();
-  await sendCode(email); show('verify'); $('#notice').textContent = 'Revisa tu correo e introduce el código recibido.';
-}); });
-$('#verify').addEventListener('submit', event => { event.preventDefault(); run(async () => {
-  await verifyCode(email, event.target.elements.token.value.trim()); show('course');
+  await sendCode(email); show('verify'); $('#notice').textContent = 'Revisa tu correo y abre el enlace de ingreso. Luego escribe el código de la materia.';
 }); });
 $('#course').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const result = await rpc('request_course', { p_code: event.target.elements.code.value.trim() });

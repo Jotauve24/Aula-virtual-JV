@@ -17,6 +17,15 @@ function saveSession(value) {
     expires_at: value.expires_at || Math.floor(Date.now()/1000) + value.expires_in }));
   else sessionStorage.removeItem(sessionKey);
 }
+// Supabase's default email template uses a magic link. It returns the session
+// in the URL fragment, which is removed immediately after reading it.
+const fragment = new URLSearchParams(location.hash.slice(1));
+if (fragment.has('access_token') && fragment.has('refresh_token')) {
+  saveSession({ access_token: fragment.get('access_token'),
+    refresh_token: fragment.get('refresh_token'),
+    expires_in: Number(fragment.get('expires_in')) || 3600 });
+  history.replaceState(null, '', location.pathname + location.search);
+}
 async function request(path, body, token) {
   const response = await fetch(endpoint(path), {
     method: 'POST',
@@ -31,7 +40,9 @@ async function request(path, body, token) {
   return data;
 }
 export async function sendCode(email) {
-  return request('/auth/v1/otp', { email, create_user: true });
+  const redirect = location.origin + location.pathname;
+  return request(`/auth/v1/otp?redirect_to=${encodeURIComponent(redirect)}`,
+    { email, create_user: true });
 }
 export async function verifyCode(email, token) {
   const data = await request('/auth/v1/verify', { email, token, type: 'email' });

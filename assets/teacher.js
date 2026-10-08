@@ -1,4 +1,4 @@
-import { configured, sendCode, verifyCode, rpc, signedIn, signOut } from './supabase-client.js';
+import { configured, sendCode, rpc, signedIn, signOut } from './supabase-client.js';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 function show(id) { for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id; }
@@ -8,10 +8,7 @@ if (!configured) { show('login'); $('#login').hidden = true; $('#setup').hidden 
 else if (signedIn()) run(loadCourses); else show('login');
 $('#login').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   email = event.target.elements.email.value.trim().toLowerCase(); await sendCode(email);
-  show('verify'); $('#notice').textContent = 'Revisa el correo docente e introduce el código.';
-}); });
-$('#verify').addEventListener('submit', event => { event.preventDefault(); run(async () => {
-  await verifyCode(email, event.target.elements.token.value.trim()); await loadCourses();
+  show('verify'); $('#notice').textContent = 'Revisa el correo docente y abre el enlace de ingreso en este navegador.';
 }); });
 async function loadCourses() {
   const courses = await rpc('my_courses'); show('dashboard');
