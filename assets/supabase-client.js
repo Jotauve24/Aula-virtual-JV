@@ -9,13 +9,21 @@ function endpoint(path) {
   return `${SUPABASE_URL}${path}`;
 }
 function session() {
-  try { return JSON.parse(sessionStorage.getItem(sessionKey) || 'null'); }
+  try { return JSON.parse(localStorage.getItem(sessionKey) || 'null'); }
   catch { return null; }
 }
 function saveSession(value) {
-  if (value) sessionStorage.setItem(sessionKey, JSON.stringify({ ...value,
+  if (value) localStorage.setItem(sessionKey, JSON.stringify({ ...value,
     expires_at: value.expires_at || Math.floor(Date.now()/1000) + value.expires_in }));
-  else sessionStorage.removeItem(sessionKey);
+  else localStorage.removeItem(sessionKey);
+  sessionStorage.removeItem(sessionKey);
+}
+// Previous releases stored the session only in one tab. Preserve it on upgrade.
+if (!session()) {
+  try {
+    const previous = JSON.parse(sessionStorage.getItem(sessionKey) || 'null');
+    if (previous?.access_token && previous?.refresh_token) saveSession(previous);
+  } catch { /* No prior session to migrate. */ }
 }
 // Supabase's default email template uses a magic link. It returns the session
 // in the URL fragment, which is removed immediately after reading it.
