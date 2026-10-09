@@ -7,7 +7,7 @@ la clave secreta y `service_role` **nunca** deben agregarse al repositorio.
 ## Antes de activar estudiantes
 
 El proyecto **Aula Encuentro** ya está creado en la organización conectada, con
-costo mensual consultado de 0. Las dos migraciones están aplicadas y la URL y
+costo mensual consultado de 0. Las migraciones están aplicadas y la URL y
 clave publicable están configuradas en el sitio. La clave secreta permanece
 fuera del repositorio. No importes una lista real aún.
 
@@ -41,18 +41,27 @@ el permiso docente sigue asociado al identificador de esa cuenta.
    Sustituye ese texto por tu correo en el editor privado de Supabase. No lo
    guardes en GitHub. Vuelve a cargar el panel: ahora podrás crear materias.
 3. Crea una materia y guarda su código cuando aparece. Solo se muestra una vez.
-   Añade temas y cupos. Pega la lista en el formato `Apellido | Nombre | correo`.
-   Si no tienes el correo del estudiante, deja esa tercera columna vacía. Al
-   entrar, hará una solicitud pendiente que debes asociar a su perfil.
+   Añade temas y cupos. Comparte el código con tus estudiantes. No necesitas
+   importar correos ni aprobar cada ingreso.
+
+### Registro de estudiantes
+
+En Authentication > Sign In / Providers > Anonymous Sign-Ins activa el ingreso
+anónimo. Cada navegador obtiene una sesión privada de Supabase sin contraseña
+ni correo de confirmación. El estudiante escribe el código de materia, correo
+de contacto, nombres, apellidos y teléfono; luego crea su avatar y elige tema.
+El correo proporcionado no se verifica y no debe utilizarse como prueba de
+identidad. El perfil permanece en ese navegador mientras no cierre sesión ni
+borre los datos del sitio. En otro dispositivo tendría que crear un perfil
+nuevo; no existe recuperación por el correo declarado.
 
 ## Alcance de este incremento
 
 - El ingreso publicado conserva `DEMO2026`. Los códigos `MAT-…` llevan a
   `live.html` **solo cuando** hay URL y clave publicable configuradas.
-- El correo se verifica al abrir el enlace de ingreso. El código compartido identifica la materia;
-  un correo previamente asignado vincula el perfil. Si falta, el docente debe
-  aprobar la solicitud antes de mostrar datos personales o temas.
-- Cada estudiante confirma nombres, cédula, teléfono y avatar. Los compañeros
+- El código compartido identifica la materia y permite crear un perfil nuevo
+  si la inscripción está abierta. No verifica quién escribió los datos.
+- Cada estudiante registra correo, nombres, apellidos, teléfono y avatar. Los compañeros
   ven únicamente nombres y avatar de integrantes. Los cupos se adjudican en una
   transacción con bloqueo por materia.
 - La elección de equipo es definitiva para el estudiante en esta etapa. El
@@ -63,11 +72,10 @@ el permiso docente sigue asociado al identificador de esa cuenta.
 
 ## Comprobaciones antes de uso real
 
-Prueba con cuentas y datos ficticios: docente autorizado, estudiante cuyo correo
-está en la lista, solicitud pendiente, aprobación, dos estudiantes intentando
-tomar el último cupo, y acceso de otra materia. Comprueba además la plantilla
-de correo y los límites de envío del proyecto. Haz copias de seguridad y define con
-la universidad si está permitido recoger cédula y teléfono en este servicio.
+Prueba con datos ficticios: docente autorizado, registro nuevo sin confirmación
+por correo, recarga que conserva la sesión, inscripción cerrada, dos estudiantes
+intentando tomar el último cupo, y acceso de otra materia. Haz copias de seguridad
+y define con la universidad si está permitido recoger teléfonos en este servicio.
 
 No envíes por GitHub el archivo de alumnos, credenciales, códigos personales,
 exportaciones ni capturas con datos reales. `docente.html` es una página pública
