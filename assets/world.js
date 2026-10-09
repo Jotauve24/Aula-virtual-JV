@@ -143,8 +143,15 @@ export function isWalkable(x, y) {
 }
 export function findPath(from, to) {
   const start={x:Math.round(from.x/20),y:Math.round(from.y/20)};
-  const end={x:Math.round(to.x/20),y:Math.round(to.y/20)};
-  if(!isWalkable(end.x*20,end.y*20))return [];
+  let end={x:Math.round(to.x/20),y:Math.round(to.y/20)};
+  if(!isWalkable(end.x*20,end.y*20)){
+    let nearest=Infinity;
+    for(let x=3;x<=37;x++)for(let y=5;y<=24;y++){
+      if(!isWalkable(x*20,y*20))continue;
+      const distance=(x*20-to.x)**2+(y*20-to.y)**2;
+      if(distance<nearest){nearest=distance;end={x,y};}
+    }
+  }
   const key=p=>`${p.x},${p.y}`, queue=[start], parents=new Map([[key(start),null]]);
   for(let i=0;i<queue.length;i++){
     const current=queue[i];

@@ -35,11 +35,47 @@ function element(tag, text = '', className = '') {
 function status(value) { $('#room-status').textContent = value; }
 $('#teacher-image').innerHTML = avatarSVG({ skin: 1, shirt: 1, hair: 'curly' });
 $('#dialog-teacher-image').innerHTML = avatarSVG({ skin: 1, shirt: 1, hair: 'curly' });
+const questionText = {
+  code: ['¿Cuál es el código de tu materia?', 'El código de tu docente te abre la puerta de esta sala.'],
+  firstName: ['¡Hola! ¿Cómo te llamas?', 'Comencemos por tus nombres.'],
+  lastName: ['¿Y cuál es tu apellido?', 'Así aparecerás en la lista del docente.'],
+  email: ['¿Qué correo podemos usar para contactarte?', 'No tienes que abrir ningún enlace de confirmación.'],
+  phone: ['Por último, ¿tu número de teléfono?', 'Tu teléfono solo lo verá el docente; no se muestra a tus compañeros.']
+};
+const registrationForm = $('#registration-form');
 const savedCode = sessionStorage.getItem('aula-course-code');
 if (savedCode) {
-  $('#registration-form').elements.namedItem('code').value = savedCode;
+  registrationForm.elements.namedItem('code').value = savedCode;
   sessionStorage.removeItem('aula-course-code');
 }
+let questions = registrationForm.elements.namedItem('code').value.trim()
+  ? ['firstName', 'lastName', 'email', 'phone']
+  : ['code', 'firstName', 'lastName', 'email', 'phone'];
+let questionIndex = 0;
+function renderQuestion(focus = false) {
+  const key = questions[questionIndex];
+  document.querySelectorAll('.dialog-step').forEach(step => { step.hidden = step.dataset.step !== key; });
+  $('#registration h2').textContent = questionText[key][0];
+  $('#dialog-description').textContent = questionText[key][1];
+  $('#dialog-progress').textContent = `PREGUNTA ${questionIndex + 1} DE ${questions.length}`;
+  $('#previous-question').hidden = questionIndex === 0;
+  $('#next-question').hidden = questionIndex === questions.length - 1;
+  $('#finish-registration').hidden = questionIndex !== questions.length - 1;
+  $('#dialog-privacy').hidden = questionIndex !== questions.length - 1;
+  if (focus) registrationForm.elements.namedItem(key).focus();
+}
+$('#next-question').addEventListener('click', () => {
+  const field = registrationForm.elements.namedItem(questions[questionIndex]);
+  if (!field.reportValidity()) return;
+  if (questions[questionIndex] === 'code') field.value = field.value.trim().toUpperCase();
+  questionIndex++; renderQuestion(true);
+});
+$('#previous-question').addEventListener('click', () => { questionIndex--; renderQuestion(true); });
+registrationForm.addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || questions[questionIndex] === 'phone') return;
+  event.preventDefault(); $('#next-question').click();
+});
+renderQuestion();
 show('registration');
 if (!configured) { $('#room').hidden = true; $('#setup').hidden = false; }
 else {
@@ -219,8 +255,12 @@ function walkTo(target, arrived = null) {
 }
 $('#world').addEventListener('click', event => {
   const bounds = event.currentTarget.getBoundingClientRect();
-  walkTo({ x: (event.clientX - bounds.left) / bounds.width * 800,
-    y: (event.clientY - bounds.top) / bounds.height * 560 });
+  const target = { x: (event.clientX - bounds.left) / bounds.width * 800,
+    y: (event.clientY - bounds.top) / bounds.height * 560 };
+  const desk = [[129,130,284,218],[500,130,655,218],[500,371,655,459]]
+    .findIndex(([left,top,right,bottom]) => target.x>=left && target.x<=right && target.y>=top && target.y<=bottom);
+  if (desk >= 0 && topics[desk]) walkTo({x:locationsForTopics[desk][0],y:locationsForTopics[desk][1]}, () => topicPanel(topics[desk]));
+  else walkTo(target);
 });
 function moveDirection(direction) {
   if ($('#room').dataset.stage !== 'room') return;
@@ -254,6 +294,8 @@ $('#logout').addEventListener('click', () => {
   if (!confirm('Al salir perderás el acceso a este perfil desde este dispositivo. ¿Deseas continuar?')) return;
   studentSignOut(); localStorage.removeItem('aula-student-course-code');
   courseId = ''; profile = null; topics = []; selectedTopic = null;
+  registrationForm.reset(); questions = ['code', 'firstName', 'lastName', 'email', 'phone'];
+  questionIndex = 0; renderQuestion();
   $('#course-title').textContent = 'Bienvenido al aula';
   $('#group-badge').textContent = 'Elige tu espacio';
   $('#topic-buttons').replaceChildren();

@@ -34,3 +34,18 @@
 #room .in-room-dialog{border-radius:3px;border:4px solid #405f4a;outline:3px solid #e7e9c9;box-shadow:8px 9px 0 #223b2d88,0 25px 48px #24352e55}
 #room .in-room-dialog .eyebrow,#room .dialog-teacher{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
 @media(max-width:600px){.topic-dialog{width:94%;bottom:2%;max-height:86%;padding:10px 12px;border-width:3px;box-shadow:4px 5px 0 #223b2d88}.topic-dialog h2{font-size:15px}.topic-dialog p{font-size:10px}.topic-dialog .member-list li{font-size:9px}.topic-dialog .button{font-size:10px;padding:5px 8px}.room-map:has(.in-room-dialog:not([hidden])){min-height:300px}.room-map:has(.in-room-dialog:not([hidden])) canvas{height:100%;object-fit:cover}}
+/* Short dialogue prompts keep the character and classroom visible. */
+#room[data-stage="registration"] .teacher-spot{top:30%}
+#room[data-stage="registration"] .in-room-dialog{top:auto;bottom:4%;transform:translateX(-50%);width:min(440px,91%);max-height:57%;padding:14px 19px;background:#fffef6}
+#room[data-stage="registration"] .dialog-teacher{margin-bottom:8px;padding-bottom:7px}
+#room[data-stage="registration"] .dialog-teacher svg{height:33px;width:25px}
+#room[data-stage="registration"] .in-room-dialog h2{font-size:23px;margin:4px 0 6px}
+#room[data-stage="registration"] .in-room-dialog p{margin-bottom:9px}
+#room[data-stage="registration"] .dialog-step label{font-size:12px;margin-bottom:5px}
+#room[data-stage="registration"] .dialog-step input{width:100%;padding:11px;font-size:16px}
+#room[data-stage="registration"] .dialog-actions{display:flex;gap:9px;align-items:center}
+#room[data-stage="registration"] .dialog-actions .primary{flex:1}
+#room[data-stage="registration"] .dialog-actions .secondary{width:auto;min-width:90px}
+#room[data-stage="registration"] .field-hint{font-size:11px;margin:10px 0 0}
+@media(max-width:600px){#room[data-stage="registration"] .room-map{min-height:490px}#room[data-stage="registration"] .teacher-spot{top:20%}#room[data-stage="registration"] .in-room-dialog{max-height:68%;bottom:3%;width:95%;padding:11px 13px}#room[data-stage="registration"] .in-room-dialog h2{font-size:18px}#room[data-stage="registration"] .dialog-teacher{font-size:10px}}
+@media(min-width:701px){#room .room-layout{grid-template-columns:minmax(0,1fr) minmax(215px,260px)}#room .room-side{min-height:0}}
