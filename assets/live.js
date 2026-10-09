@@ -1,6 +1,6 @@
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut } from './supabase-client.js';
 import { SKINS, SHIRTS } from './model.js';
-import { avatarSVG, drawWorld, findPath, isWalkable } from './world.js';
+import { avatarSVG, drawWorld, findPath, isWalkable } from './world.js?v=20261009b';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
