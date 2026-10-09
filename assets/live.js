@@ -7,6 +7,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let courseId = '', profile = null, topics = [], selectedTopic = null;
 let look = { skin: 1, shirt: 0, hair: 'short' };
 let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, onArrival = null;
+let chatTimer = 0, chatLoading = false, chatTeamId = '';
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
 function show(stage) {
   stopAnimation();
@@ -186,6 +187,8 @@ async function enterRoom() {
   topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
   show('room'); renderTopics(); draw();
   status('Explora los temas y elige tu equipo.');
+  clearInterval(chatTimer);
+  chatTimer = setInterval(() => { if (!document.hidden && !$('#team-chat-host').hidden) refreshChat(); }, 8000);
 }
 function sortTopics(rows) {
   return rows.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }) || a.id.localeCompare(b.id));
@@ -204,11 +207,26 @@ function renderTopics() {
     return button;
   }));
   const activeTopic = selectedTopic && topics.find(t => t.id === selectedTopic.id);
+  renderTeamChat(mine);
   homePanel();
   if (activeTopic) topicPanel(activeTopic);
 }
 function side(...nodes) { $('#side-content').replaceChildren(...nodes); }
 function openTopic(topic, target) { walkTo(target); topicPanel(topic); }
+function renderTeamChat(team) {
+  const host = $('#team-chat-host');
+  if (!team) {
+    host.hidden = true;
+    host.replaceChildren();
+    chatTeamId = '';
+    return;
+  }
+  if (chatTeamId !== team.id) {
+    host.replaceChildren(teamChatPanel(team));
+    chatTeamId = team.id;
+    refreshChat();
+  }
+}
 function homePanel() {
   selectedTopic = null;
   $('#topic-dialog').hidden = true;
@@ -229,28 +247,96 @@ function homePanel() {
     list.append(button);
   }
   const team = topics.find(topic => topic.id === profile.topicId);
+  const chatHost = $('#team-chat-host');
+  const wasHidden = chatHost.hidden;
+  chatHost.hidden = !team;
+  if (team && wasHidden) refreshChat();
   const nodes = [greeting, title, intro, list];
   if (team) nodes.push(teamRosterPanel(team));
-  else nodes.push(element('p', 'Al elegir un equipo, aquí verás a sus integrantes.', 'field-hint'));
+  else nodes.push(element('p', 'Al elegir un equipo, aquí verás a sus integrantes y el chat.', 'field-hint'));
   side(...nodes);
 }
 function teamRosterPanel(team) {
   const section = element('section', '', 'team-roster-panel');
   section.append(element('span', 'TU EQUIPO', 'eyebrow'), element('h3', team.name),
     element('p', team.instructions || 'El docente todavía no añadió indicaciones.'));
-  section.append(element('h4', 'Integrantes'));
+  section.append(element('h4', 'Tus compañeros'));
   const roster = element('div', '', 'team-roster');
   for (const member of team.members) {
     const card = element('div', '', 'team-member');
     card.append(element('strong', member.name + (member.mine ? ' · Tú' : '')));
+    if (member.email) {
+      const link = element('a', member.email); link.href = 'mailto:' + member.email; card.append(link);
+    }
+    if (member.phone) {
+      const link = element('a', member.phone); link.href = 'tel:' + member.phone.replace(/[^+0-9]/g, ''); card.append(link);
+    }
+    if (!member.email && !member.phone) card.append(element('small', 'Contacto privado · usa el chat'));
     roster.append(card);
   }
   section.append(roster);
+  const mine = team.members.find(member => member.mine);
+  const label = element('label', '', 'share-contact');
+  const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = !!mine?.sharing;
+  label.append(toggle, element('span', 'Compartir mi correo y teléfono con este equipo'));
+  toggle.addEventListener('change', () => run(async () => {
+    toggle.disabled = true;
+    try { await studentRpc('team_contact_setting', { p_course_id: courseId, p_share: toggle.checked });
+      topics = await studentRpc('course_room', { p_course_id: courseId }); renderTopics(); }
+    catch (error) { toggle.checked = !toggle.checked; throw error; }
+    finally { toggle.disabled = false; }
+  }));
+  section.append(label, element('p', 'Puedes cambiar esta opción en cualquier momento.', 'field-hint'));
   return section;
+}
+function teamChatPanel(team) {
+  const section = element('section', '', 'team-chat');
+  section.append(element('span', 'SOLO PARA TU EQUIPO', 'eyebrow'),
+    element('h2', 'Chat de ' + team.name),
+    element('p', 'Coordina con tus compañeros desde este espacio.'));
+  const messages = element('div', '', 'chat-messages'); messages.id = 'team-chat-messages';
+  messages.setAttribute('role', 'log'); messages.setAttribute('aria-label', 'Mensajes de tu equipo');
+  messages.append(element('p', 'Cargando conversación…'));
+  const form = element('form', '', 'chat-form'); form.id = 'team-chat-form';
+  const input = document.createElement('input'); input.name = 'message'; input.required = true;
+  input.maxLength = 500; input.placeholder = 'Escribe a tu equipo'; input.setAttribute('aria-label', 'Mensaje para tu equipo');
+  const send = element('button', 'Enviar', 'button primary'); send.type = 'submit';
+  const chatError = element('p', '', 'field-error'); chatError.hidden = true;
+  chatError.setAttribute('role', 'alert');
+  form.append(input, send, chatError);
+  form.addEventListener('submit', async event => { event.preventDefault();
+    const body = input.value.trim(); if (!body) return;
+    send.disabled = true; chatError.hidden = true;
+    try { await studentRpc('team_chat_send', { p_course_id: courseId, p_topic_id: team.id, p_body: body });
+      input.value = ''; await refreshChat(); }
+    catch (error) { chatError.textContent = error.message; chatError.hidden = false; }
+    finally { send.disabled = false; }
+  });
+  section.append(messages, form,
+    element('p', 'Solo quienes integran este equipo pueden leer y escribir aquí.', 'field-hint'));
+  return section;
+}
+async function refreshChat() {
+  const box = $('#team-chat-messages');
+  if (!box || chatLoading || !profile?.topicId) return;
+  chatLoading = true;
+  try {
+    const messages = await studentRpc('team_chat_read', { p_course_id: courseId, p_topic_id: profile.topicId });
+    if (!box.isConnected) return;
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 45;
+    box.replaceChildren(...(messages.length ? messages.map(msg => {
+      const entry = element('div', '', 'chat-message' + (msg.mine ? ' mine' : ''));
+      const when = new Date(msg.createdAt).toLocaleTimeString('es-PA', {hour:'2-digit',minute:'2-digit'});
+      entry.append(element('small', msg.name + ' · ' + when), element('span', msg.body)); return entry;
+    }) : [element('p', 'Aún no hay mensajes. Saluda a tu equipo.') ]));
+    if (nearBottom) box.scrollTop = box.scrollHeight;
+  } catch (error) { if (box.isConnected) box.replaceChildren(element('p', error.message)); }
+  finally { chatLoading = false; }
 }
 function topicPanel(topic, confirmJoin = false) {
   selectedTopic = topic;
   const mine = profile.topicId === topic.id;
+  $('#team-chat-host').hidden = !mine;
   const full = topic.members.length >= topic.capacity;
   const header = element('div', '', 'topic-dialog-heading');
   const close = element('button', '×', 'topic-close'); close.type = 'button';
@@ -374,6 +460,10 @@ window.addEventListener('pagehide', stopAnimation);
 $('#logout').addEventListener('click', () => {
   if (!confirm('Al salir perderás el acceso a este perfil desde este dispositivo. ¿Deseas continuar?')) return;
   studentSignOut(); localStorage.removeItem('aula-student-course-code');
+  clearInterval(chatTimer);
+  chatTimer = 0; chatTeamId = '';
+  $('#team-chat-host').hidden = true;
+  $('#team-chat-host').replaceChildren();
   courseId = ''; profile = null; topics = []; selectedTopic = null;
   registrationForm.reset(); questions = ['code', 'firstName', 'lastName', 'email', 'phone'];
   questionIndex = 0; renderQuestion();

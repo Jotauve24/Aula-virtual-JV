@@ -53,16 +53,28 @@
 .team-roster-panel{border-top:1px solid var(--line);margin-top:22px;padding-top:18px}
 .team-roster-panel h3{font-family:var(--serif);font-weight:400;font-size:22px;margin:8px 0}
 .team-roster-panel h4{font-size:12px;margin:20px 0 10px}
-.team-roster{display:grid;gap:8px}.team-member{padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:#f8f9f3;font-size:12px;overflow-wrap:anywhere}
-.team-member strong{font-size:12px}
+.team-roster{display:grid;gap:8px;max-height:260px;overflow:auto;align-content:start;scrollbar-color:#9fb69c #edf2e8}.team-member{display:grid;gap:3px;padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:#f8f9f3;font-size:12px;overflow-wrap:anywhere}
+.team-member strong{font-size:12px}.team-member a{color:#245f54;text-decoration:underline;font-size:11px}.team-member small{color:var(--muted);font-size:11px}
+.share-contact{display:flex;align-items:flex-start;gap:8px;margin:16px 0 0;font-size:11px;line-height:1.4}.share-contact input{margin:2px 0 0;flex-shrink:0}
+.team-chat-host{margin-top:16px}.team-chat-host[hidden]{display:none}
+.team-chat{min-width:0;padding:22px 25px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.team-chat h2{font-family:var(--serif);font-weight:400;font-size:25px;line-height:1.2;margin:8px 0 4px}
+.team-chat>p{font-size:12px;color:var(--muted);line-height:1.5}
+.team-chat .chat-messages{min-height:110px;max-height:250px;overflow:auto;align-content:start;padding:14px;margin:17px 0 12px;border:1px solid #e4e9df;border-radius:9px;background:#f8faf5;scrollbar-color:#9fb69c #edf2e8}
+.team-chat .chat-message{max-width:85%;font-size:12px;white-space:pre-wrap}.team-chat .chat-message.mine{justify-self:end;margin-left:0}
+.team-chat .chat-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start}
+.team-chat .chat-form input{min-width:0;margin:0;min-height:42px}.team-chat .chat-form .button{min-height:42px;padding:9px 18px}
+.team-chat .chat-form .field-error{grid-column:1/-1}
+.team-chat .field-hint{margin:10px 0 0}
 
 /* The welcome sequence uses the whole classroom; its empty sidebar is hidden. */
 #room[data-stage="registration"] .room-layout,#room[data-stage="avatar"] .room-layout{grid-template-columns:minmax(0,1fr)}
 #room[data-stage="registration"] .room-side,#room[data-stage="avatar"] .room-side,
+#room[data-stage="registration"] .team-chat-host,#room[data-stage="avatar"] .team-chat-host,
 #room[data-stage="registration"] .room-tools,#room[data-stage="avatar"] .room-tools{display:none}
 #room[data-stage="registration"] .room-map-container,#room[data-stage="avatar"] .room-map-container{width:100%;max-width:1000px;margin-inline:auto}
-.in-room-dialog .field-error,.topic-dialog .field-error{display:block;padding:8px 10px;background:#fff0e9;border:1px solid #e4b8a9;border-radius:4px;color:#9e3636;font-size:12px;line-height:1.45;margin:9px 0}
-.in-room-dialog .field-error[hidden],.topic-dialog .field-error[hidden]{display:none}
+.in-room-dialog .field-error,.topic-dialog .field-error,.chat-form .field-error{display:block;padding:8px 10px;background:#fff0e9;border:1px solid #e4b8a9;border-radius:4px;color:#9e3636;font-size:12px;line-height:1.45;margin:9px 0}
+.in-room-dialog .field-error[hidden],.topic-dialog .field-error[hidden],.chat-form .field-error[hidden]{display:none}
 .topic-dialog{width:min(560px,92%);padding:19px 22px;max-height:78%}
 .topic-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:15px}
 .topic-dialog .topic-close{flex:none;display:grid;place-items:center;width:32px;height:32px;background:#ecf0dc;border:1px solid #9bae8e;border-radius:2px;color:#294337;font:24px/1 ui-monospace,monospace}
@@ -91,5 +103,6 @@
   .team-change{font-size:13px}
 }
 @media(max-width:380px){.topic-dialog .member-list{grid-template-columns:1fr}}
+@media(max-width:500px){.team-chat{padding:18px 15px}.team-chat h2{font-size:22px}.team-chat .chat-messages{padding:10px}.team-chat .chat-message{max-width:94%}}
 .change-code{display:inline-flex;align-items:center;background:transparent;color:#315f4b;text-decoration:underline;font-size:12px;font-weight:700;padding:4px 0;margin:-2px 0 8px;border:0}
 .change-code:hover{color:#20493e}

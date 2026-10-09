@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Aula Encuentro: ingreso por materia, selección de temas y formación de equipos.",
+  "description": "Aula Encuentro: ingreso por materia, selección de temas, equipos y chat interno.",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "check": "node --check assets/app.js && node --check assets/world.js && node --check assets/model.js && node --check assets/supabase-client.js && node --check assets/live.js && node --check assets/teacher.js && node --check server/app.js && node --check server/storage.js && node --check server/roster.js && node --check server/admin/admin.js",
