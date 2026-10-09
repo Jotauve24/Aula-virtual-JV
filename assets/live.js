@@ -291,7 +291,7 @@ function topicPanel(topic, confirmJoin = false) {
   }
   const back = element('button', 'Ver todos los temas', 'button secondary');
   back.type = 'button'; back.addEventListener('click', homePanel); nodes.push(back);
-  if (profile.topicId) {
+  if (mine) {
     const exit = element('button', 'Salir del grupo', 'button secondary');
     exit.type = 'button';
     exit.addEventListener('click', () => {
