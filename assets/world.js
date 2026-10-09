@@ -52,6 +52,46 @@ function shelf(ctx,x,y) {
   for(let i=0;i<11;i++) rect(ctx,x+7+i*6,y+9-(i%2)*2,5,17+(i%2)*2,colors[i%5]);
   rect(ctx,x,y+29,80,4,'#947e5c');
 }
+function board(ctx,x,y,accent) {
+  rect(ctx,x+4,y+5,86,53,'#33484355');rect(ctx,x,y,86,51,'#485b5b');
+  rect(ctx,x+5,y+5,76,38,'#e4e9db');rect(ctx,x+9,y+10,23,20,accent);
+  for(let i=0;i<3;i++){rect(ctx,x+38,y+12+i*8,29-i*4,3,'#94aca3');rect(ctx,x+11+i*16,y+34,9,4,'#b0c69e');}
+  rect(ctx,x+39,y+44,8,7,'#9b8967');
+}
+function screen(ctx,x,y,accent) {
+  rect(ctx,x+3,y+5,30,26,'#293a42');rect(ctx,x+6,y+8,24,16,accent);
+  rect(ctx,x+9,y+11,11,2,'#d9e5c6');rect(ctx,x+9,y+16,16,2,'#abc6b5');
+  rect(ctx,x+15,y+31,6,4,'#52676c');rect(ctx,x+8,y+35,21,3,'#879592');
+}
+function coffee(ctx,x,y){
+  rect(ctx,x-8,y+2,17,7,'#54463744');rect(ctx,x-10,y-4,19,8,'#f6f1db');
+  rect(ctx,x-7,y-6,14,7,'#d7dbcf');rect(ctx,x+8,y-3,5,4,'#d7dbcf');
+  rect(ctx,x-4,y-5,9,4,'#9b704b');
+}
+function detail(ctx) {
+  // Original pixel-art furnishings echo a busy shared workspace.
+  for(let y=62;y<492;y+=18) for(let x=57;x<741;x+=18) {
+    if((Math.floor(x/18)+Math.floor(y/18))%2===0) rect(ctx,x,y,18,18,'#ffffff0b');
+    rect(ctx,x,y+17,17,1,'#50654d14');
+  }
+  [[78,123,223,112,'#9dad88'],[455,123,228,112,'#94b1ab'],[455,363,228,113,'#c2ab85']].forEach(([x,y,w,h,c])=>{
+    rect(ctx,x+5,y+6,w,h,'#33453f24');rect(ctx,x,y,w,h,c);
+    for(let i=x+8;i<x+w-8;i+=16) rect(ctx,i,y+6,1,h-12,'#ffffff20');
+  });
+  board(ctx,293,65,'#97b89b');board(ctx,548,67,'#8bb4ae');board(ctx,549,309,'#caa580');
+  screen(ctx,72,178,'#7ab4b4');screen(ctx,691,176,'#9ec3a8');
+  rect(ctx,370,70,58,35,'#8b9e92');rect(ctx,376,73,46,27,'#263f4a');
+  rect(ctx,381,79,20,4,'#82bbaa');rect(ctx,381,87,35,3,'#a2babb');
+  rect(ctx,390,107,18,4,'#899e90');
+  [141,209,512,585].forEach((x,i)=>coffee(ctx,x,i<2?196:193));coffee(ctx,592,432);
+  // Low shelves, books and a tiny arcade cabinet in the common room.
+  rect(ctx,291,386,43,46,'#758a82');rect(ctx,297,390,31,28,'#344c57');
+  rect(ctx,303,396,19,13,'#84b3ad');rect(ctx,309,412,4,4,'#e7aa74');
+  rect(ctx,298,423,30,4,'#536765');
+  for(let i=0;i<6;i++){rect(ctx,460+i*13,321,10,25,['#7f9a8a','#a89d83','#c0a078'][i%3]);}
+  rect(ctx,73,331,50,23,'#b48e67');rect(ctx,78,328,40,4,'#ddba80');
+  rect(ctx,307,469,39,14,'#97a87e');rect(ctx,310,464,33,6,'#b9ca9d');
+}
 function sign(ctx, x, y, label, color) {
   rect(ctx,x-48,y-12,96,25,'#fafbf4');rect(ctx,x-48,y+13,96,3,'#26382316');
   ctx.fillStyle=color;ctx.font='600 11px system-ui, sans-serif';ctx.textAlign='center';ctx.fillText(label,x,y+5);
@@ -68,6 +108,7 @@ export function drawWorld(canvas, options = {}) {
   // Cada espacio conserva su propio suelo, mobiliario y rótulo.
   rect(ctx,56,58,300,200,'#d1d9be');rect(ctx,434,58,306,200,'#cbdcda');
   rect(ctx,56,309,300,184,'#e8d7bc');rect(ctx,434,309,306,184,'#ded4b8');
+  detail(ctx);
   for(let y=58;y<495;y+=24) for(let x=56;x<740;x+=24) {
     rect(ctx,x,y,1,22,'#66785108');rect(ctx,x,y+22,23,1,'#66785108');
   }

@@ -110,11 +110,11 @@ async function enterRoom() {
   show('room'); renderTopics(); draw();
   status('Explora los temas y elige tu equipo.');
 }
-const locationsForTopics = [[220, 225], [590, 225], [590, 480]];
+const locationsForTopics = [[220, 240], [590, 240], [590, 480]];
 function renderTopics() {
   const mine = topics.find(t => t.id === profile.topicId);
   $('#group-badge').textContent = mine ? 'Tu equipo: ' + mine.name : 'Tu equipo: sin asignar';
-  const locations = [[217, 122, 220, 225], [587, 122, 590, 225], [587, 352, 590, 480]];
+  const locations = [[217, 122, 220, 240], [587, 122, 590, 240], [587, 352, 590, 480]];
   $('#topic-buttons').replaceChildren(...topics.slice(0, 3).map((topic, i) => {
     const button = element('button', '', 'map-action' + (topic.id === profile.topicId ? ' is-mine' : ''));
     button.type = 'button'; button.dataset.topic = topic.id;
@@ -208,6 +208,8 @@ function walkTo(target, arrived = null) {
     draw(time);
     if (path.length) animation = requestAnimationFrame(walk);
     else if (onArrival) { const done = onArrival; onArrival = null; done(); }
+    else { const i = locationsForTopics.findIndex(([x,y]) => Math.hypot(player.x-x, player.y-y) < 65);
+      if (i >= 0 && topics[i]) status('Llegaste a ' + topics[i].name + '. Pulsa E o toca su letrero para ver el tema.'); }
   }
   animation = requestAnimationFrame(walk);
 }
