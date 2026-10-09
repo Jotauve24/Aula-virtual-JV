@@ -36,8 +36,27 @@ async function openCourse(id) {
   $('#topic-list').replaceChildren(...overview.topics.map(topic => {
     const p = document.createElement('p'); p.textContent = `${topic.name} · ${topic.capacity} cupos · ${topic.instructions}`; return p;
   }));
-  $('#student-list').replaceChildren(...overview.students.map(student => {
-    const p = document.createElement('p'); p.textContent = `${student.lastName}, ${student.firstName} · ${student.email || 'Sin correo'} · ${student.phone || 'Sin teléfono'} · ${student.topicId ? 'Con equipo' : 'Sin equipo'}`; return p;
+  const groups = [...overview.topics.map(topic => ({ id: topic.id, name: topic.name, capacity: topic.capacity })),
+    { id: null, name: 'Sin equipo', capacity: null }];
+  $('#student-list').replaceChildren(...groups.map(group => {
+    const students = overview.students.filter(student => student.topicId === group.id);
+    const card = document.createElement('section'); card.className = 'teacher-group';
+    const heading = document.createElement('div'); heading.className = 'teacher-group-heading';
+    const title = document.createElement('h4'); title.textContent = group.name;
+    const count = document.createElement('span'); count.textContent = group.capacity === null
+      ? `${students.length} pendientes` : `${students.length} de ${group.capacity} integrantes`;
+    heading.append(title, count); card.append(heading);
+    if (!students.length) {
+      const empty = document.createElement('p'); empty.textContent = group.id ? 'Aún no hay estudiantes en este grupo.' : 'Todos eligieron un equipo.';
+      card.append(empty);
+    }
+    for (const student of students) {
+      const row = document.createElement('div'); row.className = 'teacher-student';
+      const name = document.createElement('strong'); name.textContent = `${student.lastName}, ${student.firstName}`;
+      const contact = document.createElement('span'); contact.textContent = [student.email || 'Sin correo', student.phone || 'Sin teléfono'].join(' · ');
+      row.append(name, contact); card.append(row);
+    }
+    return card;
   }));
   $('#registration').textContent = overview.course.registrationOpen ? 'Cerrar inscripción' : 'Abrir inscripción';
 }
