@@ -37,7 +37,7 @@ $('#teacher-image').innerHTML = avatarSVG({ skin: 1, shirt: 1, hair: 'curly' });
 $('#dialog-teacher-image').innerHTML = avatarSVG({ skin: 1, shirt: 1, hair: 'curly' });
 const savedCode = sessionStorage.getItem('aula-course-code');
 if (savedCode) {
-  $('#registration-form').elements.code.value = savedCode;
+  $('#registration-form').elements.namedItem('code').value = savedCode;
   sessionStorage.removeItem('aula-course-code');
 }
 show('registration');
@@ -45,7 +45,7 @@ if (!configured) { $('#room').hidden = true; $('#setup').hidden = false; }
 else {
   const priorCode = localStorage.getItem('aula-student-course-code');
   if (studentSignedIn() && priorCode) {
-    $('#registration-form').elements.code.value = priorCode;
+    $('#registration-form').elements.namedItem('code').value = priorCode;
     run(() => enterCourse(priorCode));
   }
 }
@@ -64,13 +64,13 @@ async function enterCourse(code, details = {}) {
 }
 $('#registration-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const f = event.target.elements;
-  const code = f.code.value.trim().toUpperCase();
-  const phone = f.phone.value.trim();
+  const code = f.namedItem('code').value.trim().toUpperCase();
+  const phone = f.namedItem('phone').value.trim();
   if (!/^\+?[0-9 -]{7,20}$/.test(phone) || (phone.match(/\d/g) || []).length < 7)
     throw new Error('Revisa el número de teléfono.');
   await signInStudentAnonymously();
-  await enterCourse(code, { p_email: f.email.value.trim().toLowerCase(),
-    p_first_name: f.firstName.value.trim(), p_last_name: f.lastName.value.trim(), p_phone: phone });
+  await enterCourse(code, { p_email: f.namedItem('email').value.trim().toLowerCase(),
+    p_first_name: f.namedItem('firstName').value.trim(), p_last_name: f.namedItem('lastName').value.trim(), p_phone: phone });
 }); });
 
 function renderAvatarOptions() {
