@@ -65,9 +65,11 @@ nuevo; no existe recuperación por el correo declarado.
   transacción con bloqueo por materia.
 - La elección de equipo es definitiva para el estudiante en esta etapa; el
   docente puede liberarlo para que elija otro. El docente puede cerrar nuevas
-  inscripciones. El chat de equipo y la preferencia de compartir contacto están
-  disponibles para integrantes. Faltan la edición y exportación avanzada del
-  panel Supabase, la presencia y el movimiento compartido.
+  inscripciones. Las migraciones conservan tablas y funciones de chat y de
+  preferencias de contacto, pero la interfaz estudiantil solo muestra temas,
+  cupos e integrantes. Las actividades y los mensajes se gestionan en Educativa.
+  Faltan la edición y exportación avanzada del panel Supabase, la presencia y
+  el movimiento compartido.
   El servidor Node/SQLite anterior permanece en `server/` como prototipo local,
   pero **no** comparte datos con Supabase.
 
