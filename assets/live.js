@@ -271,11 +271,11 @@ function topicPanel(topic, confirmJoin = false) {
   const nodes = [element('span', 'TEMA DE TU MATERIA', 'eyebrow'), element('h2', topic.name),
     element('p', topic.instructions || 'Sin indicaciones todavía.'), count, members];
   if (mine) nodes.push(element('p', 'Ya formas parte de este equipo. Tu lugar está guardado.'));
+  else if (profile.topicId) nodes.push(element('p', 'Ya perteneces a otro equipo. Puedes consultar este tema y sus integrantes.'));
   else if (full) nodes.push(element('p', 'Este equipo está completo.'));
-  else if (profile.topicId) nodes.push(element('p', 'Ya elegiste un equipo. Pide al docente cambiarlo si lo necesitas.'));
   else if (!profile.registrationOpen) nodes.push(element('p', 'La elección de equipos está cerrada.'));
   else {
-    if (confirmJoin) nodes.push(element('p', '¿Confirmas que quieres unirte? Esta elección queda guardada.'));
+    if (confirmJoin) nodes.push(element('p', '¿Confirmas que quieres unirte? Tu lugar quedará guardado.'));
     const button = element('button', confirmJoin ? 'Sí, unirme al equipo' : 'Quiero este equipo', 'button primary');
     button.type = 'button';
     button.addEventListener('click', () => {
@@ -291,6 +291,15 @@ function topicPanel(topic, confirmJoin = false) {
   }
   const back = element('button', 'Ver todos los temas', 'button secondary');
   back.type = 'button'; back.addEventListener('click', homePanel); nodes.push(back);
+  if (profile.topicId) {
+    const exit = element('button', 'Salir del grupo', 'button secondary');
+    exit.type = 'button';
+    exit.addEventListener('click', () => {
+      const message = element('p', 'Comuníquese con el docente por el mensajero de E-ducativa. Solo el docente puede liberarte del grupo para elegir otro.', 'field-hint');
+      exit.replaceWith(message);
+    });
+    nodes.push(exit);
+  }
   const dialog = $('#topic-dialog');
   dialog.replaceChildren(...nodes); dialog.hidden = false;
   dialog.scrollTop = 0;
@@ -303,6 +312,7 @@ function draw(time = 0) {
 }
 function walkTo(target, arrived = null) {
   if ($('#room').dataset.stage !== 'room') return;
+  if (!$('#topic-dialog').hidden) homePanel();
   onArrival = arrived;
   path = findPath(player, target);
   if (!path.length) {

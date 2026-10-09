@@ -54,7 +54,17 @@ async function openCourse(id) {
       const row = document.createElement('div'); row.className = 'teacher-student';
       const name = document.createElement('strong'); name.textContent = `${student.lastName}, ${student.firstName}`;
       const contact = document.createElement('span'); contact.textContent = [student.email || 'Sin correo', student.phone || 'Sin teléfono'].join(' · ');
-      row.append(name, contact); card.append(row);
+      row.append(name, contact);
+      if (group.id) {
+        const release = document.createElement('button'); release.type = 'button';
+        release.className = 'button secondary'; release.textContent = 'Liberar del grupo';
+        release.addEventListener('click', () => {
+          if (!confirm(`¿Liberar a ${student.firstName} ${student.lastName} de ${group.name}? Podrá elegir otro equipo.`)) return;
+          run(async () => { await rpc('teacher_release_student', { p_course_id: courseId, p_student_id: student.id }); await openCourse(courseId); });
+        });
+        row.append(release);
+      }
+      card.append(row);
     }
     return card;
   }));
