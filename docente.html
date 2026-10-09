@@ -1,13 +1,40 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
-<title>Panel docente · Aula Encuentro</title><link rel="stylesheet" href="./assets/live.css?v=20261009c"><script type="module" src="./assets/teacher.js?v=20261009d"></script></head>
-<body><header><a href="./">▦ Aula<strong>Encuentro</strong></a><span>Panel docente</span></header><main><h1>Mis materias</h1>
-<p id="notice">Acceso exclusivo para la cuenta docente autorizada en Supabase.</p><section id="setup" hidden>Configura Supabase antes de utilizar el panel.</section>
-<form id="login"><label>Correo docente<input name="email" type="email" autocomplete="email" required></label><button>Enviarme un enlace</button><button id="google-login" type="button" hidden>Entrar con Google</button></form>
-<form id="verify" hidden><p>Abre el enlace que recibiste por correo. Este panel aparecerá después de confirmar tu identidad.</p></form>
-<section id="dashboard" hidden><button id="logout" class="quiet">Cerrar sesión</button><form id="new-course"><h2>Nueva materia</h2><label>Materia y sección<input name="name" required maxlength="120"></label><button>Crear materia y código</button></form><p id="new-code" hidden></p><div id="courses"></div></section>
-<section id="detail" hidden><button id="back" class="quiet">← Mis materias</button><h2 id="course-title"></h2><p id="course-summary"></p>
-<form id="new-topic"><h3>Nuevo espacio de trabajo</h3><label>Tema<input name="name" required maxlength="80"></label><label>Indicaciones<input name="instructions" maxlength="1000"></label><label>Cupos<input name="capacity" type="number" min="1" max="100" required></label><button>Añadir tema</button></form>
-<h3>Temas</h3><div id="topic-list"></div><h3>Estudiantes</h3><p>Los estudiantes se registran con el código de esta materia. Aquí aparecerán sus datos y el equipo elegido.</p><div id="student-list"></div><button id="registration" class="quiet"></button></section>
-<p id="error" role="alert" hidden></p></main></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Panel docente · Aula Encuentro</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./assets/live.css?v=20261009d">
+  <script type="module" src="./assets/teacher.js?v=20261009e"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir al contenido</a>
+  <header class="teacher-header">
+    <a class="brand" href="./" aria-label="Aula Encuentro, volver al ingreso"><span class="brand-mark" aria-hidden="true">▦</span><span>Aula<strong>Encuentro</strong><small>Un espacio para hacer equipo</small></span></a>
+    <span class="header-label">PANEL DOCENTE</span>
+  </header>
+  <main id="main" class="teacher-main">
+    <section id="setup" class="notice-card" hidden><h1>Conexión pendiente</h1><p>Configura el servicio del aula antes de utilizar el panel.</p></section>
+    <form id="login" class="teacher-login">
+      <div class="login-intro"><span class="eyebrow">ACCESO DOCENTE</span><h1>Tu materia,<br><em>en un solo lugar.</em></h1><p>Organiza los temas, consulta los equipos y acompaña a tus estudiantes desde aquí.</p><div class="login-steps"><span><b>01</b> Crea una materia</span><span><b>02</b> Comparte su código</span><span><b>03</b> Sigue los equipos</span></div></div>
+      <div class="access-card"><span class="eyebrow">ENTRAR AL PANEL</span><h2>Bienvenido, docente.</h2><p id="notice">Usa el correo autorizado para administrar tus materias.</p><label for="teacher-email">Correo docente</label><input id="teacher-email" name="email" type="email" autocomplete="email" placeholder="tu-correo@ejemplo.com" required><button class="primary" type="submit">Enviarme un enlace <span aria-hidden="true">↗</span></button><button id="google-login" class="secondary" type="button" hidden>Entrar con Google</button><small>El acceso al panel está reservado a la cuenta docente autorizada.</small></div>
+    </form>
+    <section id="verify" class="notice-card" hidden><span class="eyebrow">REVISA TU CORREO</span><h1>Tu enlace está en camino.</h1><p>Abre el enlace recibido en este navegador. Después volverás al panel.</p></section>
+    <section id="dashboard" hidden><div class="section-heading"><div><span class="eyebrow">PANEL DOCENTE</span><h1>Mis materias</h1><p>Configura cada sección y consulta cómo se forman sus equipos.</p></div><button id="logout" class="secondary" type="button">Cerrar sesión</button></div>
+      <div class="dashboard-grid"><form id="new-course" class="panel-card"><span class="eyebrow">NUEVA MATERIA</span><h2>Prepara una sección</h2><p>Recibirás un código único para compartir con esa clase.</p><label for="course-name">Materia y sección</label><input id="course-name" name="name" required maxlength="120" placeholder="Ej.: Sistema II · Sección A"><button class="primary" type="submit">Crear materia y código</button><p id="new-code" class="code-result" role="status" hidden></p></form>
+      <div class="course-area"><div class="area-heading"><h2>Secciones activas</h2><span>Abre una para administrar sus temas y estudiantes</span></div><div id="courses" class="course-list"></div></div></div>
+    </section>
+    <section id="detail" hidden><button id="back" class="back-button" type="button">← Mis materias</button><div class="section-heading detail-heading"><div><span class="eyebrow">ESPACIO DE TRABAJO</span><h1 id="course-title"></h1><p id="course-summary"></p></div><button id="registration" class="secondary" type="button"></button></div>
+      <div class="detail-grid"><form id="new-topic" class="panel-card"><span class="eyebrow">EQUIPOS</span><h2>Nuevo tema</h2><p>Define qué trabajará este grupo y cuántos estudiantes pueden elegirlo.</p><label for="topic-name">Tema</label><input id="topic-name" name="name" required maxlength="80" placeholder="Nombre del tema"><label for="topic-instructions">Indicaciones</label><textarea id="topic-instructions" name="instructions" maxlength="1000" rows="4" placeholder="¿Qué harán los integrantes?"></textarea><label for="topic-capacity">Cupos</label><input id="topic-capacity" name="capacity" type="number" min="1" max="100" required placeholder="5"><button class="primary" type="submit">Añadir tema</button></form>
+      <div class="course-area"><div class="area-heading"><h2>Temas de la materia</h2><span>Los primeros tres aparecen como mesas en el aula</span></div><div id="topic-list" class="teacher-topic-list"></div></div></div>
+      <div class="roster-heading"><span class="eyebrow">SEGUIMIENTO</span><h2>Estudiantes y equipos</h2><p>Los estudiantes ingresan con el código de esta materia. Aquí verás quién tiene equipo y quién sigue pendiente.</p></div><div id="student-list" class="student-groups"></div>
+    </section>
+    <p id="error" role="alert" hidden></p>
+  </main>
+  <footer class="teacher-footer"><span>Aula Encuentro / Aprender también es encontrarse.</span><a href="./">Volver al ingreso</a></footer>
+</body>
+</html>

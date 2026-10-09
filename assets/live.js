@@ -25,7 +25,19 @@ function show(stage) {
   document.title = 'Mi aula · Aula Encuentro';
   draw();
 }
-function message(value) { $('#error').textContent = value; $('#error').hidden = !value; }
+function message(value) {
+  for (const id of ['#error', '#registration-error', '#avatar-error', '#topic-error']) {
+    const node = $(id);
+    if (node) { node.textContent = ''; node.hidden = true; }
+  }
+  if (!value) return;
+  const stage = $('#room').dataset.stage;
+  const target = stage === 'registration' ? $('#registration-error')
+    : stage === 'avatar' ? $('#avatar-error')
+    : !$('#topic-dialog').hidden ? $('#topic-error') : $('#error');
+  target.textContent = value;
+  target.hidden = false;
+}
 async function run(task) { message(''); try { await task(); } catch (error) { message(error.message); } }
 function element(tag, text = '', className = '') {
   const node = document.createElement(tag);
@@ -63,15 +75,26 @@ function renderQuestion(focus = false) {
   $('#next-question').hidden = questionIndex === questions.length - 1;
   $('#finish-registration').hidden = questionIndex !== questions.length - 1;
   $('#dialog-privacy').hidden = questionIndex !== questions.length - 1;
+  $('#change-code').hidden = questions.includes('code');
   if (focus) registrationForm.elements.namedItem(key).focus();
 }
 $('#next-question').addEventListener('click', () => {
   const field = registrationForm.elements.namedItem(questions[questionIndex]);
   if (!field.reportValidity()) return;
+  if (questions[questionIndex] === 'code' &&
+      !/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(field.value.trim().toUpperCase())) {
+    message('Revisa el código de tu materia. Tiene el formato MAT-XXXXX-XXXXX-XXXXX.');
+    field.focus(); return;
+  }
+  message('');
   if (questions[questionIndex] === 'code') field.value = field.value.trim().toUpperCase();
   questionIndex++; renderQuestion(true);
 });
 $('#previous-question').addEventListener('click', () => { questionIndex--; renderQuestion(true); });
+$('#change-code').addEventListener('click', () => {
+  questions = ['code', 'firstName', 'lastName', 'email', 'phone'];
+  questionIndex = 0; message(''); renderQuestion(true);
+});
 registrationForm.addEventListener('keydown', event => {
   if (event.key !== 'Enter' || questions[questionIndex] === 'phone') return;
   event.preventDefault(); $('#next-question').click();
@@ -102,17 +125,25 @@ async function enterCourse(code, details = {}) {
 $('#registration-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const f = event.target.elements;
   const code = f.namedItem('code').value.trim().toUpperCase();
+  if (!/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(code))
+    throw new Error('Revisa el código de tu materia. Tiene el formato MAT-XXXXX-XXXXX-XXXXX.');
   const phone = f.namedItem('phone').value.trim();
   if (!/^\+?[0-9 -]{7,20}$/.test(phone) || (phone.match(/\d/g) || []).length < 7)
     throw new Error('Revisa el número de teléfono.');
   const details = { p_email: f.namedItem('email').value.trim().toLowerCase(),
     p_first_name: f.namedItem('firstName').value.trim(), p_last_name: f.namedItem('lastName').value.trim(), p_phone: phone };
-  await signInStudentAnonymously();
-  try { await enterCourse(code, details); }
-  catch (error) {
-    // A previously deleted anonymous test account can leave a stale browser session.
-    if (!error.message.includes('students_auth_user_id_fkey')) throw error;
-    studentSignOut(); await signInStudentAnonymously(); await enterCourse(code, details);
+  const submit = $('#finish-registration');
+  submit.disabled = true; submit.textContent = 'Guardando tu perfil…';
+  try {
+    await signInStudentAnonymously();
+    try { await enterCourse(code, details); }
+    catch (error) {
+      // A previously deleted anonymous account can leave a stale browser session.
+      if (!error.message.includes('students_auth_user_id_fkey')) throw error;
+      studentSignOut(); await signInStudentAnonymously(); await enterCourse(code, details);
+    }
+  } finally {
+    submit.disabled = false; submit.textContent = 'Crear mi personaje →';
   }
 }); });
 
@@ -142,18 +173,25 @@ function renderAvatarOptions() {
   $('#avatar-image').innerHTML = avatarSVG(look);
 }
 $('#avatar-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
-  await studentRpc('save_student_avatar', { p_course_id: courseId, p_avatar: look });
-  profile = await studentRpc('my_profile', { p_course_id: courseId });
-  await enterRoom();
+  const submit = $('#avatar-form button[type="submit"]');
+  submit.disabled = true;
+  try {
+    await studentRpc('save_student_avatar', { p_course_id: courseId, p_avatar: look });
+    profile = await studentRpc('my_profile', { p_course_id: courseId });
+    await enterRoom();
+  } finally { submit.disabled = false; }
 }); });
 $('#edit-avatar').addEventListener('click', () => { show('avatar'); renderAvatarOptions(); });
 
 async function enterRoom() {
-  topics = await studentRpc('course_room', { p_course_id: courseId });
+  topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
   show('room'); renderTopics(); draw();
   status('Explora los temas y elige tu equipo.');
   clearInterval(chatTimer);
   chatTimer = setInterval(() => { if (!document.hidden && profile?.topicId) refreshChat(); }, 8000);
+}
+function sortTopics(rows) {
+  return rows.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }) || a.id.localeCompare(b.id));
 }
 const locationsForTopics = [[220, 240], [590, 240], [590, 480]];
 function renderTopics() {
@@ -165,7 +203,7 @@ function renderTopics() {
     button.type = 'button'; button.dataset.topic = topic.id;
     button.style.left = locations[i][0] / 8 + '%'; button.style.top = locations[i][1] / 5.6 + '%';
     button.append(element('strong', topic.name), element('small', topic.members.length + ' de ' + topic.capacity + ' lugares'));
-    button.addEventListener('click', () => walkTo({ x: locations[i][2], y: locations[i][3] }, () => topicPanel(topic)));
+    button.addEventListener('click', () => openTopic(topic, { x: locations[i][2], y: locations[i][3] }));
     return button;
   }));
   const activeTopic = selectedTopic && topics.find(t => t.id === selectedTopic.id);
@@ -173,6 +211,7 @@ function renderTopics() {
   if (activeTopic) topicPanel(activeTopic);
 }
 function side(...nodes) { $('#side-content').replaceChildren(...nodes); }
+function openTopic(topic, target) { walkTo(target); topicPanel(topic); }
 function homePanel() {
   selectedTopic = null;
   $('#topic-dialog').hidden = true;
@@ -182,9 +221,15 @@ function homePanel() {
   const list = element('div', '', 'topic-list');
   if (!topics.length) list.append(element('p', 'El docente todavía no ha añadido temas.'));
   for (const topic of topics) {
-    const button = element('button', topic.name); button.type = 'button';
-    button.append(element('span', topic.members.length + '/' + topic.capacity + ' lugares'));
-    button.addEventListener('click', () => { const i = topics.indexOf(topic); if (i < 3) walkTo({ x: locationsForTopics[i][0], y: locationsForTopics[i][1] }, () => topicPanel(topic)); else topicPanel(topic); }); list.append(button);
+    const button = element('button', topic.name, 'topic-link' + (topic.id === profile.topicId ? ' is-mine' : ''));
+    button.type = 'button';
+    const label = topic.id === profile.topicId ? 'Tu equipo' : topic.members.length + '/' + topic.capacity + ' lugares';
+    button.append(element('span', label));
+    button.addEventListener('click', () => { const i = topics.indexOf(topic);
+      if (i < 3) openTopic(topic, { x: locationsForTopics[i][0], y: locationsForTopics[i][1] });
+      else topicPanel(topic);
+    });
+    list.append(button);
   }
   const team = topics.find(topic => topic.id === profile.topicId);
   const nodes = [greeting, title, intro, list];
@@ -231,14 +276,17 @@ function teamChatPanel(team) {
   const input = document.createElement('input'); input.name = 'message'; input.required = true;
   input.maxLength = 500; input.placeholder = 'Escribe a tu equipo'; input.setAttribute('aria-label', 'Mensaje para tu equipo');
   const send = element('button', 'Enviar', 'button primary'); send.type = 'submit';
-  form.append(input, send);
-  form.addEventListener('submit', event => { event.preventDefault(); run(async () => {
+  const chatError = element('p', '', 'field-error'); chatError.hidden = true;
+  chatError.setAttribute('role', 'alert');
+  form.append(input, send, chatError);
+  form.addEventListener('submit', async event => { event.preventDefault();
     const body = input.value.trim(); if (!body) return;
-    send.disabled = true;
+    send.disabled = true; chatError.hidden = true;
     try { await studentRpc('team_chat_send', { p_course_id: courseId, p_topic_id: team.id, p_body: body });
       input.value = ''; await refreshChat(); }
+    catch (error) { chatError.textContent = error.message; chatError.hidden = false; }
     finally { send.disabled = false; }
-  }); });
+  });
   section.append(element('h4', 'Conversación del equipo'), messages, form,
     element('p', 'Solo quienes integran este equipo pueden leer y escribir aquí.', 'field-hint'));
   return section;
@@ -264,11 +312,16 @@ function topicPanel(topic, confirmJoin = false) {
   selectedTopic = topic;
   const mine = profile.topicId === topic.id;
   const full = topic.members.length >= topic.capacity;
+  const header = element('div', '', 'topic-dialog-heading');
+  const close = element('button', '×', 'topic-close'); close.type = 'button';
+  close.setAttribute('aria-label', 'Cerrar tema'); close.addEventListener('click', homePanel);
+  header.append(element('span', 'TEMA DE TU MATERIA', 'eyebrow'), close);
   const count = element('span', topic.members.length + ' de ' + topic.capacity + ' integrantes' + (mine ? ' · Tu equipo' : ''), 'side-tag');
   const members = element('ul', '', 'member-list');
   for (const member of topic.members) members.append(element('li', member.name));
   for (let i = topic.members.length; i < topic.capacity; i++) members.append(element('li', 'Lugar disponible', 'free'));
-  const nodes = [element('span', 'TEMA DE TU MATERIA', 'eyebrow'), element('h2', topic.name),
+  const title = element('h2', topic.name); title.id = 'topic-title';
+  const nodes = [header, title,
     element('p', topic.instructions || 'Sin indicaciones todavía.'), count, members];
   if (mine) nodes.push(element('p', 'Ya formas parte de este equipo. Tu lugar está guardado.'));
   else if (profile.topicId) nodes.push(element('p', 'Ya perteneces a otro equipo. Puedes consultar este tema y sus integrantes.'));
@@ -281,10 +334,13 @@ function topicPanel(topic, confirmJoin = false) {
     button.addEventListener('click', () => {
       if (!confirmJoin) { topicPanel(topic, true); return; }
       run(async () => {
-        await studentRpc('choose_topic', { p_course_id: courseId, p_topic_id: topic.id });
-        profile = await studentRpc('my_profile', { p_course_id: courseId });
-        topics = await studentRpc('course_room', { p_course_id: courseId });
-        renderTopics(); status('Te uniste al equipo de ' + topic.name + '.');
+        button.disabled = true; button.textContent = 'Guardando tu lugar…';
+        try {
+          await studentRpc('choose_topic', { p_course_id: courseId, p_topic_id: topic.id });
+          profile = await studentRpc('my_profile', { p_course_id: courseId });
+          topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
+          renderTopics(); status('Te uniste al equipo de ' + topic.name + '.');
+        } finally { button.disabled = false; button.textContent = 'Sí, unirme al equipo'; }
       });
     });
     nodes.push(button);
@@ -292,14 +348,13 @@ function topicPanel(topic, confirmJoin = false) {
   const back = element('button', 'Ver todos los temas', 'button secondary');
   back.type = 'button'; back.addEventListener('click', homePanel); nodes.push(back);
   if (mine) {
-    const exit = element('button', 'Salir del grupo', 'button secondary');
-    exit.type = 'button';
-    exit.addEventListener('click', () => {
-      const message = element('p', 'Comuníquese con el docente por el mensajero de E-ducativa. Solo el docente puede liberarte del grupo para elegir otro.', 'field-hint');
-      exit.replaceWith(message);
-    });
-    nodes.push(exit);
+    const change = element('details', '', 'team-change');
+    change.append(element('summary', '¿Necesitas cambiar de equipo?'),
+      element('p', 'Escríbele al docente por el mensajero de E-ducativa. Solo él puede liberar tu lugar para que elijas otro equipo.'));
+    nodes.push(change);
   }
+  const topicError = element('p', '', 'field-error'); topicError.id = 'topic-error';
+  topicError.setAttribute('role', 'alert'); topicError.hidden = true; nodes.push(topicError);
   const dialog = $('#topic-dialog');
   dialog.replaceChildren(...nodes); dialog.hidden = false;
   dialog.scrollTop = 0;
@@ -344,7 +399,7 @@ $('#world').addEventListener('click', event => {
     y: (event.clientY - bounds.top) / bounds.height * 560 };
   const desk = [[129,130,284,218],[500,130,655,218],[500,371,655,459]]
     .findIndex(([left,top,right,bottom]) => target.x>=left && target.x<=right && target.y>=top && target.y<=bottom);
-  if (desk >= 0 && topics[desk]) walkTo({x:locationsForTopics[desk][0],y:locationsForTopics[desk][1]}, () => topicPanel(topics[desk]));
+  if (desk >= 0 && topics[desk]) openTopic(topics[desk], {x:locationsForTopics[desk][0],y:locationsForTopics[desk][1]});
   else walkTo(target);
 });
 function moveDirection(direction) {
@@ -358,9 +413,10 @@ function moveDirection(direction) {
 document.querySelectorAll('[data-direction]').forEach(button =>
   button.addEventListener('click', () => moveDirection(button.dataset.direction)));
 document.addEventListener('keydown', event => {
-  if ($('#room').dataset.stage !== 'room' || event.ctrlKey || event.metaKey || event.altKey ||
-      event.target.closest('input,textarea,select,[contenteditable="true"]')) return;
-  if (event.key === 'Escape' && !$('#topic-dialog').hidden) { homePanel(); return; }
+  if ($('#room').dataset.stage !== 'room' || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.key === 'Escape' && !$('#topic-dialog').hidden) { event.preventDefault(); homePanel(); return; }
+  if (event.target.closest('input,textarea,select,[contenteditable="true"]')) return;
+  if (event.target.closest('button,a,summary')) return;
   if ((event.key === 'e' || event.key === 'E' || event.key === 'Enter') && $('#topic-dialog').hidden) {
     const i = locationsForTopics.findIndex(([x,y]) => Math.hypot(player.x-x, player.y-y) < 65);
     if (i >= 0 && topics[i]) { event.preventDefault(); topicPanel(topics[i]); return; }

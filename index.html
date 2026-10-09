@@ -8,8 +8,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Ingreso de estudiantes · Aula Encuentro</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/styles.css">
-  <script src="./assets/app.js" type="module"></script>
+  <link rel="stylesheet" href="./assets/styles.css?v=20261009g">
+  <script src="./assets/app.js?v=20261009g" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Ir al contenido</a>
@@ -18,7 +18,7 @@
       <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="currentColor"/><path d="M10 12h8v7h-8zm12 0h8v7h-8zm-8 11h12v7H14z" fill="#f5f6e9"/></svg>
       <span>Aula<span class="brand-light">Encuentro</span><small>Un espacio para hacer equipo</small></span>
     </a>
-    <button class="version-badge" id="about-demo" type="button"><span class="status-dot"></span>Versión de prueba</button>
+    <span class="version-badge"><span class="status-dot"></span>AULA EN LÍNEA</span>
   </header>
   <main id="main" tabindex="-1">
     <section class="login-layout" aria-labelledby="login-title">
@@ -34,15 +34,15 @@
           <button class="button primary enter-button" id="enter-course" type="submit" disabled>Entrar a mi materia <span aria-hidden="true">↗</span></button>
         </form>
         <button class="text-button help-button" id="code-help" type="button"><span class="help-circle" aria-hidden="true">?</span>¿Dónde encuentro mi código?</button>
-        <div class="demo-card"><span class="tiny-avatar" aria-hidden="true"></span><div><strong>Conoce el aula antes de entrar</strong><span>Recorre un espacio con datos de ejemplo.</span></div><button class="demo-open" type="button" id="open-demo" aria-label="Abrir aula de prueba">→</button></div>
+        <div class="entry-note"><span class="entry-note-icon" aria-hidden="true">✓</span><p><strong>Tu espacio se guarda.</strong> Usa el mismo navegador para volver a tu equipo y sus conversaciones. Si cierras sesión, consulta con tu docente antes de registrarte de nuevo.</p></div>
       </div>
       <div class="preview-panel">
         <div class="preview-top"><div><span class="eyebrow">ASÍ SERÁ TU ESPACIO</span><h2>Cada tema, un lugar para encontrarse.</h2></div><span class="pixel-star" aria-hidden="true">✳</span></div>
-        <div class="preview-scene"><canvas id="preview-map" width="800" height="560" role="img" aria-label="Aula ilustrada en pixel art con tres espacios para temas, escritorios, plantas y avatares."></canvas><div class="map-caption"><span class="map-caption-dot"></span>Tu equipo empieza con un encuentro</div></div>
+        <div class="preview-scene"><canvas id="preview-map" width="800" height="560" role="img" aria-label="Vista ilustrativa del aula con tres espacios de trabajo, escritorios y avatares."></canvas><div class="map-caption"><span class="map-caption-dot"></span>Vista ilustrativa del aula</div></div>
         <div class="preview-bottom"><span><i aria-hidden="true">01</i> Crea tu avatar</span><span><i aria-hidden="true">02</i> Explora el aula</span><span><i aria-hidden="true">03</i> Elige tu equipo</span></div>
       </div>
     </section>
-    <noscript><p class="notice">Activa JavaScript para probar el ingreso y el aula interactiva.</p></noscript>
+    <noscript><p class="notice">Activa JavaScript para entrar a tu materia.</p></noscript>
   </main>
   <footer class="site-footer"><span>Aula Encuentro <span class="footer-separator">/</span> Aprender también es encontrarse.</span><span><a href="./docente.html">Acceso docente</a> · 2026</span></footer>
   <dialog id="info-dialog" aria-labelledby="dialog-title"><div class="dialog-body"><button class="dialog-close" type="button" aria-label="Cerrar">×</button><span class="eyebrow">AULA ENCUENTRO</span><h2 id="dialog-title"></h2><p id="dialog-text"></p><button class="button primary dialog-done" type="button">Entendido</button></div></dialog>

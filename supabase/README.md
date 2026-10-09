@@ -6,10 +6,10 @@ la clave secreta y `service_role` **nunca** deben agregarse al repositorio.
 
 ## Antes de activar estudiantes
 
-El proyecto **Aula Encuentro** ya está creado en la organización conectada, con
-costo mensual consultado de 0. Las migraciones están aplicadas y la URL y
-clave publicable están configuradas en el sitio. La clave secreta permanece
-fuera del repositorio. No importes una lista real aún.
+El proyecto **Aula Encuentro** ya está creado y las migraciones están aplicadas.
+La URL y la clave publicable están configuradas en el sitio. La clave secreta
+permanece fuera del repositorio. Revisa con la institución el tratamiento de
+los datos personales antes de incorporar una lista real.
 
 ### Acceso docente con Google
 
@@ -57,16 +57,17 @@ nuevo; no existe recuperación por el correo declarado.
 
 ## Alcance de este incremento
 
-- El ingreso publicado conserva `DEMO2026`. Los códigos `MAT-…` llevan a
-  `live.html` **solo cuando** hay URL y clave publicable configuradas.
+- El ingreso publicado acepta códigos `MAT-…` y lleva al aula de la materia.
 - El código compartido identifica la materia y permite crear un perfil nuevo
   si la inscripción está abierta. No verifica quién escribió los datos.
 - Cada estudiante registra correo, nombres, apellidos, teléfono y avatar. Los compañeros
   ven únicamente nombres y avatar de integrantes. Los cupos se adjudican en una
   transacción con bloqueo por materia.
-- La elección de equipo es definitiva para el estudiante en esta etapa. El
-  docente puede cerrar nuevas inscripciones. Faltan la edición y exportación
-  avanzada del panel Supabase, el movimiento multijugador y los chats reales.
+- La elección de equipo es definitiva para el estudiante en esta etapa; el
+  docente puede liberarlo para que elija otro. El docente puede cerrar nuevas
+  inscripciones. El chat de equipo y la preferencia de compartir contacto están
+  disponibles para integrantes. Faltan la edición y exportación avanzada del
+  panel Supabase, la presencia y el movimiento compartido.
   El servidor Node/SQLite anterior permanece en `server/` como prototipo local,
   pero **no** comparte datos con Supabase.
 

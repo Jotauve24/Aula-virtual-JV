@@ -57,3 +57,43 @@
 .team-roster{display:grid;gap:8px}.team-member{padding:9px;border:1px solid var(--line);background:#f8f9f3;display:grid;gap:3px;font-size:12px;overflow-wrap:anywhere}
 .team-member strong{font-size:12px}.team-member a{color:#245f54;text-decoration:underline;font-size:11px}.team-member small{color:var(--muted);font-size:11px}
 .share-contact{display:flex;align-items:flex-start;gap:8px;margin:16px 0 0;font-size:11px;line-height:1.4}.share-contact input{margin:2px 0 0;flex-shrink:0}
+
+/* The welcome sequence uses the whole classroom; its empty sidebar is hidden. */
+#room[data-stage="registration"] .room-layout,#room[data-stage="avatar"] .room-layout{grid-template-columns:minmax(0,1fr)}
+#room[data-stage="registration"] .room-side,#room[data-stage="avatar"] .room-side,
+#room[data-stage="registration"] .room-tools,#room[data-stage="avatar"] .room-tools{display:none}
+#room[data-stage="registration"] .room-map-container,#room[data-stage="avatar"] .room-map-container{width:100%;max-width:1000px;margin-inline:auto}
+.in-room-dialog .field-error,.topic-dialog .field-error,.chat-form .field-error{display:block;padding:8px 10px;background:#fff0e9;border:1px solid #e4b8a9;border-radius:4px;color:#9e3636;font-size:12px;line-height:1.45;margin:9px 0}
+.in-room-dialog .field-error[hidden],.topic-dialog .field-error[hidden],.chat-form .field-error[hidden]{display:none}
+.topic-dialog{width:min(560px,92%);padding:19px 22px;max-height:78%}
+.topic-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:15px}
+.topic-dialog .topic-close{flex:none;display:grid;place-items:center;width:32px;height:32px;background:#ecf0dc;border:1px solid #9bae8e;border-radius:2px;color:#294337;font:24px/1 ui-monospace,monospace}
+.topic-dialog .topic-close:hover{background:#dce8cf}
+.topic-dialog h2{font-size:22px;overflow-wrap:anywhere}
+.topic-dialog p{font-size:13px;line-height:1.55}
+.topic-dialog .member-list li{font-size:12px;line-height:1.35}
+.topic-dialog .button{font-size:12px;min-height:38px}
+.team-change{margin-top:14px;padding:9px 12px;border:1px solid #c3d1b7;background:#eef2e2;font-size:12px;line-height:1.5}
+.team-change summary{cursor:pointer;font-weight:700;color:#315646}
+.team-change p{margin:8px 0 0}
+.team-roster .team-member{border-radius:7px;padding:10px 11px}
+.team-chat .chat-messages{scrollbar-color:#9fb69c #edf2e8}
+@media(max-width:600px){
+  #room[data-stage="registration"] .in-room-dialog{max-height:76%;padding:14px 16px}
+  #room[data-stage="registration"] .in-room-dialog h2{font-size:21px}
+  #room[data-stage="registration"] .dialog-step label{font-size:13px}
+  #room[data-stage="registration"] .in-room-dialog p{font-size:12px}
+  #room[data-stage="avatar"] .room-map{min-height:520px}
+  .topic-dialog{position:fixed;left:50%;bottom:10px;z-index:50;width:calc(100% - 20px);max-width:520px;max-height:72dvh;padding:15px 17px;border-width:3px;box-shadow:0 12px 40px #20352b70}
+  .topic-dialog .eyebrow{font-size:10px}
+  .topic-dialog h2{font-size:21px}
+  .topic-dialog p{font-size:13px}
+  .topic-dialog .member-list{grid-template-columns:1fr 1fr}
+  .topic-dialog .member-list li{font-size:12px;padding:7px 0}
+  .topic-dialog .button{font-size:13px;min-height:44px;padding:10px 12px}
+  .topic-dialog .topic-close{width:42px;height:42px}
+  .team-change{font-size:13px}
+}
+@media(max-width:380px){.topic-dialog .member-list{grid-template-columns:1fr}}
+.change-code{display:inline-flex;align-items:center;background:transparent;color:#315f4b;text-decoration:underline;font-size:12px;font-weight:700;padding:4px 0;margin:-2px 0 8px;border:0}
+.change-code:hover{color:#20493e}
