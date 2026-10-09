@@ -14,7 +14,7 @@ function shortName(){return `${state.profile.firstName.trim().split(/\s+/)[0]} $
 function stopAnimation(){cancelAnimationFrame(animation);animation=0;}
 function focusHeading(){main.querySelector('h1')?.setAttribute('tabindex','-1');main.querySelector('h1')?.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
 function showInfo(title,body){document.querySelector('#dialog-title').textContent=title;document.querySelector('#dialog-text').textContent=body;dialog.showModal();}
-document.querySelector('#about-demo').addEventListener('click',()=>showInfo('Estamos dando el primer paso.','Esta versión permite probar el ingreso con DEMO2026, editar un perfil ficticio, crear un avatar y recorrer el aula. No hay materias reales activas. Los datos, equipos y chats de prueba se borran al salir o recargar; nadie más los recibe. Usa únicamente datos de ejemplo.'));
+document.querySelector('#about-demo').addEventListener('click',()=>showInfo('Estamos dando el primer paso.','Esta versión permite probar el ingreso con DEMO2026, editar un perfil ficticio, crear un avatar y recorrer el aula. DEMO2026 muestra datos y equipos de ejemplo que se borran al salir o recargar. Si tienes un código real de tu docente, entrarás a la sala de tu materia para registrar tus datos y explorar los temas.'));
 dialog.querySelector('.dialog-close').addEventListener('click',()=>dialog.close());
 dialog.querySelector('.dialog-done').addEventListener('click',()=>dialog.close());
 dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
@@ -34,14 +34,14 @@ function bindLogin(){
         sessionStorage.setItem('aula-course-code',code);
         window.location.assign('./live.html');return;
       }
-      error.textContent=!code?'Escribe el código de tu materia para continuar.':!/^[A-Z0-9-]{4,24}$/.test(code)?'Revisa el código: utiliza entre 4 y 24 letras, números o guiones.':'Todavía no hay materias reales activas. Para conocer el aula, usa DEMO2026.';
+      error.textContent=!code?'Escribe el código de tu materia para continuar.':!/^[A-Z0-9-]{4,24}$/.test(code)?'Revisa el código: utiliza entre 4 y 24 letras, números o guiones.':'Revisa el código que te compartió el docente. Para conocer el aula, usa DEMO2026.';
       error.hidden=false;input.setAttribute('aria-invalid','true');input.focus();return;
     }
     state=freshState();renderProfiles();
   });
   input.addEventListener('input',()=>{error.hidden=true;input.removeAttribute('aria-invalid');});
   document.querySelector('#open-demo').addEventListener('click',()=>{input.value=DEMO_CODE;document.querySelector('#course-form').requestSubmit();});
-  document.querySelector('#code-help').addEventListener('click',()=>showInfo('Un código para cada materia.','Tu docente te compartirá el código de la clase. Todos los estudiantes de esa materia usarán el mismo. En esta primera versión puedes probar con DEMO2026; los códigos de materias reales aún no están habilitados.'));
+  document.querySelector('#code-help').addEventListener('click',()=>showInfo('Un código para cada materia.','Tu docente te compartirá el código de la clase. Todos los estudiantes de esa materia usarán el mismo. Con un código real entrarás directamente a la sala de tu materia; allí podrás registrarte. Para explorar una prueba usa DEMO2026.'));
   const canvas=document.querySelector('#preview-map');let last=0;
   function tick(time){if(screen!=='login')return;if(time-last>45){drawWorld(canvas,{decorative:true,time:reducedMotion.matches?0:time});last=time;}if(!reducedMotion.matches&&!document.hidden)animation=requestAnimationFrame(tick);}
   drawWorld(canvas,{decorative:true});if(!reducedMotion.matches)animation=requestAnimationFrame(tick);

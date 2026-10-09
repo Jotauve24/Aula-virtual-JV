@@ -87,11 +87,13 @@ export function drawWorld(canvas, options = {}) {
   rect(ctx,367,462,60,38,'#9eaf8c');for(let i=0;i<5;i++)rect(ctx,369,468+i*6,56,1,'#b6c5a0');
   if(options.labels!==false) {sign(ctx,217,114,'ARQUITECTURA','#58714e');sign(ctx,587,114,'REDES','#547471');sign(ctx,587,354,'SEGURIDAD','#7e7150');sign(ctx,207,333,'PUNTO DE ENCUENTRO','#8b765a');}
   const actors=[{x:161,y:223,skin:1,shirt:3,hair:'short',direction:'up'}, {x:532,y:223,skin:0,shirt:1,hair:'long',direction:'up'}, {x:603,y:465,skin:2,shirt:2,hair:'curly',direction:'up'}];
-  actors.forEach(p=>avatar(ctx,p.x,p.y,p));
+  if(options.actors!==false) actors.forEach(p=>avatar(ctx,p.x,p.y,p));
   const t=options.time||0;
   const shift=options.decorative?Math.sin(t/1800)*18:0;
-  avatar(ctx,320,294+shift,{skin:0,shirt:2,hair:'long'});
-  avatar(ctx,404+shift,374,{skin:2,shirt:1,hair:'short'});
+  if(options.actors!==false){
+    avatar(ctx,320,294+shift,{skin:0,shirt:2,hair:'long'});
+    avatar(ctx,404+shift,374,{skin:2,shirt:1,hair:'short'});
+  }
   if(options.decorative){avatar(ctx,407,276,{skin:1,shirt:0,hair:'curly'},Math.sin(t/180)*1.2);nameTag(ctx,407,286,'Tú');nameTag(ctx,320,307+shift,'¡Hola!');}
   if(options.player){avatar(ctx,options.player.x,options.player.y,options.player,options.walking?Math.sin(t/85)*2:0);nameTag(ctx,options.player.x,options.player.y+8,'Tú', '#28594c');}
 }
