@@ -68,9 +68,15 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
   const phone = f.namedItem('phone').value.trim();
   if (!/^\+?[0-9 -]{7,20}$/.test(phone) || (phone.match(/\d/g) || []).length < 7)
     throw new Error('Revisa el número de teléfono.');
+  const details = { p_email: f.namedItem('email').value.trim().toLowerCase(),
+    p_first_name: f.namedItem('firstName').value.trim(), p_last_name: f.namedItem('lastName').value.trim(), p_phone: phone };
   await signInStudentAnonymously();
-  await enterCourse(code, { p_email: f.namedItem('email').value.trim().toLowerCase(),
-    p_first_name: f.namedItem('firstName').value.trim(), p_last_name: f.namedItem('lastName').value.trim(), p_phone: phone });
+  try { await enterCourse(code, details); }
+  catch (error) {
+    // A previously deleted anonymous test account can leave a stale browser session.
+    if (!error.message.includes('students_auth_user_id_fkey')) throw error;
+    studentSignOut(); await signInStudentAnonymously(); await enterCourse(code, details);
+  }
 }); });
 
 function renderAvatarOptions() {
@@ -123,11 +129,9 @@ function renderTopics() {
     button.addEventListener('click', () => walkTo({ x: locations[i][2], y: locations[i][3] }, () => topicPanel(topic)));
     return button;
   }));
-  if (selectedTopic) {
-    selectedTopic = topics.find(t => t.id === selectedTopic.id) || null;
-    if (selectedTopic) topicPanel(selectedTopic);
-    else homePanel();
-  } else homePanel();
+  const activeTopic = selectedTopic && topics.find(t => t.id === selectedTopic.id);
+  homePanel();
+  if (activeTopic) topicPanel(activeTopic);
 }
 function side(...nodes) { $('#side-content').replaceChildren(...nodes); }
 function homePanel() {
