@@ -37,21 +37,7 @@ async function openCourse(id) {
     const p = document.createElement('p'); p.textContent = `${topic.name} · ${topic.capacity} cupos · ${topic.instructions}`; return p;
   }));
   $('#student-list').replaceChildren(...overview.students.map(student => {
-    const p = document.createElement('p'); p.textContent = `${student.lastName}, ${student.firstName} · ${student.activated ? 'Ingresó' : 'Sin activar'} · ${student.topicId ? 'Con equipo' : 'Sin equipo'}`; return p;
-  }));
-  $('#claim-list').replaceChildren(...overview.requests.filter(r => r.status === 'pending').map(claim => {
-    const row = document.createElement('div'); row.className = 'topic';
-    const p = document.createElement('p'); p.textContent = `${claim.email} solicita activar un perfil`;
-    const select = document.createElement('select');
-    const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = 'Selecciona el estudiante'; select.append(placeholder);
-    for (const student of overview.students.filter(s => !s.activated && (!s.email || s.email.toLowerCase() === claim.email.toLowerCase()))) {
-      const option = document.createElement('option'); option.value = student.id; option.textContent = `${student.lastName}, ${student.firstName}`; select.append(option);
-    }
-    const button = document.createElement('button'); button.textContent = 'Aprobar este perfil';
-    button.addEventListener('click', () => run(async () => {
-      if (!select.value || !confirm(`¿Asociar ${claim.email} al perfil seleccionado?`)) return;
-      await rpc('teacher_approve_claim', { p_request_id: claim.id, p_student_id: select.value }); await openCourse(courseId);
-    })); row.append(p,select,button); return row;
+    const p = document.createElement('p'); p.textContent = `${student.lastName}, ${student.firstName} · ${student.email || 'Sin correo'} · ${student.phone || 'Sin teléfono'} · ${student.topicId ? 'Con equipo' : 'Sin equipo'}`; return p;
   }));
   $('#registration').textContent = overview.course.registrationOpen ? 'Cerrar inscripción' : 'Abrir inscripción';
 }
@@ -60,15 +46,6 @@ $('#new-topic').addEventListener('submit', event => { event.preventDefault(); ru
   await rpc('teacher_add_topic', { p_course_id: courseId, p_name: f.name.value.trim(),
     p_instructions: f.instructions.value.trim(), p_capacity: Number(f.capacity.value) });
   event.target.reset(); await openCourse(courseId);
-}); });
-$('#roster').addEventListener('submit', event => { event.preventDefault(); run(async () => {
-  const rows = event.target.elements.rows.value.split(/\r?\n/).filter(Boolean).map(line => {
-    const [lastName,firstName,email] = line.split('|').map(s => s.trim());
-    return {lastName,firstName,email:email || null};
-  });
-  if (!rows.length || !confirm(`¿Importar ${rows.length} filas a esta materia?`)) return;
-  const added = await rpc('teacher_import_roster', { p_course_id: courseId, p_rows: rows });
-  event.target.reset(); await openCourse(courseId); $('#course-summary').textContent += ` · ${added} añadidos`;
 }); });
 $('#registration').addEventListener('click', () => run(async () => {
   await rpc('teacher_set_registration', { p_course_id: courseId, p_open: !overview.course.registrationOpen }); await openCourse(courseId);

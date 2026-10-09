@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js';
 
 const sessionKey = 'aula-supabase-session';
+const studentSessionKey = 'aula-student-session';
 export const configured = /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL) &&
   /^sb_publishable_|^eyJ/.test(SUPABASE_PUBLISHABLE_KEY);
 
@@ -8,15 +9,15 @@ function endpoint(path) {
   if (!configured) throw new Error('La conexión con Supabase todavía no está configurada.');
   return `${SUPABASE_URL}${path}`;
 }
-function session() {
-  try { return JSON.parse(localStorage.getItem(sessionKey) || 'null'); }
+function session(key = sessionKey) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null'); }
   catch { return null; }
 }
-function saveSession(value) {
-  if (value) localStorage.setItem(sessionKey, JSON.stringify({ ...value,
+function saveSession(value, key = sessionKey) {
+  if (value) localStorage.setItem(key, JSON.stringify({ ...value,
     expires_at: value.expires_at || Math.floor(Date.now()/1000) + value.expires_in }));
-  else localStorage.removeItem(sessionKey);
-  sessionStorage.removeItem(sessionKey);
+  else localStorage.removeItem(key);
+  sessionStorage.removeItem(key);
 }
 // Previous releases stored the session only in one tab. Preserve it on upgrade.
 if (!session()) {
@@ -69,19 +70,32 @@ export async function verifyCode(email, token) {
   saveSession(data);
   return data;
 }
-async function accessToken() {
-  const value = session();
+export async function signInStudentAnonymously() {
+  if (session(studentSessionKey)?.access_token) return;
+  const data = await request('/auth/v1/signup', { data: {} });
+  if (!data.access_token || !data.refresh_token || data.user?.is_anonymous !== true)
+    throw new Error('El acceso estudiantil sin correo aún no está habilitado.');
+  saveSession(data, studentSessionKey);
+}
+async function accessToken(key = sessionKey) {
+  const value = session(key);
   if (!value?.access_token) throw new Error('Inicia sesión con tu correo.');
   if (value.expires_at && value.expires_at * 1000 > Date.now() + 60000) return value.access_token;
   if (!value.refresh_token) throw new Error('La sesión venció. Inicia sesión otra vez.');
   const renewed = await request('/auth/v1/token?grant_type=refresh_token',
     { refresh_token: value.refresh_token });
-  saveSession(renewed);
+  saveSession(renewed, key);
   return renewed.access_token;
 }
 export async function rpc(name, body = {}) {
   const token = await accessToken();
   return request(`/rest/v1/rpc/${name}`, body, token);
 }
+export async function studentRpc(name, body = {}) {
+  const token = await accessToken(studentSessionKey);
+  return request(`/rest/v1/rpc/${name}`, body, token);
+}
+export function studentSignedIn() { return !!session(studentSessionKey)?.access_token; }
+export function studentSignOut() { saveSession(null, studentSessionKey); }
 export function signedIn() { return !!session()?.access_token; }
 export function signOut() { saveSession(null); }
