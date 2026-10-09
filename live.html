@@ -3,12 +3,18 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
 <title>Mi materia · Aula Encuentro</title><link rel="stylesheet" href="./assets/live.css"><script type="module" src="./assets/live.js"></script></head>
 <body><header><a href="./">▦ Aula<strong>Encuentro</strong></a><span>Ingreso de estudiantes</span></header><main>
-<h1>Entra a tu materia</h1><p id="notice" role="status">Ingresa con tu correo personal o institucional. El docente aprobará tu perfil si tu correo no está asociado a la lista.</p>
+<h1>Entra a tu materia</h1><p id="notice" role="status">Escribe el código que compartió tu docente y registra tus datos. No necesitas confirmar el correo.</p>
 <section id="setup" hidden><h2>Conexión pendiente</h2><p>El docente todavía está configurando esta materia. La demostración sigue disponible en la página inicial.</p></section>
-<form id="login"><label>Correo electrónico<input name="email" type="email" autocomplete="email" required></label><button>Enviarme un enlace</button></form>
-<form id="verify" hidden><p>Abre el enlace que recibiste por correo. Después vuelve a escribir el código de la materia.</p></form>
-<form id="course" hidden><label>Código de la materia<input name="code" autocomplete="off" required maxlength="48"></label><button>Entrar</button></form>
-<section id="pending" hidden><h2>Solicitud enviada</h2><p>El docente debe asociar tu correo a tu perfil. Vuelve a ingresar después de su aprobación.</p></section>
-<section id="profile" hidden><h2>Confirma tus datos</h2><form id="profile-form"><label>Nombres correctos<input name="firstName" required maxlength="80"></label><label>Apellidos correctos<input name="lastName" required maxlength="100"></label><label>Cédula<input name="nationalId" required maxlength="32"></label><label>Teléfono XXXX-XXXX<input name="phone" required maxlength="9" inputmode="numeric" pattern="[0-9]{4}-[0-9]{4}"></label><fieldset><legend>Tu avatar</legend><label>Tono<select name="skin"><option value="0">Claro</option><option value="1">Medio</option><option value="2">Oscuro</option></select></label><label>Ropa<select name="shirt"><option value="0">Verde</option><option value="1">Azul</option><option value="2">Naranja</option></select></label><label>Cabello<select name="hair"><option value="short">Corto</option><option value="long">Largo</option><option value="curly">Rizado</option></select></label></fieldset><button>Guardar y ver temas</button></form></section>
+<form id="registration"><label>Código de la materia<input name="code" autocomplete="off" required maxlength="48"></label>
+<label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="254"></label>
+<label>Nombres<input name="firstName" autocomplete="given-name" required maxlength="80"></label>
+<label>Apellidos<input name="lastName" autocomplete="family-name" required maxlength="100"></label>
+<label>Número de teléfono<input name="phone" type="tel" autocomplete="tel" required maxlength="20" placeholder="6123-4567"></label>
+<button>Registrarme y entrar</button><p>Estos datos los verá el docente de la materia. El correo se guarda como contacto y no se verifica.</p></form>
+<section id="avatar" hidden><h2>Elige tu avatar</h2><form id="avatar-form"><fieldset><legend>Tu avatar</legend>
+<label>Tono<select name="skin"><option value="0">Claro</option><option value="1">Medio</option><option value="2">Oscuro</option></select></label>
+<label>Ropa<select name="shirt"><option value="0">Verde</option><option value="1">Azul</option><option value="2">Naranja</option></select></label>
+<label>Cabello<select name="hair"><option value="short">Corto</option><option value="long">Largo</option><option value="curly">Rizado</option></select></label>
+</fieldset><button>Guardar y ver temas</button></form></section>
 <section id="room" hidden><h2>Espacios de trabajo</h2><p>Tu equipo se guarda al confirmar. Elige un tema con lugares disponibles.</p><div id="topics"></div></section>
-<p id="error" role="alert" hidden></p><button id="logout" class="quiet" hidden>Cerrar sesión</button></main></body></html>
+<p id="error" role="alert" hidden></p><button id="logout" class="quiet" hidden>Salir de este dispositivo</button></main></body></html>

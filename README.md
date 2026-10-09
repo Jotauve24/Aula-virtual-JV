@@ -5,10 +5,10 @@ Herramienta para organizar equipos de una materia con avatares y espacios de tra
 ## Estado actual
 
 - [Demostración para estudiantes](https://jotauve24.github.io/Aula-virtual-JV/): abre en el ingreso por código. El único código de esta demostración es **DEMO2026**. Perfiles, mensajes y equipos son ficticios y se borran al salir.
-- **Base Supabase 0.3.0 conectada:** `live.html` y `docente.html` ofrecen ingreso por enlace de correo, materias, listas, solicitudes, temas e inscripción persistente. Falta autorizar la cuenta docente y probar el flujo con datos ficticios antes de utilizarlo con estudiantes. Sigue la [guía de configuración](supabase/README.md).
+- **Base Supabase conectada:** `docente.html` ofrece acceso docente con Google. `live.html` permite el autorregistro estudiantil por código, correo de contacto, nombre, apellido y teléfono, sin enlace de confirmación. La sesión queda en el navegador. Sigue la [guía de configuración](supabase/README.md).
 - **Panel docente 0.2.0:** servicio Node.js con inicio de sesión, materias y códigos generados, temas y cupos, listas importadas, asignación de equipos y almacenamiento SQLite. Está preparado en `server/` para ejecutarse en un alojamiento que admita un servidor y una base de datos privada. Aún no está desplegado y no aparece como acceso funcional en GitHub Pages.
 
-Los códigos creados por el docente se pueden verificar en el servicio, pero **todavía no activan un perfil estudiantil**. Antes de recibir datos reales se debe desplegar el servicio en HTTPS y completar la activación individual de cada estudiante. Elegir un nombre de una lista y conocer el código compartido no verifican la identidad.
+El código de materia es compartido y permite registrarse mientras la inscripción está abierta. El correo se guarda como contacto declarado, sin verificar la identidad de quien lo escribe. El servicio Node/SQLite descrito más abajo es un prototipo independiente del panel publicado con Supabase.
 
 ## Panel docente en una computadora de desarrollo
 
