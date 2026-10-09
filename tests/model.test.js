@@ -31,7 +31,10 @@ test('el recorrido llega a cada espacio sin atravesar muebles ni salir del aula'
     assert.deepEqual(path.at(-1),topic.target);
     for(const point of path)assert.ok(isWalkable(point.x,point.y));
   }
-  assert.deepEqual(findPath({x:400,y:300},{x:160,y:160}),[]);
+  const deskPath=findPath({x:400,y:300},{x:160,y:160});
+  assert.ok(deskPath.length>0);
+  assert.ok(deskPath.every(point=>isWalkable(point.x,point.y)));
+  assert.ok(Math.hypot(deskPath.at(-1).x-160,deskPath.at(-1).y-160)<90);
   assert.equal(isWalkable(0,0),false);
 });
 test('nombres y mensajes se muestran como texto sin inyectar HTML',()=>{
