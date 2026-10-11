@@ -54,18 +54,69 @@
 .team-roster-panel h3{font-family:var(--serif);font-weight:400;font-size:22px;margin:8px 0}
 .team-roster-panel h4{font-size:12px;margin:20px 0 10px}
 .team-roster{display:grid;gap:8px;max-height:260px;overflow:auto;align-content:start;scrollbar-color:#9fb69c #edf2e8}.team-member{display:grid;gap:3px;padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:#f8f9f3;font-size:12px;overflow-wrap:anywhere}
-.team-member strong{font-size:12px}.team-member a{color:#245f54;text-decoration:underline;font-size:11px}.team-member small{color:var(--muted);font-size:11px}
+.team-member{border-inline-start:3px solid var(--chat-accent,#28594c);padding:12px;background:var(--chat-background,#f8f9f3)}
+.team-member-identity{display:flex;align-items:center;gap:9px;min-width:0;margin-bottom:4px}
+.team-member strong{font-size:13px;line-height:1.45;color:#263b32}
+.team-member a{color:#245f54;text-decoration:underline;font-size:13px;line-height:1.5}
+.team-member small{color:#536259;font-size:12px;line-height:1.5}
 .share-contact{display:flex;align-items:flex-start;gap:8px;margin:16px 0 0;font-size:11px;line-height:1.4}.share-contact input{margin:2px 0 0;flex-shrink:0}
-.team-chat-host{margin-top:16px}.team-chat-host[hidden]{display:none}
-.team-chat{min-width:0;padding:22px 25px;background:#fff;border:1px solid var(--line);border-radius:14px}
-.team-chat h2{font-family:var(--serif);font-weight:400;font-size:25px;line-height:1.2;margin:8px 0 4px}
-.team-chat>p{font-size:12px;color:var(--muted);line-height:1.5}
-.team-chat .chat-messages{min-height:110px;max-height:250px;overflow:auto;align-content:start;padding:14px;margin:17px 0 12px;border:1px solid #e4e9df;border-radius:9px;background:#f8faf5;scrollbar-color:#9fb69c #edf2e8}
-.team-chat .chat-message{max-width:85%;font-size:12px;white-space:pre-wrap}.team-chat .chat-message.mine{justify-self:end;margin-left:0}
-.team-chat .chat-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start}
-.team-chat .chat-form input{min-width:0;margin:0;min-height:42px}.team-chat .chat-form .button{min-height:42px;padding:9px 18px}
-.team-chat .chat-form .field-error{grid-column:1/-1}
-.team-chat .field-hint{margin:10px 0 0}
+.team-chat-host{margin-top:22px;min-width:0}.team-chat-host[hidden]{display:none}
+.team-chat{
+  min-width:0;padding:24px;background:#fff;border:1px solid #d5dfd9;
+  border-radius:20px;box-shadow:0 8px 26px #243d3010;
+  font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+.team-chat-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.team-chat-heading{flex:1;min-width:0}
+.team-chat .eyebrow{font-size:11px;letter-spacing:1.2px;color:#476457}
+.team-chat h2{font-family:inherit;font-weight:750;font-size:24px;line-height:1.3;letter-spacing:-.4px;margin:3px 0 0;overflow-wrap:anywhere}
+.team-chat-icon{
+  display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;
+  border-radius:14px 14px 14px 4px;background:#e6f1e9;color:#28594c;
+  font-size:30px;font-weight:800;line-height:1;letter-spacing:1px;
+}
+.chat-private-badge{padding:6px 10px;border:1px solid #d4e3d9;border-radius:20px;background:#f1f7f3;color:#395c49;font-size:12px;font-weight:600;white-space:nowrap}
+.team-chat .chat-description{font-size:14px;line-height:1.55;color:#56665d;margin:13px 0 0}
+.team-chat .chat-messages{
+  display:flex;flex-direction:column;gap:18px;height:clamp(280px,44vh,440px);max-height:440px;
+  overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:22px 18px;
+  margin:20px 0;border:1px solid #e0e7e2;border-radius:15px;background:#f4f7f5;
+  scrollbar-color:#a4b8aa #edf2ee;align-items:stretch;
+}
+.team-chat .chat-messages:focus-visible{outline:3px solid #28594c;outline-offset:3px}
+.team-chat .chat-message{
+  display:flex;align-items:flex-start;gap:9px;align-self:flex-start;flex:0 0 auto;
+  width:fit-content;max-width:90%;min-width:0;padding:0;border:0;border-radius:0;
+  background:transparent;color:#24342f;font-size:16px;white-space:normal;
+}
+.team-chat .chat-message.mine{align-self:flex-end;flex-direction:row-reverse;margin-left:0;background:transparent}
+.chat-avatar{
+  display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;
+  border-radius:50%;border:1px solid var(--chat-border,#b7cdbc);background:var(--chat-background,#eaf2eb);
+  color:var(--chat-accent,#28594c);font-size:12px;font-weight:800;letter-spacing:.1px;
+}
+.team-member .chat-avatar{flex-basis:30px;width:30px;height:30px;font-size:11px}
+.chat-bubble{
+  min-width:0;padding:12px 15px;border:1px solid var(--chat-border,#b7cdbc);
+  border-inline-start:3px solid var(--chat-accent,#28594c);
+  border-radius:4px 17px 17px 17px;background:var(--chat-background,#eaf2eb);
+  box-shadow:0 2px 4px #18392b08;
+}
+.chat-message.mine .chat-bubble{border-inline-start-width:1px;border-inline-end:3px solid var(--chat-accent,#28594c);border-radius:17px 4px 17px 17px}
+.chat-message-meta{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;margin-bottom:6px}
+.chat-sender{min-width:0;font-size:14px;font-weight:750;line-height:1.4;color:var(--chat-accent,#28594c);overflow-wrap:anywhere}
+.chat-you{display:inline-block;margin-left:7px;padding:1px 6px;border:1px solid currentColor;border-radius:6px;font-size:10px;font-weight:700;vertical-align:1px}
+.chat-message-meta time{flex:none;color:#526159;font-size:12px;font-weight:450;line-height:1.4;white-space:nowrap;font-variant-numeric:tabular-nums}
+.team-chat .chat-message-body{margin:0;font-size:16px;font-weight:400;line-height:1.6;color:#24342f;white-space:pre-wrap;overflow-wrap:anywhere}
+.team-chat .chat-empty{margin:auto;max-width:300px;text-align:center;color:#53645a;font-size:14px;line-height:1.7;padding:22px 4px}
+.team-chat .chat-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px 10px;align-items:start}
+.team-chat .chat-form label{grid-column:1/-1;margin:0;color:#354d3f;font-size:13px;font-weight:650}
+.team-chat .chat-form input{min-width:0;margin:0;min-height:50px;padding:12px 14px;border:1px solid #aebfb3;border-radius:12px;background:#fff;font-size:16px;line-height:1.5}
+.team-chat .chat-form input::placeholder{font-size:16px;color:#65786a}
+.team-chat .chat-form input:focus{outline:3px solid #28594c25;outline-offset:1px;border-color:#28594c}
+.team-chat .chat-form .button{min-height:50px;padding:12px 20px;border-radius:12px;font-size:15px;font-weight:650}
+.team-chat .chat-form .field-error{grid-column:1/-1;font-size:13px;margin:0}
+.team-chat .field-hint{margin:12px 0 0;font-size:12px;line-height:1.6;color:#57675c}
 
 /* The welcome sequence uses the whole classroom; its empty sidebar is hidden. */
 #room[data-stage="registration"] .room-layout,#room[data-stage="avatar"] .room-layout{grid-template-columns:minmax(0,1fr)}
@@ -103,6 +154,17 @@
   .team-change{font-size:13px}
 }
 @media(max-width:380px){.topic-dialog .member-list{grid-template-columns:1fr}}
-@media(max-width:500px){.team-chat{padding:18px 15px}.team-chat h2{font-size:22px}.team-chat .chat-messages{padding:10px}.team-chat .chat-message{max-width:94%}}
+@media(max-width:900px){.team-chat .chat-message{max-width:100%}.chat-private-badge{margin-left:56px}.team-chat-header{gap:9px 12px}}
+@media(max-width:500px){
+  .team-chat-host{margin-top:18px}.team-chat{padding:18px 13px;border-radius:16px}
+  .team-chat h2{font-size:21px}.team-chat .chat-description{font-size:13px}
+  .team-chat .chat-messages{height:340px;max-height:60dvh;min-height:240px;padding:16px 9px;gap:16px;margin:16px 0}
+  .team-chat .chat-message{gap:6px}.team-chat .chat-avatar{flex-basis:26px;width:26px;height:26px;font-size:10px}
+  .chat-bubble{padding:10px 11px}.chat-message-meta{gap:4px 9px}
+  .chat-sender{font-size:13px}.chat-message-meta time{font-size:11px}
+  .team-chat .chat-form{gap:9px 7px}.team-chat .chat-form .button{padding-inline:13px}
+  .team-chat .chat-form input{padding-inline:11px}
+}
+@media(forced-colors:active){.chat-bubble,.chat-avatar,.team-member{border-color:CanvasText}.chat-sender,.chat-avatar{color:CanvasText}}
 .change-code{display:inline-flex;align-items:center;background:transparent;color:#315f4b;text-decoration:underline;font-size:12px;font-weight:700;padding:4px 0;margin:-2px 0 8px;border:0}
 .change-code:hover{color:#20493e}

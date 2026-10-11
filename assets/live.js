@@ -1,6 +1,7 @@
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut } from './supabase-client.js';
 import { SKINS, SHIRTS } from './model.js';
 import { avatarSVG, drawWorld, findPath, isWalkable } from './world.js?v=20261009b';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011a';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -8,6 +9,7 @@ let courseId = '', profile = null, topics = [], selectedTopic = null;
 let look = { skin: 1, shirt: 0, hair: 'short' };
 let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, onArrival = null;
 let chatTimer = 0, chatLoading = false, chatTeamId = '';
+let participantColor = createParticipantPalette();
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
 function show(stage) {
   stopAnimation();
@@ -222,6 +224,7 @@ function renderTeamChat(team) {
     return;
   }
   if (chatTeamId !== team.id) {
+    participantColor = createParticipantPalette(team.members);
     host.replaceChildren(teamChatPanel(team));
     chatTeamId = team.id;
     refreshChat();
@@ -264,7 +267,10 @@ function teamRosterPanel(team) {
   const roster = element('div', '', 'team-roster');
   for (const member of team.members) {
     const card = element('div', '', 'team-member');
-    card.append(element('strong', member.name + (member.mine ? ' · Tú' : '')));
+    applyParticipantColor(card, participantColor(member.name));
+    const identity = element('div', '', 'team-member-identity');
+    identity.append(participantAvatar(member.name), element('strong', member.name + (member.mine ? ' · Tú' : '')));
+    card.append(identity);
     if (member.email) {
       const link = element('a', member.email); link.href = 'mailto:' + member.email; card.append(link);
     }
@@ -291,19 +297,26 @@ function teamRosterPanel(team) {
 }
 function teamChatPanel(team) {
   const section = element('section', '', 'team-chat');
-  section.append(element('span', 'SOLO PARA TU EQUIPO', 'eyebrow'),
-    element('h2', 'Chat de ' + team.name),
-    element('p', 'Coordina con tus compañeros desde este espacio.'));
+  section.setAttribute('aria-labelledby', 'team-chat-title');
+  const header = element('div', '', 'team-chat-header');
+  const icon = element('span', '···', 'team-chat-icon'); icon.setAttribute('aria-hidden', 'true');
+  const heading = element('div', '', 'team-chat-heading');
+  const title = element('h2', team.name); title.id = 'team-chat-title';
+  heading.append(element('span', 'CHAT DEL EQUIPO', 'eyebrow'), title);
+  header.append(icon, heading, element('span', 'Solo tu equipo', 'chat-private-badge'));
+  section.append(header, element('p', 'Cada integrante tiene su color. Aquí pueden ponerse de acuerdo.', 'chat-description'));
   const messages = element('div', '', 'chat-messages'); messages.id = 'team-chat-messages';
   messages.setAttribute('role', 'log'); messages.setAttribute('aria-label', 'Mensajes de tu equipo');
-  messages.append(element('p', 'Cargando conversación…'));
+  messages.setAttribute('aria-relevant', 'additions'); messages.tabIndex = 0;
+  messages.append(element('p', 'Cargando conversación…', 'chat-empty'));
   const form = element('form', '', 'chat-form'); form.id = 'team-chat-form';
   const input = document.createElement('input'); input.name = 'message'; input.required = true;
-  input.maxLength = 500; input.placeholder = 'Escribe a tu equipo'; input.setAttribute('aria-label', 'Mensaje para tu equipo');
+  input.id = 'team-chat-input'; input.maxLength = 500; input.placeholder = 'Escribe un mensaje…';
+  const label = element('label', 'Escribe a tu equipo'); label.htmlFor = input.id;
   const send = element('button', 'Enviar', 'button primary'); send.type = 'submit';
   const chatError = element('p', '', 'field-error'); chatError.hidden = true;
   chatError.setAttribute('role', 'alert');
-  form.append(input, send, chatError);
+  form.append(label, input, send, chatError);
   form.addEventListener('submit', async event => { event.preventDefault();
     const body = input.value.trim(); if (!body) return;
     send.disabled = true; chatError.hidden = true;
@@ -323,14 +336,17 @@ async function refreshChat() {
   try {
     const messages = await studentRpc('team_chat_read', { p_course_id: courseId, p_topic_id: profile.topicId });
     if (!box.isConnected) return;
+    const signature = JSON.stringify(messages);
+    if (box.dataset.signature === signature) return;
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 45;
-    box.replaceChildren(...(messages.length ? messages.map(msg => {
-      const entry = element('div', '', 'chat-message' + (msg.mine ? ' mine' : ''));
-      const when = new Date(msg.createdAt).toLocaleTimeString('es-PA', {hour:'2-digit',minute:'2-digit'});
-      entry.append(element('small', msg.name + ' · ' + when), element('span', msg.body)); return entry;
-    }) : [element('p', 'Aún no hay mensajes. Saluda a tu equipo.') ]));
+    box.replaceChildren(...(messages.length ? messages.map(msg => chatMessage(msg, participantColor(msg.name)))
+      : [element('p', 'La conversación empieza contigo. Saluda a tu equipo para comenzar.', 'chat-empty')]));
+    box.dataset.signature = signature;
     if (nearBottom) box.scrollTop = box.scrollHeight;
-  } catch (error) { if (box.isConnected) box.replaceChildren(element('p', error.message)); }
+  } catch (error) { if (box.isConnected) {
+    delete box.dataset.signature;
+    box.replaceChildren(element('p', error.message, 'chat-empty'));
+  } }
   finally { chatLoading = false; }
 }
 function topicPanel(topic, confirmJoin = false) {
