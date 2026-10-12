@@ -10,6 +10,8 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 - Las pestañas **Aula y temas**, **Mi equipo** y **Chat** separan el mapa, los integrantes y la conversación. El chat conserva los colores por participante y admite un adjunto de hasta 10 MB por mensaje: imágenes, PDF, Word, Excel, PowerPoint, TXT, CSV o ZIP. Los archivos se guardan en un bucket privado y solo los integrantes actuales del grupo pueden descargarlos.
 - Compartir correo y teléfono con el equipo es opcional.
 
+Al abrir una materia, el docente encuentra su código en **Código de la materia** y puede copiarlo. Las materias creadas antes de esta función conservaban solo una huella del código, que no permite recuperar el original. En esos casos, **Generar código nuevo** pide confirmación y guarda uno consultable. El anterior deja de funcionar; los estudiantes pueden ingresar con el nuevo desde su misma sesión y conservan sus perfiles y equipos.
+
 El código de materia no verifica la identidad individual. El correo declarado es de contacto y tampoco se verifica. El perfil estudiantil depende de la sesión anónima guardada en ese navegador: cerrar sesión o borrar los datos del sitio puede impedir recuperar ese perfil. Para cambiar de equipo, el estudiante debe pedir al docente que libere su lugar. El movimiento del avatar es local, no muestra la presencia de otras personas.
 
 ## Incrustar en E-ducativa

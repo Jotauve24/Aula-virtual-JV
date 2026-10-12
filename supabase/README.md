@@ -40,7 +40,8 @@ el permiso docente sigue asociado al identificador de esa cuenta.
 
    Sustituye ese texto por tu correo en el editor privado de Supabase. No lo
    guardes en GitHub. Vuelve a cargar el panel: ahora podrás crear materias.
-3. Crea una materia y guarda su código cuando aparece. Solo se muestra una vez.
+3. Crea una materia. Su código queda guardado y puedes volver a consultarlo y
+   copiarlo al abrir la materia en el panel docente. Solo su docente puede verlo.
    Elige la cantidad inicial de mesas y los cupos. Después puedes editar cada
    tema, sus indicaciones y su capacidad, o cambiar la cantidad de grupos.
    Comparte el código con tus estudiantes. No necesitas

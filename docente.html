@@ -8,8 +8,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Panel docente · Aula Encuentro</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/live.css?v=20261011b">
-  <script type="module" src="./assets/teacher.js?v=20261011b"></script>
+  <link rel="stylesheet" href="./assets/live.css?v=20261012c">
+  <script type="module" src="./assets/teacher.js?v=20261012c"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Ir al contenido</a>
@@ -29,6 +29,12 @@
       <div class="course-area"><div class="area-heading"><h2>Secciones activas</h2><span>Abre una para administrar sus temas y estudiantes</span></div><div id="courses" class="course-list"></div></div></div>
     </section>
     <section id="detail" hidden><button id="back" class="back-button" type="button">← Mis materias</button><div class="section-heading detail-heading"><div><span class="eyebrow">ESPACIO DE TRABAJO</span><h1 id="course-title"></h1><p id="course-summary"></p></div><button id="registration" class="secondary" type="button"></button></div>
+      <section class="course-code-panel" aria-labelledby="course-code-heading">
+        <div><h2 id="course-code-heading">Código de la materia</h2><p>Consúltalo aquí cuando lo necesites y compártelo con tu clase.</p></div>
+        <div id="course-code-saved" class="course-code-saved" hidden><label class="sr-only" for="course-access-code">Código de acceso de esta materia</label><input id="course-access-code" type="text" readonly spellcheck="false" autocomplete="off"><button id="copy-course-code" class="secondary" type="button">Copiar código</button></div>
+        <div id="course-code-missing" hidden><p>El código original de esta materia no quedó guardado para consultarlo. Si lo olvidaste, puedes generar uno nuevo.</p><button id="generate-course-code" class="secondary" type="button">Generar código nuevo</button></div>
+        <p id="course-code-status" class="course-code-status" role="status"></p>
+      </section>
       <form id="group-count-form" class="panel-card group-count-panel"><div><span class="eyebrow">DISTRIBUCIÓN DEL AULA</span><h2>Mesas y grupos</h2><p>Cada grupo aparece como una mesa. Para reducir, se retiran los últimos grupos vacíos y se conserva su historial.</p></div><div class="field-pair"><div><label for="group-count">Cantidad de grupos</label><input id="group-count" name="count" type="number" min="1" max="40" required></div><div><label for="new-group-capacity">Cupos de mesas nuevas</label><input id="new-group-capacity" name="capacity" type="number" min="1" max="100" value="5" required></div></div><p id="group-count-preview" role="status"></p><button class="primary" type="submit">Aplicar cantidad de mesas</button></form><div class="detail-grid"><form id="new-topic" class="panel-card"><span class="eyebrow">EQUIPOS</span><h2>Nuevo tema</h2><p>Define qué trabajará este grupo y cuántos estudiantes pueden elegirlo.</p><label for="topic-name">Tema</label><input id="topic-name" name="name" required maxlength="80" placeholder="Nombre del tema"><label for="topic-instructions">Indicaciones</label><textarea id="topic-instructions" name="instructions" maxlength="1000" rows="4" placeholder="¿Qué harán los integrantes?"></textarea><label for="topic-capacity">Cupos</label><input id="topic-capacity" name="capacity" type="number" min="1" max="100" required value="5"><button class="primary" type="submit">Añadir tema</button></form>
       <div class="course-area"><div class="area-heading"><h2>Temas de la materia</h2><span>Cada tema tiene su propia mesa en el aula</span></div><div id="topic-list" class="teacher-topic-list"></div></div></div>
       <div class="roster-heading"><span class="eyebrow">SEGUIMIENTO</span><h2>Estudiantes y equipos</h2><p>Los estudiantes ingresan con el código de esta materia. Aquí verás quién tiene equipo y quién sigue pendiente.</p></div><div id="student-list" class="student-groups"></div>
