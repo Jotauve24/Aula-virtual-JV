@@ -73,6 +73,11 @@ begin
   if not denied then raise exception 'Capacity dropped below member count'; end if;
   perform public.teacher_set_group_count(c,1,5);
   if jsonb_array_length(public.course_room(c))<>1 then raise exception 'Could not retire empty group'; end if;
+  -- A retained or renamed higher-numbered group must not collide with a new default name.
+  perform public.teacher_edit_topic(c,topic,'Grupo 2','',5);
+  perform public.teacher_set_group_count(c,2,5);
+  if (select count(distinct v->>'name') from jsonb_array_elements(public.course_room(c)) v)<>2 then
+    raise exception 'Generated a duplicate group name'; end if;
 end $$;
 reset role;
 select 'PASS: counts, editing, teacher authorization, file messages, idempotency, team isolation, capacity protection' as result;
