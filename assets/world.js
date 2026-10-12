@@ -101,6 +101,7 @@ function nameTag(ctx,x,y,text,color='#4d6551') {
   rect(ctx,x-width/2,y,width,19,'#fcfcf4');ctx.fillStyle=color;ctx.textAlign='center';ctx.fillText(text,x,y+13);
 }
 export function drawWorld(canvas, options = {}) {
+  if (options.layout) return drawRoomWorld(canvas, options);
   const ctx=canvas.getContext('2d'); if (!ctx) return;
   ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,800,560);
   rect(ctx,36,42,730,474,'#37473113');rect(ctx,30,32,730,474,'#a9b49b');rect(ctx,34,28,730,474,'#e1dfc9');
@@ -138,31 +139,33 @@ export function drawWorld(canvas, options = {}) {
   if(options.decorative){avatar(ctx,407,276,{skin:1,shirt:0,hair:'curly'},Math.sin(t/180)*1.2);nameTag(ctx,407,286,'Tú');nameTag(ctx,320,307+shift,'¡Hola!');}
   if(options.player){avatar(ctx,options.player.x,options.player.y,options.player,options.walking?Math.sin(t/85)*2:0);nameTag(ctx,options.player.x,options.player.y+8,'Tú', '#28594c');}
 }
-export function isWalkable(x, y) {
-  return x>=55&&x<=745&&y>=85&&y<=487&&!obstacles.some(o=>x>=o.x-7&&x<=o.x+o.w+7&&y>=o.y-3&&y<=o.y+o.h+6);
-}
-export function findPath(from, to) {
-  const start={x:Math.round(from.x/20),y:Math.round(from.y/20)};
-  let end={x:Math.round(to.x/20),y:Math.round(to.y/20)};
-  if(!isWalkable(end.x*20,end.y*20)){
-    let nearest=Infinity;
-    for(let x=3;x<=37;x++)for(let y=5;y<=24;y++){
-      if(!isWalkable(x*20,y*20))continue;
-      const distance=(x*20-to.x)**2+(y*20-to.y)**2;
-      if(distance<nearest){nearest=distance;end={x,y};}
-    }
+export { isWalkable, findPath } from './world-layout.js';
+
+function drawRoomWorld(canvas, options) {
+  const { layout } = options;
+  if (canvas.width !== layout.width) canvas.width = layout.width;
+  if (canvas.height !== layout.height) canvas.height = layout.height;
+  const ctx = canvas.getContext('2d'); if (!ctx) return;
+  ctx.imageSmoothingEnabled = false;
+  rect(ctx, 0, 0, layout.width, layout.height, '#e7ecdf');
+  rect(ctx, 18, 18, layout.width - 36, layout.height - 36, '#f3efdf');
+  for (let y = 20; y < layout.height - 20; y += 20) {
+    rect(ctx, 350, y, 100, 1, '#d8d8c5');
+    rect(ctx, 399, y, 1, 20, '#dedfce');
   }
-  const key=p=>`${p.x},${p.y}`, queue=[start], parents=new Map([[key(start),null]]);
-  for(let i=0;i<queue.length;i++){
-    const current=queue[i];
-    if(key(current)===key(end)){
-      const path=[];let p=current;
-      while(parents.get(key(p))){path.unshift({x:p.x*20,y:p.y*20});p=parents.get(key(p));}return path;
-    }
-    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
-      const next={x:current.x+dx,y:current.y+dy};
-      if(!parents.has(key(next))&&isWalkable(next.x*20,next.y*20)){parents.set(key(next),current);queue.push(next);}
-    }
-  }
-  return [];
+  const colors = ['#d2ddc2', '#cbdedb', '#e7d8c0', '#ded3e5', '#ceddea', '#e4dfb9', '#d9dfcb', '#e4cfd2'];
+  layout.rooms.forEach((room, i) => {
+    rect(ctx, room.x, room.y, room.w, room.h, colors[i % colors.length]);
+    for (let y = room.y + 10; y < room.y + room.h; y += 20) rect(ctx, room.x + 6, y, room.w - 12, 1, '#ffffff30');
+    rect(ctx, room.desk.x - 13, room.desk.y - 12, 168, 100, '#294c3915');
+    desk(ctx, room.desk.x + 2, room.desk.y + 2);
+    shelf(ctx, room.shelf.x, room.shelf.y);
+    plant(ctx, room.plant.x + 14, room.plant.y + 15);
+    room.walls.forEach(w => { rect(ctx, w.x, w.y, w.w, w.h, '#a4b599'); rect(ctx, w.x, w.y - 3, w.w, 3, '#fafbef'); });
+    const doorX = room.right ? room.x : room.x + room.w;
+    rect(ctx, doorX - 9, room.y + 135, 18, 59, '#d8d9bc');
+  });
+  rect(ctx, 369, layout.height - 51, 62, 24, '#a3b596');
+  if (!layout.rooms.length) sign(ctx, 400, 155, 'BIENVENIDO', '#28594c');
+  if (options.player) { avatar(ctx, options.player.x, options.player.y, options.player, options.walking ? Math.sin((options.time || 0)/85)*2 : 0); nameTag(ctx, options.player.x, options.player.y + 8, 'Tú', '#28594c'); }
 }

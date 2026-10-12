@@ -99,3 +99,41 @@ export function studentSignedIn() { return !!session(studentSessionKey)?.access_
 export function studentSignOut() { saveSession(null, studentSessionKey); }
 export function signedIn() { return !!session()?.access_token; }
 export function signOut() { saveSession(null); }
+
+
+const attachmentBucket = 'team-attachments';
+const storagePath = path => path.split('/').map(encodeURIComponent).join('/');
+async function storageRequest(path, options = {}) {
+  const token = await accessToken(studentSessionKey);
+  const response = await fetch(endpoint('/storage/v1/' + path), {
+    ...options, cache: 'no-store', headers: { apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${token}`, ...options.headers }
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || data.error || 'No se pudo completar la operación con el archivo.');
+  }
+  return response;
+}
+export async function uploadTeamFile(courseId, topicId, file, info) {
+  const token = await accessToken(studentSessionKey);
+  const claims = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+  const path = `${courseId}/${topicId}/${claims.sub}/${crypto.randomUUID()}.${info.extension}`;
+  await storageRequest(`object/${attachmentBucket}/${storagePath(path)}`, {
+    method:'POST', headers:{'Content-Type':info.type,'x-upsert':'false','Cache-Control':'private, max-age=0'}, body:file,
+    signal: AbortSignal.timeout(120000)
+  });
+  return path;
+}
+export async function cancelTeamFile(path) {
+  await storageRequest(`object/${attachmentBucket}`, {
+    method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prefixes:[path]})
+  });
+}
+export async function downloadTeamFile(attachment) {
+  const response = await storageRequest(`object/authenticated/${attachmentBucket}/${storagePath(attachment.path)}`);
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a'); link.href = url; link.download = attachment.name;
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}

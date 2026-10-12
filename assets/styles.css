@@ -24,3 +24,9 @@ dialog{border:1px solid var(--line);border-radius:18px;padding:0;max-width:440px
 .topic-list .topic-link.is-mine{background:#e8f1df;border-color:#97b594;font-weight:700}
 .topic-list .topic-link.is-mine span{color:#315f47}
 @media(max-width:500px){.entry-note{margin-top:20px;padding:14px}.entry-note p{font-size:11px}.entry-note strong{font-size:12px}}
+
+.entry-tools{display:flex;align-items:center;gap:12px}.entry-tools .button{font-size:13px;min-height:40px;padding:9px 12px}
+html.is-embedded .site-header{padding:16px 24px}html.is-embedded .login-layout{padding:12px 24px 28px;gap:30px;min-height:0}html.is-embedded .login-content{padding-top:0}html.is-embedded .login-content h1{font-size:clamp(42px,5.5vw,66px);margin-top:18px}html.is-embedded .site-footer{padding:14px 24px}
+@media(max-width:800px){html.is-embedded .preview-panel{display:none}html.is-embedded .login-layout{max-width:540px;gap:20px}html.is-embedded .login-content{width:100%;max-width:none}html.is-embedded .entry-note{margin-top:20px}}
+@media(max-width:500px){.entry-tools .version-badge{display:none}.entry-tools{gap:0}html.is-embedded .site-header{padding:14px 16px}html.is-embedded .login-layout{padding:8px 18px 20px}html.is-embedded .site-footer{padding:12px 18px}}
+

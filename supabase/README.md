@@ -41,7 +41,9 @@ el permiso docente sigue asociado al identificador de esa cuenta.
    Sustituye ese texto por tu correo en el editor privado de Supabase. No lo
    guardes en GitHub. Vuelve a cargar el panel: ahora podrás crear materias.
 3. Crea una materia y guarda su código cuando aparece. Solo se muestra una vez.
-   Añade temas y cupos. Comparte el código con tus estudiantes. No necesitas
+   Elige la cantidad inicial de mesas y los cupos. Después puedes editar cada
+   tema, sus indicaciones y su capacidad, o cambiar la cantidad de grupos.
+   Comparte el código con tus estudiantes. No necesitas
    importar correos ni aprobar cada ingreso.
 
 ### Registro de estudiantes
@@ -68,10 +70,30 @@ nuevo; no existe recuperación por el correo declarado.
   inscripciones. El chat interno de equipo y la preferencia de compartir
   contacto están disponibles para sus integrantes. Las actividades y el
   mensajero académico siguen en Educativa; esta aplicación no los integra.
-  Faltan la edición y exportación avanzada del panel Supabase, la presencia y
-  el movimiento compartido.
+  Están disponibles la edición de temas y cupos y la configuración de 1 a 40
+  mesas. Al reducir, se archivan grupos vacíos sin borrar su historial. No se
+  reduce la capacidad de un grupo por debajo de sus integrantes actuales.
+  Faltan la exportación avanzada del panel Supabase, la presencia y el
+  movimiento compartido.
   El servidor Node/SQLite anterior permanece en `server/` como prototipo local,
   pero **no** comparte datos con Supabase.
+
+## Adjuntos privados del chat
+
+La migración `20261011223933_flexible_classrooms_private_attachments.sql` crea
+el bucket privado `team-attachments`, limita cada archivo a 10 MiB y define
+las políticas de Storage. La subida requiere pertenecer al equipo y usa una
+ruta de materia, grupo, usuario autenticado y nombre UUID. La descarga exige
+seguir perteneciendo al equipo; no se crean enlaces públicos. Los compañeros
+solo pueden leer archivos asociados a mensajes publicados. El remitente puede
+eliminar su propia subida pendiente, pero no un adjunto ya enviado.
+
+`team_chat_send_file` valida pertenencia, ruta y metadatos reales de Storage;
+la ruta única hace que reintentar el envío no duplique mensajes. Los permisos
+de las nuevas operaciones se implementan en funciones del esquema privado
+con envoltorios públicos `security invoker`. La clave secreta no se utiliza
+en el navegador. Los archivos se descargan; no se ejecutan ni se incrustan
+documentos HTML o SVG en el chat.
 
 ## Comprobaciones antes de uso real
 
@@ -83,3 +105,4 @@ y define con la universidad si está permitido recoger teléfonos en este servic
 No envíes por GitHub el archivo de alumnos, credenciales, códigos personales,
 exportaciones ni capturas con datos reales. `docente.html` es una página pública
 con funciones protegidas por la base de datos; ocultar su URL no es seguridad.
+

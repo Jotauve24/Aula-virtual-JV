@@ -1,7 +1,10 @@
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut } from './supabase-client.js';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js';
+import './embed.js?v=20261012a';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS } from './model.js';
-import { avatarSVG, drawWorld, findPath, isWalkable } from './world.js?v=20261009b';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011a';
+import { avatarSVG, drawWorld } from './world.js?v=20261011b';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment } from './world-layout.js';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -10,18 +13,21 @@ let look = { skin: 1, shirt: 0, hair: 'short' };
 let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, onArrival = null;
 let chatTimer = 0, chatLoading = false, chatTeamId = '';
 let participantColor = createParticipantPalette();
+let layout = createRoomLayout(0), activeTab = 'aula', roomRefresh = 0;
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
 function show(stage) {
   stopAnimation();
   const onboarding = stage !== 'room';
   $('#in-room-dialog').hidden = !onboarding;
-  $('#topic-dialog').hidden = true;
+  closeTopic();
   $('#registration').hidden = stage !== 'registration';
   $('#avatar').hidden = stage !== 'avatar';
   $('#teacher').hidden = !onboarding;
   $('#edit-avatar').hidden = !profile;
   $('#logout').hidden = !studentSignedIn();
   $('#room').dataset.stage = stage;
+  $('.room-tabs').hidden = onboarding;
+  if (onboarding) setRoomTab('aula');
   $('#registration h2').id = stage === 'registration' ? 'dialog-title' : 'registration-title';
   $('#avatar h2').id = stage === 'avatar' ? 'dialog-title' : 'avatar-title';
   document.title = 'Mi aula · Aula Encuentro';
@@ -188,22 +194,29 @@ $('#edit-avatar').addEventListener('click', () => { show('avatar'); renderAvatar
 async function enterRoom() {
   topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
   show('room'); renderTopics(); draw();
-  status('Explora los temas y elige tu equipo.');
+  status(profile.topicId ? 'Tu lugar está guardado. Abre Mi equipo o Chat para coordinarte.' : 'Explora los temas y elige tu equipo.');
   clearInterval(chatTimer);
-  chatTimer = setInterval(() => { if (!document.hidden && !$('#team-chat-host').hidden) refreshChat(); }, 8000);
+  chatTimer = setInterval(() => { if (!document.hidden && activeTab === 'chat') refreshChat(); }, 8000);
+  clearInterval(roomRefresh); roomRefresh = setInterval(refreshRoom, 15000);
 }
 function sortTopics(rows) {
-  return rows.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }) || a.id.localeCompare(b.id));
+  return rows.sort((a, b) => (a.position || 0) - (b.position || 0) || a.id.localeCompare(b.id));
 }
-const locationsForTopics = [[220, 240], [590, 240], [590, 480]];
+let locationsForTopics = [];
 function renderTopics() {
+  stopAnimation(); path = []; onArrival = null;
+  layout = createRoomLayout(topics.length);
+  locationsForTopics = layout.rooms.map(room => [room.arrival.x, room.arrival.y]);
+  if (!isWalkable(player.x, player.y, layout)) player = { ...player, ...layout.spawn };
+  $('#room-map').style.aspectRatio = layout.width + ' / ' + layout.height;
+  draw();
   const mine = topics.find(t => t.id === profile.topicId);
   $('#group-badge').textContent = mine ? 'Tu equipo: ' + mine.name : 'Tu equipo: sin asignar';
-  const locations = [[217, 122, 220, 240], [587, 122, 590, 240], [587, 352, 590, 480]];
-  $('#topic-buttons').replaceChildren(...topics.slice(0, 3).map((topic, i) => {
+  const locations = layout.rooms.map(room => [room.label.x, room.label.y, room.arrival.x, room.arrival.y]);
+  $('#topic-buttons').replaceChildren(...topics.map((topic, i) => {
     const button = element('button', '', 'map-action' + (topic.id === profile.topicId ? ' is-mine' : ''));
     button.type = 'button'; button.dataset.topic = topic.id;
-    button.style.left = locations[i][0] / 8 + '%'; button.style.top = locations[i][1] / 5.6 + '%';
+    button.style.left = locations[i][0] / 8 + '%'; button.style.top = locations[i][1] / layout.height * 100 + '%';
     button.append(element('strong', topic.name), element('small', topic.members.length + ' de ' + topic.capacity + ' lugares'));
     button.addEventListener('click', () => openTopic(topic, { x: locations[i][2], y: locations[i][3] }));
     return button;
@@ -214,25 +227,28 @@ function renderTopics() {
   if (activeTopic) topicPanel(activeTopic);
 }
 function side(...nodes) { $('#side-content').replaceChildren(...nodes); }
-function openTopic(topic, target) { walkTo(target); topicPanel(topic); }
+function openTopic(topic, target) { setRoomTab('aula'); walkTo(target, () => topicPanel(topic)); }
 function renderTeamChat(team) {
   const host = $('#team-chat-host');
   if (!team) {
     host.hidden = true;
     host.replaceChildren();
     chatTeamId = '';
+    $('#chat-locked').hidden = false;
     return;
   }
+  $('#chat-locked').hidden = true; host.hidden = false;
   if (chatTeamId !== team.id) {
     participantColor = createParticipantPalette(team.members);
     host.replaceChildren(teamChatPanel(team));
     chatTeamId = team.id;
     refreshChat();
   }
+  $('#team-chat-title').textContent = team.name;
 }
 function homePanel() {
   selectedTopic = null;
-  $('#topic-dialog').hidden = true;
+  closeTopic();
   const greeting = element('span', 'HOLA, ' + profile.firstName.split(' ')[0].toLocaleUpperCase('es'), 'eyebrow');
   const title = element('h2', 'Encuentra tu lugar.');
   const intro = element('p', 'Explora los temas de tu materia. Abre un espacio para ver integrantes y elegir equipo.');
@@ -244,8 +260,7 @@ function homePanel() {
     const label = topic.id === profile.topicId ? 'Tu equipo' : topic.members.length + '/' + topic.capacity + ' lugares';
     button.append(element('span', label));
     button.addEventListener('click', () => { const i = topics.indexOf(topic);
-      if (i < 3) openTopic(topic, { x: locationsForTopics[i][0], y: locationsForTopics[i][1] });
-      else topicPanel(topic);
+      openTopic(topic, { x: locationsForTopics[i][0], y: locationsForTopics[i][1] });
     });
     list.append(button);
   }
@@ -255,8 +270,8 @@ function homePanel() {
   chatHost.hidden = !team;
   if (team && wasHidden) refreshChat();
   const nodes = [greeting, title, intro, list];
-  if (team) nodes.push(teamRosterPanel(team));
-  else nodes.push(element('p', 'Al elegir un equipo, aquí verás a sus integrantes y el chat.', 'field-hint'));
+  $('#team-roster-host').replaceChildren(team ? teamRosterPanel(team) : element('p', 'Elige un grupo en «Aula y temas» para ver aquí a tus compañeros.', 'empty-team'));
+  nodes.push(element('p', 'Consulta tus compañeros en Mi equipo y comparte mensajes y archivos en Chat.', 'field-hint'));
   side(...nodes);
 }
 function teamRosterPanel(team) {
@@ -267,7 +282,7 @@ function teamRosterPanel(team) {
   const roster = element('div', '', 'team-roster');
   for (const member of team.members) {
     const card = element('div', '', 'team-member');
-    applyParticipantColor(card, participantColor(member.name));
+    applyParticipantColor(card, participantColor(member.id || member.name));
     const identity = element('div', '', 'team-member-identity');
     identity.append(participantAvatar(member.name), element('strong', member.name + (member.mine ? ' · Tú' : '')));
     card.append(identity);
@@ -288,7 +303,7 @@ function teamRosterPanel(team) {
   toggle.addEventListener('change', () => run(async () => {
     toggle.disabled = true;
     try { await studentRpc('team_contact_setting', { p_course_id: courseId, p_share: toggle.checked });
-      topics = await studentRpc('course_room', { p_course_id: courseId }); renderTopics(); }
+      topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId })); renderTopics(); }
     catch (error) { toggle.checked = !toggle.checked; throw error; }
     finally { toggle.disabled = false; }
   }));
@@ -310,26 +325,59 @@ function teamChatPanel(team) {
   messages.setAttribute('aria-relevant', 'additions'); messages.tabIndex = 0;
   messages.append(element('p', 'Cargando conversación…', 'chat-empty'));
   const form = element('form', '', 'chat-form'); form.id = 'team-chat-form';
-  const input = document.createElement('input'); input.name = 'message'; input.required = true;
+  const input = document.createElement('input'); input.name = 'message';
   input.id = 'team-chat-input'; input.maxLength = 500; input.placeholder = 'Escribe un mensaje…';
   const label = element('label', 'Escribe a tu equipo'); label.htmlFor = input.id;
   const send = element('button', 'Enviar', 'button primary'); send.type = 'submit';
   const chatError = element('p', '', 'field-error'); chatError.hidden = true;
   chatError.setAttribute('role', 'alert');
-  form.append(label, input, send, chatError);
+  let selectedFile = null, uploadedPath = '', fileInfo = null;
+  const picker = document.createElement('input'); picker.type = 'file'; picker.accept = ATTACHMENT_ACCEPT; picker.hidden = true;
+  picker.id = 'team-chat-file'; picker.setAttribute('aria-label','Seleccionar un archivo para el equipo');
+  const attach = element('button', 'Adjuntar', 'button secondary chat-attach'); attach.type = 'button';
+  const preview = element('div', '', 'attachment-preview'); preview.hidden = true; preview.setAttribute('role','status');
+  const previewName = element('span');
+  const remove = element('button','Quitar','attachment-remove'); remove.type = 'button';
+  preview.append(previewName, remove);
+  const uploadStatus = element('p','','upload-status'); uploadStatus.setAttribute('role','status'); uploadStatus.hidden = true;
+  const help = element('p','Un archivo por mensaje · hasta 10 MB. Imágenes, PDF, Word, Excel, PowerPoint, TXT, CSV o ZIP.','attachment-help');
+  help.id = 'attachment-help'; attach.setAttribute('aria-describedby',help.id);
+  const clearFile = async () => {
+    const oldPath = uploadedPath;
+    selectedFile = null; uploadedPath = ''; fileInfo = null; picker.value = ''; preview.hidden = true;
+    if (oldPath) await cancelTeamFile(oldPath).catch(() => {});
+  };
+  attach.addEventListener('click', () => picker.click());
+  remove.addEventListener('click', clearFile);
+  picker.addEventListener('change', async () => {
+    const file = picker.files[0]; if (!file) return;
+    try {
+      const info = attachmentInfo(file); await clearFile(); selectedFile = file; fileInfo = info;
+      previewName.textContent = info.name + ' · ' + fileSizeLabel(info.size); preview.hidden = false; chatError.hidden = true;
+    } catch(error) { picker.value = ''; chatError.textContent = error.message; chatError.hidden = false; }
+  });
+  form.append(label, input, attach, send, picker, preview, help, uploadStatus, chatError);
   form.addEventListener('submit', async event => { event.preventDefault();
-    const body = input.value.trim(); if (!body) return;
-    send.disabled = true; chatError.hidden = true;
-    try { await studentRpc('team_chat_send', { p_course_id: courseId, p_topic_id: team.id, p_body: body });
-      input.value = ''; await refreshChat(); }
-    catch (error) { chatError.textContent = error.message; chatError.hidden = false; }
-    finally { send.disabled = false; }
+    const body = input.value.trim();
+    if (!body && !selectedFile) { chatError.textContent = 'Escribe un mensaje o adjunta un archivo.'; chatError.hidden = false; return; }
+    send.disabled = true; attach.disabled = true; remove.disabled = true; input.disabled = true; chatError.hidden = true;
+    try {
+      if (selectedFile) {
+        uploadStatus.hidden = false; uploadStatus.textContent = uploadedPath ? 'Enviando archivo al equipo…' : 'Subiendo archivo…';
+        if (!uploadedPath) uploadedPath = await uploadTeamFile(courseId, team.id, selectedFile, fileInfo);
+        uploadStatus.textContent = 'Enviando archivo al equipo…';
+        await studentRpc('team_chat_send_file', { p_course_id:courseId,p_topic_id:team.id,p_body:body,p_path:uploadedPath,p_name:fileInfo.name });
+        uploadedPath = ''; await clearFile();
+      } else await studentRpc('team_chat_send', { p_course_id: courseId, p_topic_id: team.id, p_body: body });
+      input.value = ''; await refreshChat(true);
+    } catch (error) { chatError.textContent = (error.name === 'TimeoutError' ? 'La subida tardó demasiado. Puedes volver a intentarlo.' : error.message); chatError.hidden = false; }
+    finally { send.disabled = false; attach.disabled = false; remove.disabled = false; input.disabled = false; uploadStatus.hidden = true; input.focus(); }
   });
   section.append(messages, form,
     element('p', 'Solo quienes integran este equipo pueden leer y escribir aquí.', 'field-hint'));
   return section;
 }
-async function refreshChat() {
+async function refreshChat(forceBottom = false) {
   const box = $('#team-chat-messages');
   if (!box || chatLoading || !profile?.topicId) return;
   chatLoading = true;
@@ -337,12 +385,16 @@ async function refreshChat() {
     const messages = await studentRpc('team_chat_read', { p_course_id: courseId, p_topic_id: profile.topicId });
     if (!box.isConnected) return;
     const signature = JSON.stringify(messages);
-    if (box.dataset.signature === signature) return;
+    if (box.dataset.signature === signature) {
+      if (forceBottom) box.scrollTop = box.scrollHeight;
+      return;
+    }
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 45;
-    box.replaceChildren(...(messages.length ? messages.map(msg => chatMessage(msg, participantColor(msg.name)))
+    box.replaceChildren(...(messages.length ? messages.map(msg => chatMessage(msg, participantColor(msg.senderId || msg.name), downloadTeamFile))
       : [element('p', 'La conversación empieza contigo. Saluda a tu equipo para comenzar.', 'chat-empty')]));
     box.dataset.signature = signature;
-    if (nearBottom) box.scrollTop = box.scrollHeight;
+    box.dataset.lastMessage = messages.length ? String(messages.at(-1).id) : '';
+    if (nearBottom || forceBottom) box.scrollTop = box.scrollHeight;
   } catch (error) { if (box.isConnected) {
     delete box.dataset.signature;
     box.replaceChildren(element('p', error.message, 'chat-empty'));
@@ -352,7 +404,7 @@ async function refreshChat() {
 function topicPanel(topic, confirmJoin = false) {
   selectedTopic = topic;
   const mine = profile.topicId === topic.id;
-  $('#team-chat-host').hidden = !mine;
+
   const full = topic.members.length >= topic.capacity;
   const header = element('div', '', 'topic-dialog-heading');
   const close = element('button', '×', 'topic-close'); close.type = 'button';
@@ -399,19 +451,22 @@ function topicPanel(topic, confirmJoin = false) {
   topicError.setAttribute('role', 'alert'); topicError.hidden = true; nodes.push(topicError);
   const dialog = $('#topic-dialog');
   dialog.replaceChildren(...nodes); dialog.hidden = false;
+  if (!dialog.open) dialog.showModal();
   dialog.scrollTop = 0;
   status('Estás viendo el tema ' + topic.name + '.');
 }
 function draw(time = 0) {
   const canvas = $('#world');
-  if (!$('#room').hidden) drawWorld(canvas, { labels: false, actors: false,
+  const inRoom = $('#room').dataset.stage === 'room';
+  if (!inRoom) { canvas.width = 800; canvas.height = 560; $('#room-map').style.aspectRatio = '10 / 7'; }
+  if (!$('#room').hidden) drawWorld(canvas, { layout: inRoom ? layout : undefined, labels: false, actors: false,
     player: profile ? { ...player, ...look } : undefined, walking: path.length > 0, time });
 }
 function walkTo(target, arrived = null) {
   if ($('#room').dataset.stage !== 'room') return;
   if (!$('#topic-dialog').hidden) homePanel();
   onArrival = arrived;
-  path = findPath(player, target);
+  path = findPath(player, target, layout);
   if (!path.length) {
     if (Math.hypot(player.x-target.x, player.y-target.y) < 30 && arrived) arrived();
     else status('Elige un lugar libre del suelo para caminar.');
@@ -437,10 +492,9 @@ function walkTo(target, arrived = null) {
 }
 $('#world').addEventListener('click', event => {
   const bounds = event.currentTarget.getBoundingClientRect();
-  const target = { x: (event.clientX - bounds.left) / bounds.width * 800,
-    y: (event.clientY - bounds.top) / bounds.height * 560 };
-  const desk = [[129,130,284,218],[500,130,655,218],[500,371,655,459]]
-    .findIndex(([left,top,right,bottom]) => target.x>=left && target.x<=right && target.y>=top && target.y<=bottom);
+  const target = { x: (event.clientX - bounds.left) / bounds.width * layout.width,
+    y: (event.clientY - bounds.top) / bounds.height * layout.height };
+  const desk = layout.rooms.findIndex(({desk:d}) => target.x>=d.x && target.x<=d.x+d.w && target.y>=d.y && target.y<=d.y+d.h);
   if (desk >= 0 && topics[desk]) openTopic(topics[desk], {x:locationsForTopics[desk][0],y:locationsForTopics[desk][1]});
   else walkTo(target);
 });
@@ -449,13 +503,13 @@ function moveDirection(direction) {
   const delta = { up: [0,-20], down: [0,20], left: [-20,0], right: [20,0] }[direction];
   const target = { x: Math.round(player.x / 20) * 20 + delta[0],
     y: Math.round(player.y / 20) * 20 + delta[1] };
-  if (isWalkable(target.x, target.y)) { player.direction = direction; walkTo(target); }
-  else status('Hay mobiliario en ese lugar. Rodea la mesa por el pasillo.');
+  if (canWalkSegment(player, target, layout)) { player.direction = direction; walkTo(target); }
+  else status('Hay una pared o un mueble. Busca la puerta hacia el pasillo.');
 }
 document.querySelectorAll('[data-direction]').forEach(button =>
   button.addEventListener('click', () => moveDirection(button.dataset.direction)));
 document.addEventListener('keydown', event => {
-  if ($('#room').dataset.stage !== 'room' || event.ctrlKey || event.metaKey || event.altKey) return;
+  if ($('#room').dataset.stage !== 'room' || activeTab !== 'aula' || event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.key === 'Escape' && !$('#topic-dialog').hidden) { event.preventDefault(); homePanel(); return; }
   if (event.target.closest('input,textarea,select,[contenteditable="true"]')) return;
   if (event.target.closest('button,a,summary')) return;
@@ -476,7 +530,7 @@ window.addEventListener('pagehide', stopAnimation);
 $('#logout').addEventListener('click', () => {
   if (!confirm('Al salir perderás el acceso a este perfil desde este dispositivo. ¿Deseas continuar?')) return;
   studentSignOut(); localStorage.removeItem('aula-student-course-code');
-  clearInterval(chatTimer);
+  clearInterval(chatTimer); clearInterval(roomRefresh);
   chatTimer = 0; chatTeamId = '';
   $('#team-chat-host').hidden = true;
   $('#team-chat-host').replaceChildren();
@@ -489,3 +543,54 @@ $('#logout').addEventListener('click', () => {
   $('#side-content').replaceChildren(element('h2', 'La sala ya está aquí.'), element('p', 'Habla con el docente para empezar.'));
   show('registration');
 });
+
+
+function closeTopic() {
+  const dialog = $('#topic-dialog');
+  if (dialog.open) dialog.close(); dialog.hidden = true;
+}
+$('#topic-dialog').addEventListener('cancel', event => { event.preventDefault(); homePanel(); });
+function setRoomTab(name) {
+  activeTab = name;
+  for (const tab of document.querySelectorAll('[data-room-tab]')) {
+    const selected = tab.dataset.roomTab === name;
+    tab.setAttribute('aria-selected', String(selected)); tab.tabIndex = selected ? 0 : -1;
+    $('#panel-' + tab.dataset.roomTab).hidden = !selected;
+  }
+  if (name === 'chat') {
+    $('#chat-unread').hidden = true;
+    const box = $('#team-chat-messages');
+    const firstOpen = box && !box.dataset.opened;
+    if (firstOpen) { box.dataset.opened = 'true'; box.scrollTop = box.scrollHeight; }
+    refreshChat(firstOpen);
+  }
+  else if (name === 'aula') draw();
+}
+for (const tab of document.querySelectorAll('[data-room-tab]')) {
+  tab.addEventListener('click', () => setRoomTab(tab.dataset.roomTab));
+  tab.addEventListener('keydown', event => {
+    const tabs = [...document.querySelectorAll('[data-room-tab]')]; let i = tabs.indexOf(tab);
+    if (event.key === 'ArrowRight') i = (i+1)%tabs.length;
+    else if (event.key === 'ArrowLeft') i = (i+tabs.length-1)%tabs.length;
+    else if (event.key === 'Home') i = 0; else if (event.key === 'End') i=tabs.length-1; else return;
+    event.preventDefault(); setRoomTab(tabs[i].dataset.roomTab); tabs[i].focus();
+  });
+}
+let refreshingRoom = false;
+async function refreshRoom() {
+  if (document.hidden || !courseId || $('#room').dataset.stage !== 'room' || refreshingRoom) return;
+  refreshingRoom = true;
+  try {
+    const [rows, currentProfile] = await Promise.all([studentRpc('course_room', {p_course_id:courseId}), studentRpc('my_profile',{p_course_id:courseId})]);
+    const ordered = sortTopics(rows);
+    if (JSON.stringify(ordered) !== JSON.stringify(topics) || currentProfile.topicId !== profile.topicId || currentProfile.registrationOpen !== profile.registrationOpen) {
+      topics = ordered; profile = currentProfile; renderTopics();
+    }
+    if (activeTab !== 'chat' && profile.topicId) {
+      const rows = await studentRpc('team_chat_read',{p_course_id:courseId,p_topic_id:profile.topicId});
+      const box = $('#team-chat-messages');
+      if (rows.length && box && box.dataset.lastMessage !== String(rows.at(-1).id)) $('#chat-unread').hidden = false;
+    }
+  } catch { /* Keep the current classroom usable during a temporary disconnect. */ }
+  finally { refreshingRoom = false; }
+}

@@ -1,4 +1,5 @@
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut } from './supabase-client.js';
+import './embed.js?v=20261012a';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut } from './supabase-client.js?v=20261012a';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 function show(id) { for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id; }
@@ -35,7 +36,8 @@ $('#new-course').addEventListener('submit', event => { event.preventDefault(); r
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', bytes = crypto.getRandomValues(new Uint8Array(15));
     const part = Array.from(bytes, n => chars[n % chars.length]).join('');
     const code = `MAT-${part.slice(0,5)}-${part.slice(5,10)}-${part.slice(10)}`;
-    await rpc('create_course', { p_name: event.target.elements.namedItem('name').value.trim(), p_code: code });
+    await rpc('create_course_with_groups', { p_name: event.target.elements.namedItem('name').value.trim(), p_code: code,
+      p_count: Number(event.target.elements.namedItem('groups').value), p_capacity: Number(event.target.elements.namedItem('capacity').value) });
     event.target.reset(); await loadCourses();
     $('#new-code').textContent = `Guarda y comparte este código con la clase; se muestra una sola vez: ${code}`;
     $('#new-code').hidden = false;
@@ -43,7 +45,8 @@ $('#new-course').addEventListener('submit', event => { event.preventDefault(); r
 }); });
 async function openCourse(id) {
   courseId = id; overview = await rpc('teacher_overview', { p_course_id: id });
-  overview.topics.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }) || a.id.localeCompare(b.id));
+  overview.topics.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
+  $('#group-count').value = overview.topics.length; updateGroupPreview();
   show('detail'); $('#course-title').textContent = overview.course.name;
   $('#course-summary').textContent = `${overview.students.length} estudiantes · ${overview.topics.length} temas`;
   if (!overview.topics.length) {
@@ -55,7 +58,9 @@ async function openCourse(id) {
     const title = document.createElement('h3'); title.textContent = topic.name;
     const capacity = document.createElement('small'); capacity.textContent = `${topic.capacity} cupos`;
     const instructions = document.createElement('p'); instructions.textContent = topic.instructions || 'Sin indicaciones todavía.';
-    card.append(title, capacity, instructions); return card;
+    const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'secondary'; edit.textContent = 'Editar tema y cupos';
+    edit.addEventListener('click', () => editTopic(topic));
+    card.append(title, capacity, instructions, edit); return card;
   }));
   const groups = [...overview.topics.map(topic => ({ id: topic.id, name: topic.name, capacity: topic.capacity })),
     { id: null, name: 'Sin equipo', capacity: null }];
@@ -112,3 +117,46 @@ $('#registration').addEventListener('click', () => run(async () => {
 }));
 $('#back').addEventListener('click', () => run(loadCourses));
 $('#logout').addEventListener('click', () => { signOut(); show('login'); });
+
+
+function updateGroupPreview() {
+  if (!overview) return;
+  const count = Number($('#group-count').value), current = overview.topics.length;
+  const empty = overview.topics.filter(t => !overview.students.some(s => s.topicId === t.id)).reverse();
+  $('#group-count-preview').textContent = count < current
+    ? empty.length < current-count ? 'Primero libera los integrantes de los grupos que quieras retirar.'
+      : 'Se retirarán estas mesas vacías: ' + empty.slice(0,current-count).map(t=>t.name).join(', ') + '.'
+    : count > current ? 'Se crearán ' + (count-current) + ' mesas nuevas.' : 'El aula tiene ' + current + ' mesas.';
+}
+$('#group-count').addEventListener('input', updateGroupPreview);
+$('#group-count-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
+  const button = event.target.querySelector('button'); button.disabled = true;
+  try { await rpc('teacher_set_group_count', { p_course_id: courseId,
+    p_count: Number($('#group-count').value), p_capacity: Number($('#new-group-capacity').value) });
+    await openCourse(courseId); teacherSuccess('La cantidad de mesas quedó guardada.');
+  } finally { button.disabled = false; }
+}); });
+let editingTopicId = '';
+function editTopic(topic) {
+  editingTopicId = topic.id;
+  const form = $('#edit-topic-form');
+  form.elements.namedItem('name').value = topic.name;
+  form.elements.namedItem('instructions').value = topic.instructions;
+  form.elements.namedItem('capacity').value = topic.capacity;
+  $('#edit-topic-error').hidden = true; $('#edit-topic-dialog').showModal();
+}
+$('#cancel-topic-edit').addEventListener('click', () => $('#edit-topic-dialog').close());
+$('#edit-topic-form').addEventListener('submit', async event => {
+  event.preventDefault(); const f = event.target.elements, button = event.target.querySelector('[type="submit"]');
+  button.disabled = true; $('#edit-topic-error').hidden = true;
+  try { await rpc('teacher_edit_topic', { p_course_id: courseId, p_topic_id: editingTopicId,
+    p_name: f.namedItem('name').value.trim(), p_instructions: f.namedItem('instructions').value.trim(),
+    p_capacity: Number(f.namedItem('capacity').value) });
+    $('#edit-topic-dialog').close(); await openCourse(courseId); teacherSuccess('Tema y cupos actualizados.');
+  } catch(error) { $('#edit-topic-error').textContent = error.message; $('#edit-topic-error').hidden = false; }
+  finally { button.disabled = false; }
+});
+function teacherSuccess(text) {
+  $('#teacher-success').textContent = text; $('#teacher-success').hidden = false;
+  setTimeout(() => { $('#teacher-success').hidden = true; }, 6000);
+}

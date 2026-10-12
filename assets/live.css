@@ -7,3 +7,16 @@
 #error{position:fixed;z-index:30;right:22px;bottom:22px;max-width:min(450px,calc(100vw - 44px));margin:0;padding:13px 17px;border:1px solid #e4b8a9;border-radius:10px;background:#fff0e9;color:#983733;box-shadow:0 12px 30px #54352c25;font-size:13px}
 @media(max-width:850px){.teacher-header{padding:20px 25px}.teacher-main{padding:15px 25px 50px}.teacher-footer{padding:18px 25px}.teacher-login{grid-template-columns:1fr;gap:16px;min-height:0;max-width:620px;margin:auto}.login-intro{padding:24px 0 0}.login-steps{margin-top:25px}.dashboard-grid,.detail-grid{grid-template-columns:1fr}.student-groups{grid-template-columns:1fr}}
 @media(max-width:560px){.teacher-header{padding:17px 18px}.brand{font-size:17px}.brand-mark{width:37px;height:37px}.brand small{font-size:10px}.header-label{font-size:9px;letter-spacing:1px}.teacher-main{padding:10px 18px 42px}.teacher-footer{padding:15px 18px;flex-direction:column}.login-intro h1{font-size:44px}.login-intro>p{font-size:14px}.login-steps{gap:9px}.login-steps span{font-size:10px}.access-card,.panel-card{padding:23px}.access-card h2{font-size:28px}.section-heading{align-items:flex-start;flex-direction:column;gap:14px}.section-heading h1{font-size:38px}.detail-heading .secondary{max-width:none;width:100%}.area-heading{align-items:flex-start;flex-direction:column}.area-heading span{text-align:left}.teacher-group{padding:16px}.teacher-student{grid-template-columns:1fr}.teacher-student button{grid-column:1;grid-row:auto;justify-self:start;margin-top:5px}.teacher-group-heading{align-items:flex-start;flex-direction:column;gap:3px}.notice-card{padding:25px}}
+
+
+.field-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;min-width:0}
+.field-pair>div{min-width:0}.group-count-panel{margin-bottom:24px;display:grid;grid-template-columns:minmax(240px,1fr) minmax(260px,1fr);gap:10px 30px}
+.group-count-panel p{margin-bottom:0;font-size:14px}.group-count-panel button{align-self:end}
+.topic-card .secondary{margin-top:14px}.topic-card p{white-space:pre-wrap}
+#edit-topic-dialog{border:0;padding:0;border-radius:18px;width:min(560px,calc(100% - 28px));max-height:90dvh;box-shadow:0 24px 80px #17352944}
+#edit-topic-dialog::backdrop{background:#243a3266}#edit-topic-dialog .panel-card{border:0;margin:0}
+#edit-topic-error{color:#9e3636}#teacher-success{position:fixed;z-index:40;bottom:20px;right:20px;max-width:calc(100% - 40px);background:#28594c;color:white;padding:14px 20px;border-radius:10px}
+html.is-embedded .teacher-header{padding:16px 20px}html.is-embedded .teacher-main{padding:10px 20px 24px}
+html.is-embedded .teacher-login{min-height:0;gap:24px}html.is-embedded .login-intro{padding:10px 0}
+html.is-embedded .login-intro h1{font-size:clamp(32px,5vw,48px);margin:12px 0}html.is-embedded .login-steps{margin-top:20px}
+@media(max-width:700px){.group-count-panel{grid-template-columns:1fr}.panel-card{padding:20px}.access-card small,.panel-card p{font-size:14px}.teacher-topic-list{gap:14px}}

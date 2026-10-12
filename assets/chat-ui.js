@@ -1,4 +1,5 @@
-// The existing chat API identifies senders by their full display name.
+import { fileSizeLabel } from './attachments.js';
+// Stable student IDs distinguish participants who share a display name.
 // Share one palette between the roster and the conversation, scoped to a team.
 const TONES = [
   ['#1e5ab3', '#eaf2ff', '#a8c5ef'],
@@ -41,7 +42,7 @@ export function createParticipantPalette(members = []) {
     return colors.get(key);
   }
   // Sorting makes the first assignment independent of the roster's API order.
-  [...new Set(members.map(member => nameKey(member.name)))].sort().forEach(colorFor);
+  [...new Set(members.map(member => nameKey(member.id || member.name)))].sort().forEach(colorFor);
   return colorFor;
 }
 
@@ -60,7 +61,7 @@ export function participantAvatar(name) {
   return avatar;
 }
 
-export function chatMessage(msg, color) {
+export function chatMessage(msg, color, downloadAttachment) {
   const entry = document.createElement('div');
   entry.className = 'chat-message' + (msg.mine ? ' mine' : '');
   entry.dataset.messageId = String(msg.id);
@@ -87,7 +88,22 @@ export function chatMessage(msg, color) {
   body.className = 'chat-message-body';
   body.textContent = msg.body;
   meta.append(sender, time);
-  bubble.append(meta, body);
+  bubble.append(meta);
+  if (msg.body) bubble.append(body);
+  if (msg.attachment) {
+    const file = document.createElement('button'); file.type = 'button'; file.className = 'chat-file';
+    const title = document.createElement('strong'); title.textContent = msg.attachment.name;
+    const detail = document.createElement('span'); detail.textContent = fileSizeLabel(msg.attachment.size) + ' · Descargar';
+    file.append(title, detail);
+    file.addEventListener('click', async () => {
+      file.disabled = true; detail.textContent = 'Descargando…';
+      try { await downloadAttachment(msg.attachment); detail.textContent = fileSizeLabel(msg.attachment.size) + ' · Descargar de nuevo'; }
+      catch(error) { detail.textContent = error.message + ' · Reintentar'; }
+      finally { file.disabled = false; }
+    });
+    bubble.append(file);
+  }
   entry.append(participantAvatar(msg.name), bubble);
   return entry;
 }
+

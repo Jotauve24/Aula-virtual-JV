@@ -1,3 +1,4 @@
+import './embed.js?v=20261012a';
 import { normalizeCode } from './model.js';
 import { drawWorld } from './world.js';
 import { configured } from './supabase-client.js';
@@ -65,3 +66,4 @@ reducedMotion.addEventListener('change', updatePreview);
 document.addEventListener('visibilitychange', updatePreview);
 window.addEventListener('pagehide', () => cancelAnimationFrame(frame));
 updatePreview();
+
