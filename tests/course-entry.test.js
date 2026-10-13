@@ -30,7 +30,8 @@ function storage(entries = {}) {
 class Element {
   constructor() {
     this.value = ''; this.textContent = ''; this.hidden = false;
-    this.dataset = {}; this.style = {}; this.listeners = new Map(); this.children = [];
+    this.dataset = {}; this.style = { setProperty(name, value) { this[name] = value; } };
+    this.listeners = new Map(); this.children = []; this.isConnected = true;
   }
   addEventListener(name, handler) { this.listeners.set(name, handler); }
   setAttribute(name, value) { this[name] = value; }
@@ -53,9 +54,16 @@ class Element {
   click() { return this.dispatch('click'); }
 }
 
-async function boot({ submitted, remembered, signedIn = true, enroll, roomError } = {}) {
+async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
+  profileFixture, roomFixture = [], sharedPresence, messages = [] } = {}) {
   const nodes = new Map();
   const get = selector => {
+    if (selector.startsWith('#')) {
+      for (const node of nodes.values()) {
+        const nested = node.querySelector(selector);
+        if (nested) return nested;
+      }
+    }
     if (!nodes.has(selector)) nodes.set(selector, new Element());
     return nodes.get(selector);
   };
@@ -68,17 +76,24 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError 
     ...(signedIn ? { [SESSION]: 'existing-private-session' } : {}) });
   const sessionStorage = storage(submitted ? { [HANDOFF]: submitted } : {});
   const calls = [];
+  const frames = [];
   let signOutCount = 0;
   const context = vm.createContext({
     document: { querySelector: get, querySelectorAll: selector => selector === '.dialog-step' ? steps
       : selector === '[data-room-tab]' ? tabs : [], createElement: () => new Element(), addEventListener() {} },
     window: { addEventListener() {} }, localStorage, sessionStorage,
-    configured: true, SKINS, SHIRTS, normalizeCode,
+    configured: true, SKINS, SHIRTS, normalizeCode, ATTACHMENT_ACCEPT: '.pdf',
     matchMedia: () => ({ matches: true }),
     cancelAnimationFrame() {}, requestAnimationFrame: () => 1,
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1,
-    avatarSVG, drawWorld() {}, createParticipantPalette: () => new Map(),
-    createRoomLayout: () => ({ rooms: [], width: 800, height: 560, spawn: { x: 400, y: 300 } }),
+    avatarSVG, drawWorld: (_canvas, options) => { frames.push(options); },
+    createParticipantPalette: () => () => '#456789',
+    applyParticipantColor() {}, participantAvatar: name => Object.assign(new Element(), { textContent: name }),
+    chatMessage: msg => Object.assign(new Element(), { textContent: msg.body }),
+    roomTheme: () => ({ accent: '#456789', card: '#eef' }), isWalkable: () => true,
+    createRoomLayout: count => ({ rooms: Array.from({ length: count }, (_, i) => ({
+      arrival: { x: 400, y: 140 + i * 30 }, label: { x: 400, y: 100 + i * 30 }
+    })), width: 800, height: 560, spawn: { x: 400, y: 300 } }),
     studentSignedIn: () => !!localStorage.getItem(SESSION),
     studentSignOut: () => { signOutCount++; localStorage.removeItem(SESSION); },
     signInStudentAnonymously: async () => { localStorage.setItem(SESSION, 'existing-private-session'); },
@@ -88,15 +103,22 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError 
         if (enroll) await enroll(body);
         return { course_id: 'course-fixture', course_name: 'Materia de prueba' };
       }
-      if (name === 'my_profile') return { firstName: 'Ana', lastName: 'Prueba', topicId: 'existing-team', avatar: {} };
+      if (name === 'my_profile') return profileFixture || { firstName: 'Ana', lastName: 'Prueba', topicId: 'existing-team', avatar: {} };
       if (name === 'course_room' && roomError) throw new Error(roomError);
+      if (name === 'course_room') return roomFixture;
+      if (name === 'team_chat_read') return messages;
+      if (name === 'classroom_presence_ping') {
+        sharedPresence?.set(profileFixture.id, { id: profileFixture.id, name: profileFixture.firstName,
+          avatar: profileFixture.avatar, x: body.p_x, y: body.p_y, direction: body.p_direction });
+        return [...(sharedPresence?.values() || [])].filter(student => student.id !== profileFixture.id);
+      }
       throw new Error('Unexpected RPC: ' + name);
     }
   });
   vm.runInContext(source, context, { filename: 'assets/live.js' });
   const settle = () => new Promise(resolve => setImmediate(resolve));
   await settle();
-  return { get, fields, calls, localStorage, sessionStorage, settle,
+  return { get, fields, calls, frames, localStorage, sessionStorage, settle,
     state: expression => vm.runInContext(expression, context), signOutCount: () => signOutCount };
 }
 
@@ -239,4 +261,47 @@ test('a live student session leaves the classroom when the course is disabled', 
   assert.equal(page.get('#room').dataset.stage, 'registration');
   assert.equal(page.localStorage.getItem(LAST_CODE), null);
   assert.match(page.get('#registration-error').textContent, /ya no está disponible/);
+});
+
+test('two connected students appear together in the same classroom', async () => {
+  const sharedPresence = new Map();
+  const student = (id, firstName) => ({ id, firstName, lastName: 'Prueba', topicId: null,
+    avatar: { skin: 1, shirt: 0, hair: 'long' } });
+  const ana = await boot({ submitted: NEW, profileFixture: student('student-a', 'Ana'), sharedPresence });
+  const luis = await boot({ submitted: NEW, profileFixture: student('student-b', 'Luis'), sharedPresence });
+  await ana.state('refreshPresence()');
+  assert.equal(ana.get('#online-count').textContent, 'En el aula: 2');
+  assert.equal(luis.get('#online-count').textContent, 'En el aula: 2');
+  assert.equal(ana.frames.at(-1).peers[0].name, 'Luis');
+  assert.equal(luis.frames.at(-1).peers[0].name, 'Ana');
+  assert.equal(ana.frames.at(-1).player.direction, 'down');
+});
+
+test('unread alert counts teammates, survives background refresh and clears only when chat is opened', async () => {
+  const messages = [
+    { id: 1, senderId: 'self', body: 'Hola', mine: true },
+    { id: 2, senderId: 'other', body: '¿Empezamos?', mine: false }
+  ];
+  const profileFixture = { id: 'student-a', firstName: 'Ana', lastName: 'Prueba',
+    topicId: 'team-1', avatar: { skin: 1 } };
+  const roomFixture = [{ id: 'team-1', name: 'Equipo 1', position: 1,
+    members: [{ id: 'student-a', name: 'Ana Prueba', mine: true }], capacity: 5 }];
+  const page = await boot({ submitted: NEW, profileFixture, roomFixture, messages });
+  assert.equal(page.get('#chat-unread').textContent, '1');
+  assert.equal(page.get('#chat-alert').hidden, false);
+  assert.match(page.state('document.title'), /^\(1\) Mensajes/);
+  await page.state('refreshChat()');
+  assert.equal(page.get('#chat-alert').hidden, false);
+  page.get('#chat-alert-open').click();
+  await page.settle();
+  assert.equal(page.get('#chat-alert').hidden, true);
+  assert.equal(page.get('#chat-unread').hidden, true);
+  assert.equal(page.localStorage.getItem('aula-chat-seen:course-fixture:student-a:team-1'), '2');
+  page.state('setRoomTab("aula")');
+  messages.push({ id: 3, senderId: 'other', body: 'Mensaje nuevo', mine: false });
+  await page.state('refreshChat()');
+  assert.equal(page.get('#chat-unread').textContent, '1');
+  messages.push({ id: 4, senderId: 'self', body: 'Yo también', mine: true });
+  await page.state('refreshChat()');
+  assert.equal(page.get('#chat-unread').textContent, '1');
 });

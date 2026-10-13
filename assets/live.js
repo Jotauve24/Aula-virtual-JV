@@ -2,7 +2,7 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261013g';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261013h';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment } from './world-layout.js?v=20261013f';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
@@ -11,9 +11,10 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let courseId = '', profile = null, topics = [], selectedTopic = null;
 let look = { skin: 1, shirt: 0, outfit: 0, hair: 'short', presentation: 'hombre' };
 let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, onArrival = null;
-let chatTimer = 0, chatLoading = false, chatTeamId = '';
+let chatTimer = 0, chatLoading = false, chatTeamId = '', unreadCount = 0;
 let participantColor = createParticipantPalette();
 let layout = createRoomLayout(0), activeTab = 'aula', roomRefresh = 0;
+let presenceTimer = 0, presenceLoading = false, peers = [];
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
 function show(stage) {
   stopAnimation();
@@ -31,6 +32,7 @@ function show(stage) {
   $('#registration h2').id = stage === 'registration' ? 'dialog-title' : 'registration-title';
   $('#avatar h2').id = stage === 'avatar' ? 'dialog-title' : 'avatar-title';
   document.title = 'Mi aula · Aula Encuentro';
+  renderChatNotice(onboarding ? 0 : unreadCount);
   draw();
 }
 function message(value) {
@@ -234,11 +236,16 @@ $('#edit-avatar').addEventListener('click', () => { show('avatar'); renderAvatar
 
 async function enterRoom() {
   topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
+  const newLayout = createRoomLayout(topics.length);
+  const idHash = [...String(profile.id || '')].reduce((hash, char) => ((hash * 31 + char.charCodeAt(0)) >>> 0), 0);
+  player = { x: 208 + idHash % 13 * 32, y: newLayout.spawn.y, direction: 'down' };
   show('room'); renderTopics(); draw();
   status(profile.topicId ? 'Tu lugar está guardado. Abre Mi equipo o Chat para coordinarte.' : 'Explora los temas y elige tu equipo.');
   clearInterval(chatTimer);
-  chatTimer = setInterval(() => { if (!document.hidden && activeTab === 'chat') refreshChat(); }, 8000);
+  chatTimer = setInterval(() => { if (!document.hidden && profile?.topicId) refreshChat(); }, 6000);
   clearInterval(roomRefresh); roomRefresh = setInterval(refreshRoom, 15000);
+  clearInterval(presenceTimer); presenceTimer = setInterval(refreshPresence, 2500);
+  refreshPresence();
 }
 function sortTopics(rows) {
   return rows.sort((a, b) => (a.position || 0) - (b.position || 0) || a.id.localeCompare(b.id));
@@ -278,11 +285,13 @@ function renderTeamChat(team) {
     host.hidden = true;
     host.replaceChildren();
     chatTeamId = '';
+    renderChatNotice(0);
     $('#chat-locked').hidden = false;
     return;
   }
   $('#chat-locked').hidden = true; host.hidden = false;
   if (chatTeamId !== team.id) {
+    renderChatNotice(0);
     participantColor = createParticipantPalette(team.members);
     host.replaceChildren(teamChatPanel(team));
     chatTeamId = team.id;
@@ -424,13 +433,38 @@ function teamChatPanel(team) {
     element('p', 'Solo quienes integran este equipo pueden leer y escribir aquí.', 'field-hint'));
   return section;
 }
+function renderChatNotice(count) {
+  unreadCount = count;
+  $('#chat-unread').hidden = !count;
+  $('#chat-unread').textContent = count > 99 ? '99+' : String(count);
+  $('#chat-alert').hidden = !count;
+  $('#chat-alert-text').textContent = count === 1
+    ? 'Tienes 1 mensaje nuevo en el chat de tu equipo.'
+    : `Tienes ${count} mensajes nuevos en el chat de tu equipo.`;
+  document.title = count ? `(${count}) Mensajes · Mi aula · Aula Encuentro` : 'Mi aula · Aula Encuentro';
+}
+function updateChatNotice(messages, topicId) {
+  const key = `aula-chat-seen:${courseId}:${profile.id}:${topicId}`;
+  const lastSeen = BigInt(localStorage.getItem(key) || '0');
+  const newest = messages.length ? BigInt(messages.at(-1).id) : 0n;
+  if (activeTab === 'chat' && !document.hidden && $('#room').dataset.stage === 'room') {
+    if (newest > lastSeen) localStorage.setItem(key, String(newest));
+    renderChatNotice(0);
+  } else {
+    renderChatNotice(messages.filter(msg => !msg.mine && BigInt(msg.id) > lastSeen).length);
+  }
+}
+$('#chat-alert-open').addEventListener('click', () => setRoomTab('chat'));
 async function refreshChat(forceBottom = false) {
   const box = $('#team-chat-messages');
   if (!box || chatLoading || !profile?.topicId) return;
+  const topicId = profile.topicId;
+  const currentCourseId = courseId;
   chatLoading = true;
   try {
-    const messages = await studentRpc('team_chat_read', { p_course_id: courseId, p_topic_id: profile.topicId });
-    if (!box.isConnected) return;
+    const messages = await studentRpc('team_chat_read', { p_course_id: currentCourseId, p_topic_id: topicId });
+    if (!box.isConnected || courseId !== currentCourseId || profile?.topicId !== topicId) return;
+    updateChatNotice(messages, topicId);
     const signature = JSON.stringify(messages);
     if (box.dataset.signature === signature) {
       if (forceBottom) box.scrollTop = box.scrollHeight;
@@ -517,7 +551,27 @@ function draw(time = 0) {
   const inRoom = $('#room').dataset.stage === 'room';
   if (!inRoom) { canvas.width = 800; canvas.height = 560; $('#room-map').style.aspectRatio = '10 / 7'; }
   if (!$('#room').hidden) drawWorld(canvas, { layout: inRoom ? layout : undefined, labels: false, actors: false,
-    player: profile ? { ...player, ...look } : undefined, walking: path.length > 0, time });
+    player: profile ? { ...player, ...look } : undefined, peers: inRoom ? peers : [], walking: path.length > 0, time });
+}
+async function refreshPresence() {
+  if (presenceLoading || document.hidden || !profile?.id || !courseId || $('#room').dataset.stage !== 'room') return;
+  const currentCourseId = courseId, studentId = profile.id;
+  presenceLoading = true;
+  try {
+    const nearby = await studentRpc('classroom_presence_ping', {
+      p_course_id: currentCourseId, p_x: Math.round(player.x), p_y: Math.round(player.y),
+      p_direction: player.direction
+    });
+    if (courseId !== currentCourseId || profile?.id !== studentId || $('#room').dataset.stage !== 'room') return;
+    peers = (Array.isArray(nearby) ? nearby : []).filter(peer => peer.id !== studentId &&
+      Number.isFinite(peer.x) && Number.isFinite(peer.y) && peer.x >= 28 && peer.x <= layout.width - 28 &&
+      peer.y >= 28 && peer.y <= layout.height - 28);
+    $('#online-count').textContent = `En el aula: ${peers.length + 1}`;
+    $('#online-count').hidden = false;
+    draw();
+  } catch (_) {
+    // A temporary disconnect must not stop movement or messaging.
+  } finally { presenceLoading = false; }
 }
 function walkTo(target, arrived = null) {
   if ($('#room').dataset.stage !== 'room') return;
@@ -581,14 +635,20 @@ document.addEventListener('keydown', event => {
 });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) stopAnimation();
-  else if (!$('#room').hidden) { path = []; draw(); }
+  else if (!$('#room').hidden) { path = []; draw(); refreshPresence(); if (profile?.topicId) refreshChat(); }
 });
 window.addEventListener('pagehide', stopAnimation);
+function stopRoomPolling() {
+  clearInterval(chatTimer); clearInterval(roomRefresh); clearInterval(presenceTimer);
+  chatTimer = roomRefresh = presenceTimer = 0;
+  peers = [];
+  $('#online-count').hidden = true;
+  renderChatNotice(0);
+}
 $('#logout').addEventListener('click', () => {
   if (!confirm('Al salir perderás el acceso a este perfil desde este dispositivo. ¿Deseas continuar?')) return;
   studentSignOut(); localStorage.removeItem('aula-student-course-code');
-  clearInterval(chatTimer); clearInterval(roomRefresh);
-  chatTimer = 0; chatTeamId = '';
+  stopRoomPolling(); chatTeamId = '';
   $('#team-chat-host').hidden = true;
   $('#team-chat-host').replaceChildren();
   courseId = ''; profile = null; topics = []; selectedTopic = null;
@@ -615,7 +675,6 @@ function setRoomTab(name) {
     $('#panel-' + tab.dataset.roomTab).hidden = !selected;
   }
   if (name === 'chat') {
-    $('#chat-unread').hidden = true;
     const box = $('#team-chat-messages');
     const firstOpen = box && !box.dataset.opened;
     if (firstOpen) { box.dataset.opened = 'true'; box.scrollTop = box.scrollHeight; }
@@ -643,14 +702,9 @@ async function refreshRoom() {
     if (JSON.stringify(ordered) !== JSON.stringify(topics) || currentProfile.topicId !== profile.topicId || currentProfile.registrationOpen !== profile.registrationOpen) {
       topics = ordered; profile = currentProfile; renderTopics();
     }
-    if (activeTab !== 'chat' && profile.topicId) {
-      const rows = await studentRpc('team_chat_read',{p_course_id:courseId,p_topic_id:profile.topicId});
-      const box = $('#team-chat-messages');
-      if (rows.length && box && box.dataset.lastMessage !== String(rows.at(-1).id)) $('#chat-unread').hidden = false;
-    }
   } catch (error) {
     if (error.message === 'Materia deshabilitada') {
-      clearInterval(chatTimer); clearInterval(roomRefresh);
+      stopRoomPolling();
       courseId = ''; profile = null; topics = [];
       localStorage.removeItem('aula-student-course-code');
       questions = ['code', 'firstName', 'lastName', 'email', 'phone']; questionIndex = 0;

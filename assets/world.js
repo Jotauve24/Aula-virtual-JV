@@ -459,5 +459,19 @@ function drawRoomWorld(canvas, options) {
   });
   rect(ctx, 369, layout.height - 51, 62, 24, '#8bc0a3');
   if (!layout.rooms.length) sign(ctx, 400, 155, 'BIENVENIDO', '#28594c');
+  const occupied = options.player ? [{ x: options.player.x, y: options.player.y }] : [];
+  for (const peer of options.peers || []) {
+    let x = peer.x;
+    // Nearby people stand side by side on screen, even if their saved coordinates overlap.
+    for (const offset of [0, -32, 32, -64, 64, -96, 96]) {
+      const candidate = Math.max(32, Math.min(layout.width - 32, peer.x + offset));
+      if (!occupied.some(other => Math.abs(other.x - candidate) < 27 && Math.abs(other.y - peer.y) < 45)) {
+        x = candidate; break;
+      }
+    }
+    occupied.push({ x, y: peer.y });
+    avatar(ctx, x, peer.y, peer.avatar || {});
+    nameTag(ctx, x, peer.y + 8, peer.name || 'Compañero', '#4c315c');
+  }
   if (options.player) { avatar(ctx, options.player.x, options.player.y, options.player, options.walking ? Math.sin((options.time || 0)/85)*2 : 0); nameTag(ctx, options.player.x, options.player.y + 8, 'Tú', '#28594c'); }
 }

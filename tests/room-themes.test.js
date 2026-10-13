@@ -56,3 +56,17 @@ test('an unpaired final group sits below the center and every room remains reach
     }
   }
 });
+
+test('the map draws two overlapping students with separate visible names', () => {
+  const names = [];
+  const ctx = { fillRect() {}, beginPath() {}, ellipse() {}, fill() {},
+    measureText: text => ({ width: text.length * 7 }),
+    fillText: (text, x) => names.push([text, x]) };
+  const canvas = { width: 0, height: 0, getContext: () => ctx };
+  drawWorld(canvas, { layout: createRoomLayout(0), player: { x: 400, y: 280, skin: 1, shirt: 0 },
+    peers: [{ x: 400, y: 280, name: 'Ana', avatar: { skin: 1, shirt: 5, hair: 'long' } }] });
+  const peer = names.find(([label]) => label === 'Ana');
+  const me = names.find(([label]) => label === 'Tú');
+  assert.ok(peer && me);
+  assert.ok(Math.abs(peer[1] - me[1]) >= 27);
+});
