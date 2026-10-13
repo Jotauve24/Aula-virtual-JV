@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { drawWorld, roomTheme, ROOM_THEMES } from '../assets/world.js';
-import { createRoomLayout, isWalkable } from '../assets/world-layout.js';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment } from '../assets/world-layout.js';
 
 test('ten desks have different themed furnishings while their walking layout stays intact', () => {
   const layout = createRoomLayout(10);
@@ -34,4 +34,25 @@ test('ten desks have different themed furnishings while their walking layout sta
 test('rooms beyond ten still receive distinct color palettes', () => {
   const accents = Array.from({ length: 40 }, (_, i) => roomTheme(i).accent);
   assert.equal(new Set(accents).size, 40);
+});
+
+test('an unpaired final group sits below the center and every room remains reachable', () => {
+  for (let count = 1; count <= 10; count++) {
+    const layout = createRoomLayout(count);
+    const last = layout.rooms.at(-1);
+    assert.equal(last.x, count % 2 ? 250 : 460);
+    if (count % 2) {
+      assert.equal(last.label.x, layout.width / 2);
+      assert.ok(isWalkable(400, last.y + 3, layout));
+      assert.ok(isWalkable(400, last.y + 217, layout));
+      if (count > 1) assert.deepEqual(layout.rooms.slice(-3, -1).map(room => room.x), [40, 460]);
+    }
+    assert.ok(isWalkable(layout.spawn.x, layout.spawn.y, layout));
+    for (const room of layout.rooms) {
+      const path = findPath(layout.spawn, room.arrival, layout);
+      assert.deepEqual(path.at(-1), room.arrival, `entry to group ${layout.rooms.indexOf(room) + 1} of ${count}`);
+      assert.ok([layout.spawn, ...path].every((point, index, points) =>
+        index === 0 || canWalkSegment(points[index - 1], point, layout)));
+    }
+  }
 });

@@ -167,7 +167,7 @@ export function drawWorld(canvas, options = {}) {
   if(options.decorative){avatar(ctx,407,276,{skin:1,shirt:0,hair:'curly'},Math.sin(t/180)*1.2);nameTag(ctx,407,286,'Tú');nameTag(ctx,320,307+shift,'¡Hola!');}
   if(options.player){avatar(ctx,options.player.x,options.player.y,options.player,options.walking?Math.sin(t/85)*2:0);nameTag(ctx,options.player.x,options.player.y+8,'Tú', '#28594c');}
 }
-export { isWalkable, findPath } from './world-layout.js';
+export { isWalkable, findPath } from './world-layout.js?v=20261013f';
 
 function roomPattern(ctx, room, theme) {
   const x = room.x, y = room.y;
@@ -436,9 +436,16 @@ function drawRoomWorld(canvas, options) {
     themeProp(ctx, room.x + 25, room.y + 154, theme);
     themeProp(ctx, room.x + 249, room.y + 87, theme);
     room.walls.forEach(w => { rect(ctx, w.x, w.y, w.w, w.h, theme.tile); rect(ctx, w.x, w.y - 3, w.w, 3, '#fffaf0'); });
-    const doorX = room.right ? room.x : room.x + room.w;
-    rect(ctx, doorX - 9, room.y + 135, 18, 59, '#85858e');
-    rect(ctx, doorX - 9, room.y + 135, 18, 5, theme.pop);
+    if (room.center) {
+      rect(ctx, room.x + 130, room.y - 3, 40, 10, '#85858e');
+      rect(ctx, room.x + 130, room.y + 7, 40, 4, theme.pop);
+      rect(ctx, room.x + 130, room.y + 213, 40, 10, '#85858e');
+      rect(ctx, room.x + 130, room.y + 209, 40, 4, theme.pop);
+    } else {
+      const doorX = room.right ? room.x : room.x + room.w;
+      rect(ctx, doorX - 9, room.y + 135, 18, 59, '#85858e');
+      rect(ctx, doorX - 9, room.y + 135, 18, 5, theme.pop);
+    }
   });
   rect(ctx, 369, layout.height - 51, 62, 24, '#8bc0a3');
   if (!layout.rooms.length) sign(ctx, 400, 155, 'BIENVENIDO', '#28594c');

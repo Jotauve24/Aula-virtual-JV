@@ -4,19 +4,31 @@ export function createRoomLayout(count = 0) {
   const rows = Math.max(1, Math.ceil(count / 2));
   const layout = { width: 800, height: rows * 240 + 80, rooms: [], obstacles: [], spawn: { x: 400, y: rows * 240 + 40 } };
   for (let i = 0; i < count; i++) {
-    const right = i % 2 === 1, x = right ? 460 : 40, y = 40 + Math.floor(i / 2) * 240;
-    const room = { x, y, w: 300, h: 220, right,
+    const center = count % 2 === 1 && i === count - 1;
+    const right = !center && i % 2 === 1;
+    const x = center ? 250 : right ? 460 : 40, y = 40 + Math.floor(i / 2) * 240;
+    const room = { x, y, w: 300, h: 220, right, center,
       label: { x: x + 150, y: y + 38 },
       desk: { x: x + 76, y: y + 76, w: 142, h: 74 },
       arrival: { x: x + 150, y: y + 182 },
       shelf: { x: x + 26, y: y + 12, w: 80, h: 32 },
       plant: { x: x + 256, y: y + 34, w: 28, h: 28 } };
-    const doorX = right ? x : x + 294;
-    room.walls = [
-      { x, y, w: 300, h: 6 }, { x, y: y + 214, w: 300, h: 6 },
-      { x: right ? x + 294 : x, y, w: 6, h: 220 },
-      { x: doorX, y, w: 6, h: 130 }, { x: doorX, y: y + 200, w: 6, h: 20 }
-    ];
+    if (center) {
+      // A centered final room bridges the hall above and the entrance below.
+      // Both openings must be real gaps in the collision map, not just paint.
+      room.walls = [
+        { x, y, w: 130, h: 6 }, { x: x + 170, y, w: 130, h: 6 },
+        { x, y: y + 214, w: 130, h: 6 }, { x: x + 170, y: y + 214, w: 130, h: 6 },
+        { x, y, w: 6, h: 220 }, { x: x + 294, y, w: 6, h: 220 }
+      ];
+    } else {
+      const doorX = right ? x : x + 294;
+      room.walls = [
+        { x, y, w: 300, h: 6 }, { x, y: y + 214, w: 300, h: 6 },
+        { x: right ? x + 294 : x, y, w: 6, h: 220 },
+        { x: doorX, y, w: 6, h: 130 }, { x: doorX, y: y + 200, w: 6, h: 20 }
+      ];
+    }
     layout.rooms.push(room);
     layout.obstacles.push(...room.walls, room.desk, room.shelf, room.plant);
   }
@@ -75,3 +87,4 @@ export function findPath(from, to, layout = defaultLayout) {
   if (canWalkSegment(last, to, layout) && Math.hypot(last.x - to.x, last.y - to.y) < step * 2) path.push(to);
   return path;
 }
+
