@@ -1,7 +1,7 @@
 import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js';
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
-import { SKINS, SHIRTS } from './model.js';
+import { SKINS, SHIRTS, normalizeCode } from './model.js';
 import { avatarSVG, drawWorld } from './world.js?v=20261011b';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment } from './world-layout.js';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
@@ -64,11 +64,12 @@ const questionText = {
   phone: ['Por último, ¿tu número de teléfono?', 'Tu teléfono solo lo verá el docente; no se muestra a tus compañeros.']
 };
 const registrationForm = $('#registration-form');
-const savedCode = sessionStorage.getItem('aula-course-code');
-if (savedCode) {
-  registrationForm.elements.namedItem('code').value = savedCode;
-  sessionStorage.removeItem('aula-course-code');
-}
+// An explicit entry must win over the code remembered from an earlier visit.
+const submittedCode = normalizeCode(sessionStorage.getItem('aula-course-code') || '');
+const rememberedCode = normalizeCode(localStorage.getItem('aula-student-course-code') || '');
+const entryCode = submittedCode || rememberedCode;
+registrationForm.elements.namedItem('code').value = entryCode;
+sessionStorage.removeItem('aula-course-code');
 let questions = registrationForm.elements.namedItem('code').value.trim()
   ? ['firstName', 'lastName', 'email', 'phone']
   : ['code', 'firstName', 'lastName', 'email', 'phone'];
@@ -90,12 +91,12 @@ $('#next-question').addEventListener('click', () => {
   const field = registrationForm.elements.namedItem(questions[questionIndex]);
   if (!field.reportValidity()) return;
   if (questions[questionIndex] === 'code' &&
-      !/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(field.value.trim().toUpperCase())) {
+      !/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(normalizeCode(field.value))) {
     message('Revisa el código de tu materia. Tiene el formato MAT-XXXXX-XXXXX-XXXXX.');
     field.focus(); return;
   }
   message('');
-  if (questions[questionIndex] === 'code') field.value = field.value.trim().toUpperCase();
+  if (questions[questionIndex] === 'code') field.value = normalizeCode(field.value);
   questionIndex++; renderQuestion(true);
 });
 $('#previous-question').addEventListener('click', () => { questionIndex--; renderQuestion(true); });
@@ -111,14 +112,30 @@ renderQuestion();
 show('registration');
 if (!configured) { $('#room').hidden = true; $('#setup').hidden = false; }
 else {
-  const priorCode = localStorage.getItem('aula-student-course-code');
-  if (studentSignedIn() && priorCode) {
-    $('#registration-form').elements.namedItem('code').value = priorCode;
-    run(() => enterCourse(priorCode));
+  if (studentSignedIn() && entryCode) {
+    run(async () => {
+      try { await enterCourse(entryCode); }
+      catch (error) {
+        // This browser has a session, but may not have a profile in this subject.
+        // Keep the registration form ready instead of treating missing details as a failure.
+        if (error.message !== 'Revisa correo, nombre, apellido y teléfono') throw error;
+      }
+    });
   }
 }
 async function enterCourse(code, details = {}) {
-  const result = await studentRpc('enroll_student', { p_code: code, ...details });
+  code = normalizeCode(code);
+  let result;
+  try { result = await studentRpc('enroll_student', { p_code: code, ...details }); }
+  catch (error) {
+    if (error.message !== 'Materia no encontrada') throw error;
+    // Forget only the rejected shortcut. The anonymous session owns the profile and team.
+    if (normalizeCode(localStorage.getItem('aula-student-course-code') || '') === code)
+      localStorage.removeItem('aula-student-course-code');
+    questions = ['code', 'firstName', 'lastName', 'email', 'phone'];
+    questionIndex = 0; show('registration'); renderQuestion(true);
+    throw new Error('No encontramos una materia con ese código. Revisa el código actual que te compartió tu docente.');
+  }
   courseId = result.course_id;
   localStorage.setItem('aula-student-course-code', code);
   profile = await studentRpc('my_profile', { p_course_id: courseId });
@@ -132,7 +149,7 @@ async function enterCourse(code, details = {}) {
 }
 $('#registration-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const f = event.target.elements;
-  const code = f.namedItem('code').value.trim().toUpperCase();
+  const code = normalizeCode(f.namedItem('code').value);
   if (!/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(code))
     throw new Error('Revisa el código de tu materia. Tiene el formato MAT-XXXXX-XXXXX-XXXXX.');
   const phone = f.namedItem('phone').value.trim();
@@ -594,3 +611,4 @@ async function refreshRoom() {
   } catch { /* Keep the current classroom usable during a temporary disconnect. */ }
   finally { refreshingRoom = false; }
 }
+
