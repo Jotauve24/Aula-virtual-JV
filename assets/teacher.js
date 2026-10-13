@@ -1,5 +1,5 @@
 import './embed.js?v=20261012a';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut } from './supabase-client.js?v=20261012a';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=20261013d';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 function show(id) { for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id; }
@@ -19,20 +19,41 @@ $('#login').addEventListener('submit', event => { event.preventDefault(); run(as
   show('verify'); $('#notice').textContent = 'Revisa el correo docente y abre el enlace de ingreso en este navegador.';
 }); });
 async function loadCourses() {
-  const courses = await rpc('my_courses'); show('dashboard');
+  const [courses, disabled] = await Promise.all([rpc('my_courses'), rpc('teacher_disabled_courses')]);
+  show('dashboard');
   const list = $('#courses');
   if (!courses.length) {
     const empty = document.createElement('p'); empty.className = 'empty-state';
     empty.textContent = 'Todavía no tienes materias. Crea la primera para obtener su código.';
-    list.replaceChildren(empty); return;
-  }
-  list.replaceChildren(...courses.sort((a, b) => a.name.localeCompare(b.name, 'es')).map(course => {
+    list.replaceChildren(empty);
+  } else list.replaceChildren(...courses.sort((a, b) => a.name.localeCompare(b.name, 'es')).map(course => {
     const button = document.createElement('button'); button.className = 'course-card'; button.type = 'button';
     const title = document.createElement('strong'); title.textContent = course.name;
     const meta = document.createElement('small');
     meta.textContent = `${course.student_count} estudiantes · ${course.topic_count} temas · Abrir materia →`;
     button.append(title, meta);
     button.addEventListener('click', () => run(() => openCourse(course.id))); return button;
+  }));
+  $('#disabled-area').hidden = !disabled.length;
+  $('#disabled-courses').replaceChildren(...disabled.sort((a, b) => a.name.localeCompare(b.name, 'es')).map(course => {
+    const card = document.createElement('article'); card.className = 'course-card disabled-course-card';
+    const open = document.createElement('button'); open.type = 'button'; open.className = 'course-card-link';
+    const title = document.createElement('strong'); title.textContent = course.name;
+    const meta = document.createElement('small');
+    meta.textContent = `${course.student_count} estudiantes · ${course.topic_count} temas · Código inactivo · Ver materia →`;
+    open.append(title, meta); open.addEventListener('click', () => run(() => openCourse(course.id)));
+    const actions = document.createElement('div'); actions.className = 'disabled-course-actions';
+    const restore = document.createElement('button'); restore.type = 'button'; restore.className = 'secondary';
+    restore.textContent = 'Restaurar';
+    restore.addEventListener('click', () => run(async () => {
+      restore.disabled = true;
+      try { await rpc('teacher_set_course_active', { p_course_id: course.id, p_active: true });
+        await loadCourses(); teacherSuccess('Materia restaurada. Su código vuelve a funcionar.'); }
+      finally { restore.disabled = false; }
+    }));
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'danger-outline';
+    remove.textContent = 'Eliminar'; remove.addEventListener('click', () => openDeleteCourse({ ...course, active: false }));
+    actions.append(restore, remove); card.append(open, actions); return card;
   }));
 }
 $('#new-course').addEventListener('submit', event => { event.preventDefault(); run(async () => {
@@ -53,6 +74,19 @@ async function openCourse(id) {
   show('detail'); $('#course-title').textContent = overview.course.name;
   $('#course-summary').textContent = `${overview.students.length} estudiantes · ${overview.topics.length} temas`;
   renderCourseCode();
+  const active = overview.course.active;
+  $('.course-management').dataset.active = String(active);
+  $('.course-code-panel').dataset.active = String(active);
+  $('#course-state-label').textContent = active ? 'Materia activa' : 'Materia deshabilitada';
+  $('#course-state-description').textContent = active
+    ? 'El código permite ingresar al aula.'
+    : 'No aparece entre las materias activas. El código y el acceso de estudiantes están bloqueados.';
+  $('#toggle-course').textContent = active ? 'Deshabilitar materia' : 'Restaurar materia';
+  $('#registration').hidden = !active;
+  $('#new-topic').hidden = !active;
+  $('#group-count-form').hidden = !active;
+  $('#generate-course-code').hidden = !active;
+  if (!active) $('#course-code-status').textContent = 'Código deshabilitado. Volverá a funcionar si restauras la materia.';
   if (!overview.topics.length) {
     const empty = document.createElement('p'); empty.className = 'empty-state';
     empty.textContent = 'Aún no hay temas. Añade uno para que los estudiantes puedan elegir equipo.';
@@ -64,6 +98,7 @@ async function openCourse(id) {
     const instructions = document.createElement('p'); instructions.textContent = topic.instructions || 'Sin indicaciones todavía.';
     const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'secondary'; edit.textContent = 'Editar tema y cupos';
     edit.addEventListener('click', () => editTopic(topic));
+    edit.hidden = !active;
     card.append(title, capacity, instructions, edit); return card;
   }));
   const groups = [...overview.topics.map(topic => ({ id: topic.id, name: topic.name, capacity: topic.capacity })),
@@ -86,7 +121,7 @@ async function openCourse(id) {
       const name = document.createElement('strong'); name.textContent = `${student.lastName}, ${student.firstName}`;
       const contact = document.createElement('span'); contact.textContent = [student.email || 'Sin correo', student.phone || 'Sin teléfono'].join(' · ');
       row.append(name, contact);
-      if (group.id) {
+      if (group.id && active) {
         const release = document.createElement('button'); release.type = 'button';
         release.className = 'button secondary'; release.textContent = 'Liberar del grupo';
         release.addEventListener('click', () => {
@@ -119,8 +154,79 @@ $('#registration').addEventListener('click', () => run(async () => {
   try { await rpc('teacher_set_registration', { p_course_id: courseId, p_open: !overview.course.registrationOpen }); await openCourse(courseId); }
   finally { button.disabled = false; }
 }));
+$('#toggle-course').addEventListener('click', () => run(async () => {
+  const active = overview.course.active;
+  if (active && !confirm('¿Deshabilitar esta materia? Desaparecerá de las materias activas y sus estudiantes no podrán entrar con el código ni usar el aula. Puedes restaurarla después.')) return;
+  const button = $('#toggle-course'); button.disabled = true;
+  try {
+    await rpc('teacher_set_course_active', { p_course_id: courseId, p_active: !active });
+    await loadCourses();
+    teacherSuccess(active ? 'Materia deshabilitada. El código ya no permite ingresar.'
+      : 'Materia restaurada. Su código vuelve a funcionar.');
+  } finally { button.disabled = false; }
+}));
+$('#delete-course').addEventListener('click', () => openDeleteCourse({ ...overview.course,
+  student_count: overview.students.length, topic_count: overview.topics.length }));
 $('#back').addEventListener('click', () => run(loadCourses));
 $('#logout').addEventListener('click', () => { signOut(); show('login'); });
+
+let deleteTarget = null, deletingCourse = false;
+function openDeleteCourse(course) {
+  deleteTarget = course;
+  $('#delete-course-name').textContent = course.name;
+  $('#delete-course-counts').textContent = `${course.student_count} estudiantes · ${course.topic_count} equipos. También se eliminarán los mensajes y archivos.`;
+  $('#delete-course-confirmation').value = '';
+  $('#confirm-course-delete').disabled = true;
+  $('#delete-course-progress').textContent = '';
+  $('#delete-course-error').hidden = true;
+  $('#delete-course-dialog').showModal();
+  $('#delete-course-confirmation').focus();
+}
+$('#delete-course-confirmation').addEventListener('input', event => {
+  $('#confirm-course-delete').disabled = deletingCourse || event.target.value.trim() !== deleteTarget?.name;
+});
+$('#delete-course-dialog').addEventListener('cancel', event => { if (deletingCourse) event.preventDefault(); });
+$('#cancel-course-delete').addEventListener('click', () => {
+  if (deletingCourse) return;
+  $('#delete-course-dialog').close(); deleteTarget = null;
+  run(loadCourses);
+});
+$('#delete-course-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const course = deleteTarget;
+  if (!course || deletingCourse || $('#delete-course-confirmation').value.trim() !== course.name) return;
+  deletingCourse = true;
+  const submit = $('#confirm-course-delete'); submit.disabled = true;
+  $('#cancel-course-delete').disabled = true;
+  $('#delete-course-confirmation').disabled = true;
+  $('#delete-course-error').hidden = true;
+  const progress = $('#delete-course-progress');
+  try {
+    if (course.active) {
+      progress.textContent = 'Deshabilitando el acceso…';
+      await rpc('teacher_set_course_active', { p_course_id: course.id, p_active: false });
+      course.active = false;
+    }
+    progress.textContent = 'Revisando archivos de la materia…';
+    const paths = await rpc('teacher_course_file_paths', { p_course_id: course.id });
+    progress.textContent = paths.length ? `Eliminando ${paths.length} archivos…` : 'Eliminando materia y estudiantes…';
+    await deleteTeacherCourseFiles(course.id, paths);
+    progress.textContent = 'Eliminando materia y estudiantes…';
+    await rpc('teacher_delete_course', { p_course_id: course.id });
+    $('#delete-course-dialog').close(); deleteTarget = null;
+    try { await loadCourses(); teacherSuccess('Materia eliminada. Su código dejó de funcionar.'); }
+    catch { alertError('La materia fue eliminada, pero no se pudo actualizar la lista. Recarga el panel.'); }
+  } catch (error) {
+    progress.textContent = '';
+    $('#delete-course-error').textContent = (course.active ? '' : 'La materia está deshabilitada. Puedes reintentar la eliminación. ') + error.message;
+    $('#delete-course-error').hidden = false;
+  } finally {
+    deletingCourse = false;
+    $('#cancel-course-delete').disabled = false;
+    $('#delete-course-confirmation').disabled = false;
+    submit.disabled = !deleteTarget || $('#delete-course-confirmation').value.trim() !== deleteTarget.name;
+  }
+});
 
 function renderCourseCode() {
   const code = overview.course.accessCode;

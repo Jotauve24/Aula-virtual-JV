@@ -53,7 +53,7 @@ class Element {
   click() { return this.dispatch('click'); }
 }
 
-async function boot({ submitted, remembered, signedIn = true, enroll } = {}) {
+async function boot({ submitted, remembered, signedIn = true, enroll, roomError } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (!nodes.has(selector)) nodes.set(selector, new Element());
@@ -89,6 +89,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll } = {}) {
         return { course_id: 'course-fixture', course_name: 'Materia de prueba' };
       }
       if (name === 'my_profile') return { firstName: 'Ana', lastName: 'Prueba', topicId: 'existing-team', avatar: {} };
+      if (name === 'course_room' && roomError) throw new Error(roomError);
       throw new Error('Unexpected RPC: ' + name);
     }
   });
@@ -211,4 +212,13 @@ test('joining a team requires the red confirmation and allows going back', async
   button('Sí, unirme al equipo').click();
   await page.settle();
   assert.equal(page.calls.filter(call => call.name === 'choose_topic').length, 1);
+});
+
+test('a live student session leaves the classroom when the course is disabled', async () => {
+  const page = await boot({ submitted: NEW, roomError: 'Materia deshabilitada' });
+  page.state('show("room")');
+  await page.state('refreshRoom()');
+  assert.equal(page.get('#room').dataset.stage, 'registration');
+  assert.equal(page.localStorage.getItem(LAST_CODE), null);
+  assert.match(page.get('#registration-error').textContent, /ya no está disponible/);
 });

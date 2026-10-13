@@ -631,7 +631,18 @@ async function refreshRoom() {
       const box = $('#team-chat-messages');
       if (rows.length && box && box.dataset.lastMessage !== String(rows.at(-1).id)) $('#chat-unread').hidden = false;
     }
-  } catch { /* Keep the current classroom usable during a temporary disconnect. */ }
+  } catch (error) {
+    if (error.message === 'Materia deshabilitada') {
+      clearInterval(chatTimer); clearInterval(roomRefresh);
+      courseId = ''; profile = null; topics = [];
+      localStorage.removeItem('aula-student-course-code');
+      questions = ['code', 'firstName', 'lastName', 'email', 'phone']; questionIndex = 0;
+      registrationForm.elements.namedItem('code').value = '';
+      show('registration'); renderQuestion();
+      message('Esta materia ya no está disponible. Pide al docente un código vigente.');
+    }
+    // A temporary disconnect leaves the current classroom usable.
+  }
   finally { refreshingRoom = false; }
 }
 

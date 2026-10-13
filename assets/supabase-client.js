@@ -100,6 +100,26 @@ export function studentSignOut() { saveSession(null, studentSessionKey); }
 export function signedIn() { return !!session()?.access_token; }
 export function signOut() { saveSession(null); }
 
+// Delete only objects returned by the teacher-owned course manifest. Storage's
+// API removes the underlying files as well as their metadata.
+export async function deleteTeacherCourseFiles(courseId, paths) {
+  if (!Array.isArray(paths) || paths.some(path => typeof path !== 'string' || !path.startsWith(courseId + '/')))
+    throw new Error('La lista de archivos de esta materia no es válida.');
+  for (let i = 0; i < paths.length; i += 100) {
+    const token = await accessToken();
+    const response = await fetch(endpoint('/storage/v1/object/team-attachments'), {
+      method: 'DELETE', cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ prefixes: paths.slice(i, i + 100) })
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.message || data.error || 'No se pudieron retirar los archivos de la materia.');
+    }
+  }
+}
+
 
 const attachmentBucket = 'team-attachments';
 const storagePath = path => path.split('/').map(encodeURIComponent).join('/');
