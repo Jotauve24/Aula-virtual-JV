@@ -23,3 +23,43 @@ html.is-embedded .login-intro h1{font-size:clamp(32px,5vw,48px);margin:12px 0}ht
 
 .course-code-panel{display:flex;align-items:center;flex-wrap:wrap;gap:14px 24px;padding:20px 24px;margin:0 0 24px;background:#edf3e8;border:1px solid #bdcdb7;border-radius:14px}.course-code-panel>div:first-child{flex:1;min-width:220px}.course-code-panel h2{font-size:16px;margin:0 0 5px}.course-code-panel p{font-size:14px;margin:0}.course-code-saved{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:100%}.course-code-saved input{width:26ch;max-width:100%;min-height:46px;padding:10px 12px;border:1px solid #a7bda4;background:white;color:#204b3b;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:17px;font-weight:700;letter-spacing:.02em}.course-code-panel .secondary{min-height:46px;white-space:nowrap}.course-code-panel #course-code-missing{flex-basis:100%}.course-code-panel #course-code-missing p{margin-bottom:10px}.course-code-panel .course-code-status{flex-basis:100%;font-size:13px;color:#28594c}.course-code-status:empty{display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 @media(max-width:560px){.course-code-panel{padding:18px;gap:12px}.course-code-saved{width:100%}.course-code-saved input{flex:1 1 100%;width:100%;min-width:0}.course-code-saved button{width:100%}}
+
+/* Shared visual language for the teacher's access and course management. */
+:root{--paper:#f7f8f2;--ink:#20392e;--muted:#4e6254;--green:#265b46;--mint:#e8f0e6;--line:#cad8ca;--focus:#9a5328;--warm-ink:#724c26;--warm-soft:#f7efdf}
+body{background:radial-gradient(ellipse 60% 55% at 88% 12%,#eaf2e7 0%,transparent 78%),var(--paper)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline-color:var(--focus)}
+.teacher-header{padding-block:28px}
+.header-label,.eyebrow{color:#426b48}
+.teacher-footer{color:#526452;font-size:12px}
+.teacher-footer a{color:#315b46}
+.login-intro h1{letter-spacing:-2.1px;text-wrap:balance}
+.login-intro h1 em{color:#426b48}
+.login-intro>p{color:var(--muted)}
+.login-steps{border-color:#c2d3c1}
+.login-steps span{color:#3d6148;font-size:13px}
+.login-steps b{color:var(--warm-ink);background:var(--warm-soft);border-color:#d8bd99;font-weight:700}
+.access-card,.panel-card,.notice-card,.teacher-group{border-color:#c9d7c9;box-shadow:0 15px 38px #23443412}
+.access-card{background:linear-gradient(150deg,#fff 55%,#f0f6eb);box-shadow:0 22px 48px #2344341a}
+.access-card small{color:#4e6254;font-size:12px}
+.access-card input,.panel-card input,.panel-card textarea{border-color:#9fb49f;font-size:16px}
+.access-card input:focus,.panel-card input:focus,.panel-card textarea:focus{border-color:var(--green);box-shadow:0 0 0 4px #426b4830}
+.access-card input::placeholder,.panel-card input::placeholder,.panel-card textarea::placeholder{color:#5b6b5f}
+.primary{background:var(--green);box-shadow:0 6px 16px #1b48371a;transition:background .18s,transform .18s,box-shadow .18s}
+.primary:not(:disabled):hover{background:#1b4837;transform:translateY(-2px);box-shadow:0 10px 22px #1b483729}
+.secondary{border-color:#b3c7b6;color:#315b46}
+.secondary:hover{border-color:#8daf91}
+.area-heading span,.course-card small,.topic-card small{color:#4e6254;font-size:13px}
+.course-card,.topic-card{border-color:#c9d7c9;box-shadow:0 8px 22px #2344340e;transition:border-color .18s,box-shadow .18s,transform .18s}
+.course-card:hover,.course-card:focus-visible,.topic-card:hover{border-color:#779c7b;box-shadow:0 12px 25px #23443418;transform:translateY(-2px)}
+.empty-state{border-color:#a7bea9;background:#f0f5ec;color:var(--muted)}
+.teacher-group-heading span{color:#426b48;font-size:12px}
+.teacher-student span{font-size:12px}
+.back-button{color:#315b46}
+.course-code-panel{background:linear-gradient(110deg,#eef5e9,#e3f0e5);border:1px solid #b7d1ba;border-left:5px solid var(--green);box-shadow:0 10px 26px #23443410}
+.course-code-panel h2{color:var(--ink);font-size:18px}
+.course-code-panel p{color:#405b48}
+.course-code-saved input{border-color:#7da386;color:var(--green);box-shadow:0 2px 9px #2344340b}
+.course-code-panel .course-code-status{color:var(--green);font-weight:650}
+@media(max-width:850px){.teacher-login{gap:20px}.login-intro{padding-top:12px}.access-card{max-width:620px}}
+@media(max-width:560px){.teacher-header{padding:17px 18px}.login-intro h1{font-size:clamp(38px,11vw,44px)}.login-steps span{font-size:12px}.access-card,.panel-card{padding:22px}.area-heading span{font-size:12px}.course-code-panel{padding:18px}.teacher-footer{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.primary,.course-card,.topic-card{transition:none}.primary:not(:disabled):hover,.course-card:hover,.course-card:focus-visible,.topic-card:hover{transform:none}}

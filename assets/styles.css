@@ -30,3 +30,56 @@ html.is-embedded .site-header{padding:16px 24px}html.is-embedded .login-layout{p
 @media(max-width:800px){html.is-embedded .preview-panel{display:none}html.is-embedded .login-layout{max-width:540px;gap:20px}html.is-embedded .login-content{width:100%;max-width:none}html.is-embedded .entry-note{margin-top:20px}}
 @media(max-width:500px){.entry-tools .version-badge{display:none}.entry-tools{gap:0}html.is-embedded .site-header{padding:14px 16px}html.is-embedded .login-layout{padding:8px 18px 20px}html.is-embedded .site-footer{padding:12px 18px}}
 
+/* Aula Encuentro visual system: warm paper, clear forest green, readable secondary text. */
+:root{--paper:#f7f8f2;--ink:#20392e;--muted:#4e6254;--green:#265b46;--green-hover:#1b4837;--mint:#e8f0e6;--line:#cad8ca;--focus:#9a5328;--warm:#a96833;--warm-ink:#724c26;--warm-soft:#f7efdf}
+body{background:radial-gradient(ellipse 58% 48% at 90% 10%,#ebf3e7 0%,transparent 75%),radial-gradient(ellipse 45% 36% at 4% 85%,#f3f0e5 0%,transparent 78%),var(--paper)}
+::selection{background:#d5e7cf;color:var(--ink)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline-color:var(--focus)}
+.site-header{padding-block:28px}
+.brand-mark{color:var(--green)}
+.brand small,.intro,.field-hint,.text-button{color:var(--muted)}
+.version-badge{border-color:#c4d4c4;color:#315b46;background:#e8f0e6}
+.status-dot{background:#397253;box-shadow:0 0 0 3px #39725322}
+.eyebrow,.preview-top .eyebrow{color:#426b48}
+.eyebrow-line{background:var(--warm)}
+.login-content h1{letter-spacing:-2.2px;text-wrap:balance}
+.login-content h1 em{color:#426b48}
+.intro{font-size:16px;line-height:1.7}
+.code-field{border-color:#a6b9a7;box-shadow:0 2px 8px #1f402908}
+.code-field:hover{border-color:#6f9479}
+.code-field:focus-within{border-color:var(--green);box-shadow:0 0 0 4px #426b4830}
+.code-field svg{stroke:#456b50}
+input::placeholder{color:#5b6b5f}
+.button.primary{font-weight:700;box-shadow:0 7px 18px #1b48371c;transition:background .18s,transform .18s,box-shadow .18s}
+.button.primary:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 11px 24px #1b48372a}
+.button.secondary{border-color:#b9cbbd;color:#315b46;font-weight:650}
+.button.secondary:hover{border-color:#8daf91}
+.enter-button{min-height:54px;font-size:15px}
+.help-button{font-size:13px;min-height:40px}
+.help-circle{width:17px;height:17px;border-color:#bb916a;color:var(--warm-ink);background:var(--warm-soft)}
+.entry-note{border-color:#c8d9c9;border-left:4px solid #426b48;background:#f0f5eb;box-shadow:0 5px 18px #23443409}
+.entry-note p{color:#405b48;font-size:13px}
+.entry-note strong{color:var(--ink);font-size:14px}
+.preview-panel{background:linear-gradient(145deg,#edf2e6,#e4ecdd 72%);border-color:#cbdac7;box-shadow:0 20px 42px #2c503216}
+.preview-top h2{font-size:clamp(25px,2.3vw,31px);max-width:350px;text-wrap:balance}
+.pixel-star{color:var(--warm)}
+.preview-scene canvas{filter:drop-shadow(0 6px 11px #29462a16)}
+.map-caption{color:#315b46;border-color:#b9cbb7;font-size:11px}
+.preview-bottom{border-color:#c5d5bd}
+.preview-bottom span{color:#375c42;font-size:12px;font-weight:550}
+.preview-bottom i{color:var(--warm-ink);border-color:#d8bd99;background:var(--warm-soft);font-weight:700}
+.site-footer{color:#526452;font-size:12px}
+.site-footer a:hover{text-decoration-thickness:2px}
+.dialog-body p{color:var(--muted)}
+.room-map-container,.room-side{border-color:#bfcfbd;box-shadow:0 8px 22px #25452c0b}
+.room-side p,.room-side .side-footer{color:var(--muted)}
+.group-badge,.side-tag{color:#315b46;background:var(--mint)}
+.topic-list button{border-color:#c7d7c7}
+.topic-list button:hover{border-color:#8daf91;background:#eff6eb}
+.room-tools{background:#f1f5ed}
+.dpad button{border-color:#aec2af;color:var(--green);font-weight:700}
+.dpad button:hover{background:#e7f0e4}
+@media(max-width:800px){.login-layout{gap:25px}.login-content{max-width:470px}.preview-panel{max-width:550px;width:100%;margin-inline:auto}}
+@media(max-width:500px){.site-header{padding:18px}.login-layout{padding-inline:20px}.login-content h1{font-size:clamp(42px,12vw,50px)}.intro{font-size:15px}.preview-panel{margin-inline:auto}.preview-bottom span{font-size:11px}.entry-note p{font-size:12px}.site-footer{font-size:12px}.room-side p{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.button.primary{transition:none}.button.primary:not(:disabled):hover{transform:none}}
+
