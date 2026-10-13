@@ -204,7 +204,7 @@ html.is-embedded .site-header{padding:14px 18px}html.is-embedded #room.room-shel
 .room-tabs{background:#e8f0e6;border-color:#bfd1bf;box-shadow:inset 0 1px 3px #2344340b}
 .room-tabs [role="tab"]{color:#315b46;transition:background .18s,color .18s,box-shadow .18s}
 .room-tabs [role="tab"]:hover:not([aria-selected="true"]){background:#f8fbf5}
-.room-tabs [aria-selected="true"]{background:var(--green);box-shadow:0 4px 12px #173b2c30}
+.room-tabs [role="tab"][aria-selected="true"]{background:var(--green);color:#fff;box-shadow:0 4px 12px #173b2c30}
 .room-tabs [role="tab"]:focus-visible{outline-color:var(--focus)}
 .room-map-container{border-color:#b7cdb8;box-shadow:0 12px 30px #23443414}
 #room .room-side,.team-roster-panel,.team-chat{border-color:#c2d3c2;box-shadow:0 10px 27px #2344340e}
@@ -230,3 +230,19 @@ html.is-embedded .site-header{padding:14px 18px}html.is-embedded #room.room-shel
 .dpad button{min-height:44px}
 @media(max-width:650px){.room-tabs [role="tab"]{font-size:13px;line-height:1.25}.room-tools{flex-wrap:wrap}.movement-hint{max-width:none;flex:1 1 170px}.map-action small{font-size:11px}#room .in-room-dialog label{font-size:14px}#room .in-room-dialog p{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.room-tabs [role="tab"]{transition:none}}
+
+/* Clear team commitment and two visible avatar silhouettes. */
+.avatar-style-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.avatar-style-option{display:flex;align-items:center;justify-content:center;gap:10px;min-height:55px;padding:5px 9px;background:#f7f8f2;border:2px solid #bdcebf;border-radius:10px;color:var(--ink);font-weight:700;font-size:13px}
+.avatar-style-option svg{flex:none;width:28px;height:42px;image-rendering:pixelated}
+.avatar-style-option:hover{background:#e8f0e6;border-color:#729776}
+.avatar-style-option[aria-pressed="true"]{background:#e6f0e5;border-color:var(--green);box-shadow:0 0 0 2px #265b4622}
+#topic-dialog .join-confirmation{position:relative;margin:20px 0 12px;padding:18px 18px 16px 62px;border:2px solid #bc5650;border-radius:12px;background:#fff0eb;color:#66251f}
+#topic-dialog .join-confirm-icon{position:absolute;top:17px;left:18px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#9c332e;color:#fff;font-weight:800;font-size:19px}
+#topic-dialog .join-confirmation h3{font-size:18px;line-height:1.3;margin:0 0 5px;color:#762923}
+#topic-dialog .join-confirmation p{margin:0 0 13px;color:#71312a;font-size:14px;line-height:1.5;white-space:normal}
+#topic-dialog .join-confirm-actions{display:flex;gap:8px;flex-wrap:wrap}
+#topic-dialog .join-confirm-actions .button{margin:0;border-radius:8px;font-size:14px;font-weight:700}
+#topic-dialog .join-confirm-actions .button.danger{background:#9c332e;border:1px solid #9c332e;color:#fff}
+#topic-dialog .join-confirm-actions .button.danger:hover{background:#7c211d}
+@media(max-width:500px){.avatar-style-option{gap:5px;padding:4px;font-size:12px}.avatar-style-option svg{width:25px;height:38px}#topic-dialog .join-confirmation{padding:55px 13px 13px}#topic-dialog .join-confirm-icon{top:13px;left:13px}#topic-dialog .join-confirm-actions .button{flex:1 1 100%}}

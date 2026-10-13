@@ -23,6 +23,10 @@ function spriteRects(avatar, step = 0) {
   add(13, 20, 7, 3, skin); add(8, 23, 17, 14, shirt); add(4, 25, 5, 8, shirt); add(25, 25, 5, 8, shirt);
   add(4, 33, 5, 5, skin); add(25, 33, 5, 5, skin);
   add(9, 37, 7, 9 - step, '#465552'); add(19, 37, 7, 9 + step, '#465552');
+  if (avatar.presentation === 'mujer') {
+    add(8, 35, 17, 5, shirt); add(6, 40, 21, 3, shirt);
+    add(10, 43, 5, 3, '#465552'); add(20, 43, 5, 3, '#465552');
+  }
   add(8, 44 - step, 8, 4, '#34403d'); add(19, 44 + step, 8, 4, '#34403d');
   return r;
 }

@@ -2,14 +2,14 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js';
-import { avatarSVG, drawWorld } from './world.js?v=20261011b';
+import { avatarSVG, drawWorld } from './world.js?v=20261013c';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment } from './world-layout.js';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let courseId = '', profile = null, topics = [], selectedTopic = null;
-let look = { skin: 1, shirt: 0, hair: 'short' };
+let look = { skin: 1, shirt: 0, hair: 'short', presentation: 'hombre' };
 let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, onArrival = null;
 let chatTimer = 0, chatLoading = false, chatTeamId = '';
 let participantColor = createParticipantPalette();
@@ -142,7 +142,8 @@ async function enterCourse(code, details = {}) {
   $('#avatar-course').textContent = result.course_name;
   $('#course-title').textContent = result.course_name;
   $('#avatar-name').textContent = profile.firstName + ' ' + profile.lastName;
-  look = { skin: profile.avatar?.skin ?? 1, shirt: profile.avatar?.shirt ?? 0, hair: profile.avatar?.hair ?? 'short' };
+  look = { skin: profile.avatar?.skin ?? 1, shirt: profile.avatar?.shirt ?? 0,
+    hair: profile.avatar?.hair ?? 'short', presentation: profile.avatar?.presentation === 'mujer' ? 'mujer' : 'hombre' };
   renderAvatarOptions();
   if (Object.keys(profile.avatar || {}).length) await enterRoom();
   else show('avatar');
@@ -173,6 +174,18 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
 }); });
 
 function renderAvatarOptions() {
+  $('#presentation-options').replaceChildren(...[['mujer', 'Mujer'], ['hombre', 'Hombre']].map(([value, label]) => {
+    const button = element('button', '', 'avatar-style-option');
+    button.type = 'button';
+    button.dataset.presentation = value;
+    button.setAttribute('aria-label', 'Avatar ' + label.toLowerCase());
+    button.setAttribute('aria-pressed', String(look.presentation === value));
+    button.innerHTML = avatarSVG({ ...look, presentation: value });
+    button.append(element('span', label));
+    button.addEventListener('click', () => { look.presentation = value; renderAvatarOptions();
+      $('#presentation-options [data-presentation="' + value + '"]').focus(); });
+    return button;
+  }));
   const choices = [
     ['skin-options', 'skin', SKINS.slice(0, 3), ['Claro', 'Medio', 'Oscuro']],
     ['shirt-options', 'shirt', SHIRTS.slice(0, 3), ['Verde', 'Azul', 'Naranja']]
@@ -438,22 +451,31 @@ function topicPanel(topic, confirmJoin = false) {
   else if (profile.topicId) nodes.push(element('p', 'Ya perteneces a otro equipo. Puedes consultar este tema y sus integrantes.'));
   else if (full) nodes.push(element('p', 'Este equipo está completo.'));
   else if (!profile.registrationOpen) nodes.push(element('p', 'La elección de equipos está cerrada.'));
-  else {
-    if (confirmJoin) nodes.push(element('p', '¿Confirmas que quieres unirte? Tu lugar quedará guardado.'));
-    const button = element('button', confirmJoin ? 'Sí, unirme al equipo' : 'Quiero este equipo', 'button primary');
-    button.type = 'button';
-    button.addEventListener('click', () => {
-      if (!confirmJoin) { topicPanel(topic, true); return; }
-      run(async () => {
-        button.disabled = true; button.textContent = 'Guardando tu lugar…';
-        try {
-          await studentRpc('choose_topic', { p_course_id: courseId, p_topic_id: topic.id });
-          profile = await studentRpc('my_profile', { p_course_id: courseId });
-          topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
-          renderTopics(); status('Te uniste al equipo de ' + topic.name + '.');
-        } finally { button.disabled = false; button.textContent = 'Sí, unirme al equipo'; }
-      });
-    });
+  else if (confirmJoin) {
+    const confirmation = element('div', '', 'join-confirmation');
+    confirmation.setAttribute('role', 'group');
+    confirmation.setAttribute('aria-labelledby', 'join-confirm-title');
+    const warning = element('span', '!', 'join-confirm-icon'); warning.setAttribute('aria-hidden', 'true');
+    const heading = element('h3', 'Confirma tu elección'); heading.id = 'join-confirm-title'; heading.tabIndex = -1;
+    const explanation = element('p', '¿Seguro que quieres pertenecer a ' + topic.name + '? Después solo el docente podrá cambiarte de equipo.');
+    const actions = element('div', '', 'join-confirm-actions');
+    const cancel = element('button', 'No, volver', 'button secondary'); cancel.type = 'button';
+    cancel.addEventListener('click', () => topicPanel(topic));
+    const join = element('button', 'Sí, unirme al equipo', 'button danger'); join.type = 'button';
+    join.addEventListener('click', () => run(async () => {
+      join.disabled = true; join.textContent = 'Guardando tu lugar…';
+      try {
+        await studentRpc('choose_topic', { p_course_id: courseId, p_topic_id: topic.id });
+        profile = await studentRpc('my_profile', { p_course_id: courseId });
+        topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
+        renderTopics(); status('Te uniste al equipo de ' + topic.name + '.');
+      } finally { join.disabled = false; join.textContent = 'Sí, unirme al equipo'; }
+    }));
+    actions.append(cancel, join); confirmation.append(warning, heading, explanation, actions);
+    nodes.push(confirmation);
+  } else {
+    const button = element('button', 'Quiero este equipo', 'button primary');
+    button.type = 'button'; button.addEventListener('click', () => topicPanel(topic, true));
     nodes.push(button);
   }
   const back = element('button', 'Ver todos los temas', 'button secondary');
@@ -470,6 +492,7 @@ function topicPanel(topic, confirmJoin = false) {
   dialog.replaceChildren(...nodes); dialog.hidden = false;
   if (!dialog.open) dialog.showModal();
   dialog.scrollTop = 0;
+  if (confirmJoin) dialog.querySelector('#join-confirm-title')?.focus();
   status('Estás viendo el tema ' + topic.name + '.');
 }
 function draw(time = 0) {

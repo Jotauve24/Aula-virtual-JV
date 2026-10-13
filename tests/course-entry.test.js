@@ -4,6 +4,10 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { SKINS, SHIRTS, normalizeCode } from '../assets/model.js';
 
+const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', import.meta.url), 'utf8')
+  .split('function rect(ctx')[0].replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '')
+  + '\navatarSVG;', { SKINS, SHIRTS });
+
 // Run the actual page controller with isolated browser storage and RPC responses.
 // Canvas, DOM and timers are doubles; no production accounts or data are used.
 const source = readFileSync(new URL('../assets/live.js', import.meta.url), 'utf8')
@@ -33,6 +37,11 @@ class Element {
   removeAttribute(name) { delete this[name]; }
   append(...nodes) { this.children.push(...nodes); }
   replaceChildren(...nodes) { this.children = nodes; }
+  querySelector(selector) {
+    const id = selector.startsWith('#') ? selector.slice(1) : '';
+    const find = node => node.id === id ? node : node.children.map(find).find(Boolean);
+    return this.children.map(find).find(Boolean) || null;
+  }
   focus() { this.focused = true; }
   select() { this.selected = true; }
   reportValidity() { return true; }
@@ -68,7 +77,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll } = {}) {
     matchMedia: () => ({ matches: true }),
     cancelAnimationFrame() {}, requestAnimationFrame: () => 1,
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1,
-    avatarSVG: () => '', drawWorld() {}, createParticipantPalette: () => new Map(),
+    avatarSVG, drawWorld() {}, createParticipantPalette: () => new Map(),
     createRoomLayout: () => ({ rooms: [], width: 800, height: 560, spawn: { x: 400, y: 300 } }),
     studentSignedIn: () => !!localStorage.getItem(SESSION),
     studentSignOut: () => { signOutCount++; localStorage.removeItem(SESSION); },
@@ -168,4 +177,38 @@ test('code normalization is consistent when entering directly in the classroom',
   page.get('#next-question').click();
   assert.equal(page.fields.code.value, NEW);
   assert.equal(page.state('questions[questionIndex]'), 'firstName');
+});
+
+test('woman and man avatar choices have distinct silhouettes and save the choice', async () => {
+  const page = await boot({ submitted: NEW });
+  const choices = page.get('#presentation-options').children;
+  assert.deepEqual(choices.map(button => button.children[0].textContent), ['Mujer', 'Hombre']);
+  assert.notEqual(avatarSVG({ skin: 1, shirt: 0, hair: 'short', presentation: 'mujer' }),
+    avatarSVG({ skin: 1, shirt: 0, hair: 'short', presentation: 'hombre' }));
+  choices[0].click();
+  assert.equal(page.state('look.presentation'), 'mujer');
+  page.get('#avatar-form').dispatch('submit');
+  await page.settle();
+  assert.equal(page.calls.find(call => call.name === 'save_student_avatar').body.p_avatar.presentation, 'mujer');
+});
+
+test('joining a team requires the red confirmation and allows going back', async () => {
+  const page = await boot({ submitted: NEW });
+  page.state('profile.topicId = null; profile.registrationOpen = true; courseId = "course-fixture";');
+  const topic = { id: 'team-1', name: 'Grupo 1', members: [], capacity: 4 };
+  page.state('topicPanel(' + JSON.stringify(topic) + ')');
+  const dialog = page.get('#topic-dialog');
+  const button = text => {
+    const find = node => node.textContent === text ? node : node.children.map(find).find(Boolean);
+    return dialog.children.map(find).find(Boolean);
+  };
+  button('Quiero este equipo').click();
+  assert.equal(page.calls.filter(call => call.name === 'choose_topic').length, 0);
+  assert.ok(dialog.querySelector('#join-confirm-title'));
+  button('No, volver').click();
+  assert.equal(page.calls.filter(call => call.name === 'choose_topic').length, 0);
+  button('Quiero este equipo').click();
+  button('Sí, unirme al equipo').click();
+  await page.settle();
+  assert.equal(page.calls.filter(call => call.name === 'choose_topic').length, 1);
 });
