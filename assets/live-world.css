@@ -231,6 +231,15 @@ html.is-embedded .site-header{padding:14px 18px}html.is-embedded #room.room-shel
 @media(max-width:650px){.room-tabs [role="tab"]{font-size:13px;line-height:1.25}.room-tools{flex-wrap:wrap}.movement-hint{max-width:none;flex:1 1 170px}.map-action small{font-size:11px}#room .in-room-dialog label{font-size:14px}#room .in-room-dialog p{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.room-tabs [role="tab"]{transition:none}}
 
+/* Each sign uses the palette of its illustrated workstation. */
+#room .map-action{border-color:var(--table-accent,#28594c);background:var(--table-soft,#f5f4e8);color:var(--table-accent,#28594c);box-shadow:4px 4px 0 #263b3266}
+#room .map-action small{color:#354c47}
+#room .map-action:hover,#room .map-action:focus-visible{background:#fff;border-color:var(--table-accent,#28594c)}
+#room .map-action.is-mine{outline:3px solid #fff;box-shadow:0 0 0 5px var(--table-accent,#28594c),4px 4px 0 #263b3266}
+#room .topic-list .topic-link{border-left:5px solid var(--table-accent,#28594c);background:var(--table-soft,#f5f4e8);color:var(--table-accent,#28594c)}
+#room .topic-list .topic-link span{color:var(--table-accent,#28594c)}
+#room .topic-list .topic-link:hover,#room .topic-list .topic-link:focus-visible{background:#fff;border-color:var(--table-accent,#28594c)}
+
 /* Clear team commitment and two visible avatar silhouettes. */
 .avatar-style-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .avatar-style-option{display:flex;align-items:center;justify-content:center;gap:10px;min-height:55px;padding:5px 9px;background:#f7f8f2;border:2px solid #bdcebf;border-radius:10px;color:var(--ink);font-weight:700;font-size:13px}

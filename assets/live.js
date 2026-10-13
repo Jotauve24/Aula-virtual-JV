@@ -2,7 +2,7 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js';
-import { avatarSVG, drawWorld } from './world.js?v=20261013c';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261013e';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment } from './world-layout.js';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
@@ -245,7 +245,10 @@ function renderTopics() {
   const locations = layout.rooms.map(room => [room.label.x, room.label.y, room.arrival.x, room.arrival.y]);
   $('#topic-buttons').replaceChildren(...topics.map((topic, i) => {
     const button = element('button', '', 'map-action' + (topic.id === profile.topicId ? ' is-mine' : ''));
+    const theme = roomTheme(i);
     button.type = 'button'; button.dataset.topic = topic.id;
+    button.style.setProperty('--table-accent', theme.accent);
+    button.style.setProperty('--table-soft', theme.card);
     button.style.left = locations[i][0] / 8 + '%'; button.style.top = locations[i][1] / layout.height * 100 + '%';
     button.append(element('strong', topic.name), element('small', topic.members.length + ' de ' + topic.capacity + ' lugares'));
     button.addEventListener('click', () => openTopic(topic, { x: locations[i][2], y: locations[i][3] }));
@@ -284,9 +287,12 @@ function homePanel() {
   const intro = element('p', 'Explora los temas de tu materia. Abre un espacio para ver integrantes y elegir equipo.');
   const list = element('div', '', 'topic-list');
   if (!topics.length) list.append(element('p', 'El docente todavía no ha añadido temas.'));
-  for (const topic of topics) {
+  for (const [index, topic] of topics.entries()) {
     const button = element('button', topic.name, 'topic-link' + (topic.id === profile.topicId ? ' is-mine' : ''));
     button.type = 'button';
+    const theme = roomTheme(index);
+    button.style.setProperty('--table-accent', theme.accent);
+    button.style.setProperty('--table-soft', theme.card);
     const label = topic.id === profile.topicId ? 'Tu equipo' : topic.members.length + '/' + topic.capacity + ' lugares';
     button.append(element('span', label));
     button.addEventListener('click', () => { const i = topics.indexOf(topic);

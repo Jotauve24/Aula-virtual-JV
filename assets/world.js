@@ -2,6 +2,30 @@ import { SKINS, SHIRTS } from './model.js';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
+// A room's place in the teacher's group order always keeps the same scenery.
+// The first ten have their own palette and workstation; later groups get a
+// fresh palette as well, since a course may have up to forty groups.
+export const ROOM_THEMES = [
+  { id: 'bosque', accent: '#245d42', floor: '#a5c99e', tile: '#619476', rug: '#5b8b71', surface: '#e8bf82', edge: '#785b47', chair: '#2f896a', pop: '#f3c444', card: '#f0f8e9' },
+  { id: 'oceano', accent: '#145b77', floor: '#9bd6da', tile: '#53a7b9', rug: '#468eaa', surface: '#f0deb1', edge: '#716b61', chair: '#247da3', pop: '#20bfd1', card: '#eaf9fa' },
+  { id: 'arte', accent: '#904032', floor: '#efb79f', tile: '#d98570', rug: '#bd6b72', surface: '#ffe6bf', edge: '#9e6554', chair: '#c1457e', pop: '#f6bd42', card: '#fff2e9' },
+  { id: 'cosmos', accent: '#4d3b87', floor: '#aea5d8', tile: '#7867aa', rug: '#515887', surface: '#414f7f', edge: '#373f6b', chair: '#7955ab', pop: '#f3c86a', card: '#f2efff' },
+  { id: 'biblioteca', accent: '#704c29', floor: '#dfc38b', tile: '#aa8654', rug: '#9c7657', surface: '#eec492', edge: '#7d5943', chair: '#9a634b', pop: '#f1c14e', card: '#fbf4df' },
+  { id: 'laboratorio', accent: '#16665e', floor: '#9ed6c8', tile: '#58ae9f', rug: '#408782', surface: '#d5f3e7', edge: '#58847f', chair: '#188779', pop: '#61d6c5', card: '#ebfbf4' },
+  { id: 'musica', accent: '#842f69', floor: '#dda8cc', tile: '#b66a9d', rug: '#855887', surface: '#544062', edge: '#874e73', chair: '#b44a94', pop: '#f6bc54', card: '#fff0f9' },
+  { id: 'tecnologia', accent: '#28558b', floor: '#a9c8e9', tile: '#5d91c1', rug: '#4b6699', surface: '#29466f', edge: '#385873', chair: '#3185ba', pop: '#65d6e5', card: '#eef6ff' },
+  { id: 'cafe', accent: '#813e38', floor: '#d9b69d', tile: '#b67d67', rug: '#9e746d', surface: '#eed0a7', edge: '#714c43', chair: '#b6645b', pop: '#f4b452', card: '#fff3e8' },
+  { id: 'arquitectura', accent: '#465a47', floor: '#bfd0ad', tile: '#7e9d80', rug: '#748e79', surface: '#dce6c7', edge: '#526554', chair: '#638d73', pop: '#e4af47', card: '#f4f7e8' }
+];
+export function roomTheme(index) {
+  const theme = ROOM_THEMES[index % ROOM_THEMES.length];
+  if (index < ROOM_THEMES.length) return theme;
+  const hue = (index * 47 + 33) % 360;
+  return { ...theme, accent: `hsl(${hue} 48% 29%)`, floor: `hsl(${hue} 38% 86%)`,
+    tile: `hsl(${hue} 32% 74%)`, rug: `hsl(${hue} 34% 68%)`,
+    chair: `hsl(${hue} 52% 42%)`, pop: `hsl(${(hue + 60) % 360} 78% 62%)`,
+    card: `hsl(${hue} 65% 96%)` };
+}
 const obstacles = [
   { x: 129, y: 130, w: 155, h: 88 }, { x: 500, y: 130, w: 155, h: 88 },
   { x: 500, y: 371, w: 155, h: 88 }, { x: 97, y: 357, w: 171, h: 95 },
@@ -145,31 +169,278 @@ export function drawWorld(canvas, options = {}) {
 }
 export { isWalkable, findPath } from './world-layout.js';
 
+function roomPattern(ctx, room, theme) {
+  const x = room.x, y = room.y;
+  // Pattern stays on the floor; all furniture still uses the original
+  // collision map, so decoration never changes where students can walk.
+  for (let n = 0; n < 7; n++) {
+    const px = x + 21 + n * 37, py = y + 75 + (n % 3) * 42;
+    switch (theme.id) {
+      case 'bosque':
+        rect(ctx, px, py, 8, 3, theme.tile); rect(ctx, px + 3, py - 3, 3, 9, theme.tile); break;
+      case 'oceano':
+        rect(ctx, px, py, 13, 2, theme.tile); rect(ctx, px + 4, py + 3, 13, 2, theme.tile);
+        rect(ctx, px + 18, py - 6, 3, 3, '#f6fbef'); break;
+      case 'arte':
+        rect(ctx, px, py, 5, 5, ['#df5371','#ffd75d','#42a5ce'][n % 3]);
+        rect(ctx, px + 11, py + 7, 3, 8, theme.tile); break;
+      case 'cosmos':
+        rect(ctx, px + 3, py - 3, 2, 10, theme.pop); rect(ctx, px - 1, py + 1, 10, 2, theme.pop);
+        rect(ctx, px + 17, py + 9, 3, 3, theme.tile); break;
+      case 'biblioteca':
+        rect(ctx, px, py, 26, 2, theme.tile); rect(ctx, px + 12, py + 2, 2, 13, theme.tile); break;
+      case 'laboratorio':
+        rect(ctx, px, py, 5, 5, theme.tile); rect(ctx, px + 11, py + 8, 5, 5, theme.tile);
+        rect(ctx, px + 5, py + 5, 8, 2, theme.tile); break;
+      case 'musica':
+        rect(ctx, px, py, 25, 2, theme.tile); rect(ctx, px, py + 5, 25, 2, theme.tile);
+        rect(ctx, px + 18, py - 5, 2, 13, theme.pop); rect(ctx, px + 13, py + 5, 6, 4, theme.pop); break;
+      case 'tecnologia':
+        rect(ctx, px, py, 19, 2, theme.tile); rect(ctx, px + 17, py - 7, 2, 9, theme.tile);
+        rect(ctx, px + 14, py - 10, 7, 4, theme.pop); break;
+      case 'cafe':
+        rect(ctx, px, py, 15, 15, theme.tile); rect(ctx, px + 15, py + 15, 10, 10, theme.tile); break;
+      case 'arquitectura':
+        rect(ctx, px, py, 24, 1, theme.tile); rect(ctx, px, py + 10, 24, 1, theme.tile);
+        rect(ctx, px + 10, py - 5, 1, 25, theme.tile); break;
+    }
+  }
+}
+function themeProp(ctx, x, y, theme) {
+  const dark = theme.accent, light = '#f7f5e9';
+  switch (theme.id) {
+    case 'bosque':
+      rect(ctx,x,y,24,24,'#eee4c8');rect(ctx,x+3,y+4,18,16,'#9ac785');
+      rect(ctx,x+11,y+5,2,15,dark);rect(ctx,x+5,y+8,6,3,dark);rect(ctx,x+13,y+11,7,3,dark); break;
+    case 'oceano':
+      rect(ctx,x,y,24,24,'#e9f8f2');rect(ctx,x+3,y+5,18,3,dark);
+      rect(ctx,x+6,y+12,14,2,theme.tile);rect(ctx,x+2,y+17,18,2,theme.tile); break;
+    case 'arte':
+      rect(ctx,x,y,24,24,'#fff7e8');
+      ['#d97267','#e5ba60','#6394aa'].forEach((c,i)=>rect(ctx,x+4+i*6,y+5+i*3,5,12,c)); break;
+    case 'cosmos':
+      rect(ctx,x,y,24,24,'#263457');rect(ctx,x+5,y+4,3,3,light);
+      rect(ctx,x+12,y+11,7,7,'#eac486');rect(ctx,x+18,y+3,2,2,light); break;
+    case 'biblioteca':
+      rect(ctx,x,y,24,24,'#d1ad76');rect(ctx,x+3,y+3,18,17,'#f3dfb2');
+      [0,1,2].forEach(i=>rect(ctx,x+5+i*5,y+7,4,10,['#9f6557','#67877b','#a47d4e'][i])); break;
+    case 'laboratorio':
+      rect(ctx,x,y,24,24,'#e8f9ee');rect(ctx,x+9,y+3,6,8,dark);
+      rect(ctx,x+5,y+12,14,9,'#68b5a7');rect(ctx,x+7,y+10,10,3,dark); break;
+    case 'musica':
+      rect(ctx,x,y,24,24,'#fff1f8');rect(ctx,x+4,y+9,16,2,dark);
+      rect(ctx,x+15,y+4,2,12,dark);rect(ctx,x+10,y+14,6,4,dark); break;
+    case 'tecnologia':
+      rect(ctx,x,y,24,24,'#d9eef8');rect(ctx,x+3,y+3,18,17,dark);
+      rect(ctx,x+6,y+7,7,2,'#a8d5dc');rect(ctx,x+6,y+11,12,2,'#b5da91'); break;
+    case 'cafe':
+      rect(ctx,x,y,24,24,'#f6e7d1');rect(ctx,x+5,y+9,12,9,'#fff8eb');
+      rect(ctx,x+17,y+11,4,4,'#fff8eb');rect(ctx,x+9,y+4,2,4,dark); break;
+    case 'arquitectura':
+      rect(ctx,x,y,24,24,'#f5f6e7');rect(ctx,x+4,y+4,16,16,'#9db5ab');
+      rect(ctx,x+7,y+8,10,2,light);rect(ctx,x+7,y+13,10,2,light); break;
+  }
+}
+function themedRug(ctx, room, theme) {
+  const x = room.x + 58, y = room.y + 64;
+  if (['oceano','cosmos','cafe'].includes(theme.id)) {
+    // Stepped ovals make a very different silhouette from the square mats.
+    [76,112,148,180,180,148,112,76].forEach((width,i)=>{
+      rect(ctx,x+(184-width)/2+3,y+i*14+3,width,14,'#263d4930');
+      rect(ctx,x+(184-width)/2,y+i*14,width,14,theme.rug);
+    });
+    rect(ctx,x+13,y+54,158,4,theme.pop);
+    return;
+  }
+  rect(ctx,x-4,y+3,192,118,'#263d4930');
+  rect(ctx,x,y,184,113,theme.rug);
+  if (theme.id === 'arte' || theme.id === 'musica') {
+    for (let i=0;i<9;i++) {
+      rect(ctx,x+6+i*20,y+4,11,5,i%2?theme.pop:theme.accent);
+      rect(ctx,x+6+i*20,y+105,11,5,i%2?theme.accent:theme.pop);
+    }
+  } else if (theme.id === 'laboratorio' || theme.id === 'tecnologia') {
+    for (let i=0;i<5;i++) {
+      rect(ctx,x+11+i*34,y+7,2,99,'#ffffff52');
+      rect(ctx,x+8,y+10+i*22,169,2,'#ffffff52');
+    }
+  } else {
+    rect(ctx,x+4,y+4,176,4,theme.accent);
+    rect(ctx,x+4,y+105,176,4,theme.pop);
+  }
+}
+function themedShelf(ctx, x, y, theme) {
+  rect(ctx,x,y,80,32,theme.edge);
+  rect(ctx,x+4,y+3,72,24,theme.card);
+  switch (theme.id) {
+    case 'bosque':
+      for(let i=0;i<5;i++){rect(ctx,x+7+i*14,y+14,10,11,'#b57d5e');
+        rect(ctx,x+10+i*14,y+5,5,12,i%2?'#429565':'#62b77b');}break;
+    case 'oceano':
+      rect(ctx,x+7,y+7,66,18,'#48b9d0');
+      for(let i=0;i<4;i++){rect(ctx,x+13+i*16,y+12+(i%2)*5,7,3,'#f4d576');
+        rect(ctx,x+18+i*16,y+11+(i%2)*5,2,2,'#f8fbeb');}break;
+    case 'arte':
+      ['#ec5c75','#f4be46','#5db8d0','#9176b6','#65bd81'].forEach((c,i)=>
+        rect(ctx,x+8+i*13,y+7,9,18,c));break;
+    case 'cosmos':
+      rect(ctx,x+7,y+6,66,19,'#293351');
+      for(let i=0;i<6;i++)rect(ctx,x+12+i*10,y+9+(i%2)*6,3,3,i%2?theme.pop:'#f5e8dd');break;
+    case 'biblioteca':
+      for(let i=0;i<11;i++)rect(ctx,x+7+i*6,y+7-(i%2)*2,5,18+(i%2)*2,
+        ['#936858','#3b8176','#dfb85e'][i%3]);break;
+    case 'laboratorio':
+      for(let i=0;i<5;i++){rect(ctx,x+9+i*13,y+7,6,5,theme.accent);
+        rect(ctx,x+7+i*13,y+12,10,12,i%2?'#5abcc8':'#76d0a6');}break;
+    case 'musica':
+      [0,1,2].forEach(i=>{rect(ctx,x+7+i*23,y+6,19,19,'#343b55');
+        rect(ctx,x+13+i*23,y+12,7,7,theme.pop);});break;
+    case 'tecnologia':
+      [0,1,2,3].forEach(i=>{rect(ctx,x+7+i*17,y+5,14,21,'#304768');
+        rect(ctx,x+10+i*17,y+8,8,3,theme.pop);rect(ctx,x+11+i*17,y+18,3,3,'#88d7a6');});break;
+    case 'cafe':
+      [0,1,2,3].forEach(i=>{rect(ctx,x+9+i*16,y+8,11,16,i%2?'#fff3d6':'#cf7c67');
+        rect(ctx,x+11+i*16,y+4,7,4,theme.pop);});break;
+    case 'arquitectura':
+      [0,1,2,3].forEach(i=>{rect(ctx,x+8+i*17,y+8,13,16,'#b2c9bd');
+        rect(ctx,x+10+i*17,y+11,9,2,theme.accent);});break;
+  }
+  rect(ctx,x,y+29,80,4,theme.accent);
+}
+function themedDesk(ctx, x, y, theme) {
+  rect(ctx,x+3,y+47,137,8,'#303d3c33');
+  rect(ctx,x+5,y+40,8,16,theme.edge);rect(ctx,x+121,y+40,8,16,theme.edge);
+  if (theme.id === 'cafe' || theme.id === 'oceano') {
+    rect(ctx,x+12,y-2,112,46,theme.edge);rect(ctx,x+3,y+5,130,33,theme.edge);
+    rect(ctx,x+12,y,112,40,theme.surface);rect(ctx,x+5,y+7,126,27,theme.surface);
+    rect(ctx,x+16,y+1,104,4,'#fff5dc70');
+  } else if (theme.id === 'cosmos' || theme.id === 'musica' || theme.id === 'tecnologia') {
+    rect(ctx,x+2,y-4,132,48,theme.edge);rect(ctx,x-2,y+4,140,37,theme.edge);
+    rect(ctx,x+4,y-2,128,41,theme.surface);rect(ctx,x,y+6,136,31,theme.surface);
+    rect(ctx,x+5,y,126,2,'#ffffff39');
+  } else if (theme.id === 'arte' || theme.id === 'arquitectura') {
+    rect(ctx,x+7,y-4,122,48,theme.edge);rect(ctx,x-2,y+3,140,38,theme.edge);
+    rect(ctx,x+9,y-2,118,42,theme.surface);rect(ctx,x,y+5,136,33,theme.surface);
+    rect(ctx,x+10,y,116,3,'#fff5dc70');
+  } else {
+    rect(ctx,x-2,y-2,140,46,theme.edge);rect(ctx,x,y,136,40,theme.surface);
+    rect(ctx,x,y,136,4,'#fff5dc70');
+  }
+  rect(ctx,x,y+39,136,5,theme.edge);
+  const ink=theme.accent;
+  switch (theme.id) {
+    case 'bosque':
+      [16,87].forEach(dx=>{rect(ctx,x+dx,y+7,30,24,'#f3e6b7');rect(ctx,x+dx+5,y+12,15,2,ink);
+        rect(ctx,x+dx+7,y+17,12,2,theme.chair);});
+      rect(ctx,x+63,y+7,11,14,theme.chair);rect(ctx,x+65,y+3,7,7,'#7ab975');break;
+    case 'oceano':
+      [15,85].forEach(dx=>{rect(ctx,x+dx,y+7,34,24,'#e4f5ec');rect(ctx,x+dx+4,y+11,22,3,theme.chair);
+        rect(ctx,x+dx+6,y+18,18,2,ink);rect(ctx,x+dx+18,y+16,2,9,ink);});
+      rect(ctx,x+62,y+8,14,14,'#f4e2b4');rect(ctx,x+68,y+6,2,18,ink);break;
+    case 'arte':
+      rect(ctx,x+14,y+6,35,28,'#fff4df');rect(ctx,x+86,y+6,35,28,'#fff4df');
+      ['#d46c67','#e6bf5f','#6fa7aa','#8d80b6'].forEach((c,i)=>{rect(ctx,x+19+i*6,y+13,5,10,c);rect(ctx,x+90+i*6,y+10+i*3,5,5,c);});
+      rect(ctx,x+65,y+7,9,20,ink);rect(ctx,x+67,y+5,5,4,'#f4d0a4');break;
+    case 'cosmos':
+      [14,84].forEach(dx=>{rect(ctx,x+dx,y+6,36,26,'#263457');rect(ctx,x+dx+5,y+11,2,2,'#e8e5c7');
+        rect(ctx,x+dx+20,y+15,7,7,'#e6bd8c');rect(ctx,x+dx+29,y+9,2,2,'#d4e6f3');});
+      rect(ctx,x+63,y+7,10,18,'#adb0d2');rect(ctx,x+67,y+5,2,22,ink);break;
+    case 'biblioteca':
+      [13,86].forEach(dx=>{rect(ctx,x+dx,y+7,35,25,'#f1d8a6');rect(ctx,x+dx+16,y+8,2,22,ink);
+        rect(ctx,x+dx+4,y+14,10,2,'#aa7954');rect(ctx,x+dx+21,y+14,10,2,'#aa7954');});
+      rect(ctx,x+63,y+8,11,12,'#f6e8b9');rect(ctx,x+67,y+4,3,14,ink);break;
+    case 'laboratorio':
+      [15,85].forEach(dx=>{rect(ctx,x+dx,y+7,34,27,'#eaf7e8');rect(ctx,x+dx+3,y+9,28,3,ink);
+        rect(ctx,x+dx+7,y+17,6,11,'#65b6a8');rect(ctx,x+dx+19,y+15,7,13,'#87c8ca');});
+      rect(ctx,x+64,y+8,10,17,'#f3f4df');rect(ctx,x+67,y+5,4,5,ink);break;
+    case 'musica':
+      rect(ctx,x+15,y+7,103,25,'#2e3446');rect(ctx,x+18,y+11,96,18,'#f3ebdc');
+      for(let k=0;k<14;k++){rect(ctx,x+18+k*7,y+11,1,18,'#7e7276');if(k%2)rect(ctx,x+21+k*7,y+11,3,10,'#34374b');}
+      break;
+    case 'tecnologia':
+      [14,84].forEach(dx=>{rect(ctx,x+dx,y+5,38,26,'#253b53');rect(ctx,x+dx+3,y+8,32,18,'#477895');
+        rect(ctx,x+dx+7,y+12,15,2,'#b9e3cc');rect(ctx,x+dx+7,y+17,22,2,'#afd4de');
+        rect(ctx,x+dx+13,y+31,12,3,'#bad0d1');});
+      rect(ctx,x+64,y+10,8,12,'#86ced0');break;
+    case 'cafe':
+      [15,85].forEach(dx=>{rect(ctx,x+dx,y+7,31,25,'#f9ead0');rect(ctx,x+dx+4,y+13,20,2,ink);
+        rect(ctx,x+dx+4,y+20,16,2,'#ba9272');});
+      rect(ctx,x+61,y+13,13,12,'#fdf9e8');rect(ctx,x+74,y+16,5,5,'#fdf9e8');
+      rect(ctx,x+67,y+7,2,4,ink);break;
+    case 'arquitectura':
+      [14,84].forEach(dx=>{rect(ctx,x+dx,y+5,38,29,'#e4eee3');rect(ctx,x+dx+5,y+10,26,1,ink);
+        rect(ctx,x+dx+5,y+10,1,18,ink);rect(ctx,x+dx+9,y+18,18,1,theme.chair);
+        rect(ctx,x+dx+20,y+14,1,13,theme.chair);});
+      rect(ctx,x+62,y+8,13,3,'#f8df9a');rect(ctx,x+62,y+11,3,16,'#f8df9a');break;
+  }
+  // Chairs retain the old footprint and remain legible over every palette.
+  [18,92].forEach(dx=>{rect(ctx,x+dx,y+52,26,9,theme.edge);
+    rect(ctx,x+dx-2,y+42,30,16,theme.chair);rect(ctx,x+dx+2,y+41,22,4,'#ffffff70');
+    rect(ctx,x+dx+12,y+61,3,7,theme.edge);});
+}
+function cornerFurnishing(ctx, x, y, theme) {
+  if (theme.id === 'bosque' || theme.id === 'cafe') {
+    plant(ctx, x + 14, y + 15);
+    if (theme.id === 'cafe') rect(ctx,x+11,y-6,7,6,'#ee9b79');
+    return;
+  }
+  rect(ctx,x+1,y+3,27,24,theme.edge);
+  rect(ctx,x+4,y+6,21,17,theme.surface);
+  switch (theme.id) {
+    case 'oceano':
+      rect(ctx,x+6,y+9,17,11,'#39abc6');rect(ctx,x+9,y+14,5,3,'#f5ca6d');
+      rect(ctx,x+17,y+9,3,3,'#effaf6');break;
+    case 'arte':
+      ['#eb5876','#f4c446','#42a4d0'].forEach((c,i)=>rect(ctx,x+7+i*6,y+8,5,12,c));break;
+    case 'cosmos':
+      rect(ctx,x+6,y+9,17,12,'#2e355c');rect(ctx,x+13,y+10,6,6,theme.pop);
+      rect(ctx,x+8,y+17,3,2,'#f8f6e2');break;
+    case 'biblioteca':
+      ['#8f5b5a','#427b76','#e2ba61'].forEach((c,i)=>rect(ctx,x+7+i*5,y+9,4,11,c));break;
+    case 'laboratorio':
+      rect(ctx,x+7,y+9,4,10,'#5ac9be');rect(ctx,x+14,y+8,6,12,'#5ab8cc');
+      rect(ctx,x+6,y+18,16,3,theme.pop);break;
+    case 'musica':
+      rect(ctx,x+7,y+9,14,11,'#313b54');rect(ctx,x+11,y+12,6,6,theme.pop);break;
+    case 'tecnologia':
+      rect(ctx,x+7,y+8,15,13,'#213b57');rect(ctx,x+10,y+11,9,2,theme.pop);
+      rect(ctx,x+10,y+16,7,2,'#a8e1db');break;
+    case 'arquitectura':
+      rect(ctx,x+9,y+8,11,12,'#eef2d9');rect(ctx,x+12,y+5,5,4,theme.pop);
+      rect(ctx,x+6,y+18,16,2,theme.accent);break;
+  }
+}
+
 function drawRoomWorld(canvas, options) {
   const { layout } = options;
   if (canvas.width !== layout.width) canvas.width = layout.width;
   if (canvas.height !== layout.height) canvas.height = layout.height;
   const ctx = canvas.getContext('2d'); if (!ctx) return;
   ctx.imageSmoothingEnabled = false;
-  rect(ctx, 0, 0, layout.width, layout.height, '#e7ecdf');
-  rect(ctx, 18, 18, layout.width - 36, layout.height - 36, '#f3efdf');
+  rect(ctx, 0, 0, layout.width, layout.height, '#59656b');
+  rect(ctx, 18, 18, layout.width - 36, layout.height - 36, '#85858e');
   for (let y = 20; y < layout.height - 20; y += 20) {
-    rect(ctx, 350, y, 100, 1, '#d8d8c5');
-    rect(ctx, 399, y, 1, 20, '#dedfce');
+    rect(ctx, 350, y, 100, 1, '#676e78');
+    rect(ctx, 399, y, 1, 20, '#a1a0a4');
   }
-  const colors = ['#d2ddc2', '#cbdedb', '#e7d8c0', '#ded3e5', '#ceddea', '#e4dfb9', '#d9dfcb', '#e4cfd2'];
   layout.rooms.forEach((room, i) => {
-    rect(ctx, room.x, room.y, room.w, room.h, colors[i % colors.length]);
-    for (let y = room.y + 10; y < room.y + room.h; y += 20) rect(ctx, room.x + 6, y, room.w - 12, 1, '#ffffff30');
-    rect(ctx, room.desk.x - 13, room.desk.y - 12, 168, 100, '#294c3915');
-    desk(ctx, room.desk.x + 2, room.desk.y + 2);
-    shelf(ctx, room.shelf.x, room.shelf.y);
-    plant(ctx, room.plant.x + 14, room.plant.y + 15);
-    room.walls.forEach(w => { rect(ctx, w.x, w.y, w.w, w.h, '#a4b599'); rect(ctx, w.x, w.y - 3, w.w, 3, '#fafbef'); });
+    const theme = roomTheme(i);
+    rect(ctx, room.x, room.y, room.w, room.h, theme.tile);
+    rect(ctx, room.x + 6, room.y + 6, room.w - 12, room.h - 12, theme.floor);
+    rect(ctx, room.x + 6, room.y + 6, room.w - 12, 7, theme.accent);
+    roomPattern(ctx, room, theme);
+    themedRug(ctx, room, theme);
+    themedDesk(ctx, room.desk.x + 2, room.desk.y + 2, theme);
+    themedShelf(ctx, room.shelf.x, room.shelf.y, theme);
+    cornerFurnishing(ctx, room.plant.x, room.plant.y, theme);
+    themeProp(ctx, room.x + 25, room.y + 154, theme);
+    themeProp(ctx, room.x + 249, room.y + 87, theme);
+    room.walls.forEach(w => { rect(ctx, w.x, w.y, w.w, w.h, theme.tile); rect(ctx, w.x, w.y - 3, w.w, 3, '#fffaf0'); });
     const doorX = room.right ? room.x : room.x + room.w;
-    rect(ctx, doorX - 9, room.y + 135, 18, 59, '#d8d9bc');
+    rect(ctx, doorX - 9, room.y + 135, 18, 59, '#85858e');
+    rect(ctx, doorX - 9, room.y + 135, 18, 5, theme.pop);
   });
-  rect(ctx, 369, layout.height - 51, 62, 24, '#a3b596');
+  rect(ctx, 369, layout.height - 51, 62, 24, '#8bc0a3');
   if (!layout.rooms.length) sign(ctx, 400, 155, 'BIENVENIDO', '#28594c');
   if (options.player) { avatar(ctx, options.player.x, options.player.y, options.player, options.walking ? Math.sin((options.time || 0)/85)*2 : 0); nameTag(ctx, options.player.x, options.player.y + 8, 'Tú', '#28594c'); }
 }
