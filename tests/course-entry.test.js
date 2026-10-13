@@ -180,17 +180,35 @@ test('code normalization is consistent when entering directly in the classroom',
   assert.equal(page.state('questions[questionIndex]'), 'firstName');
 });
 
-test('woman and man avatar choices have distinct silhouettes and save the choice', async () => {
+test('woman avatar starts with visible long hair and pink, and lets the student save another outfit color', async () => {
   const page = await boot({ submitted: NEW });
   const choices = page.get('#presentation-options').children;
   assert.deepEqual(choices.map(button => button.children[0].textContent), ['Mujer', 'Hombre']);
-  assert.notEqual(avatarSVG({ skin: 1, shirt: 0, hair: 'short', presentation: 'mujer' }),
-    avatarSVG({ skin: 1, shirt: 0, hair: 'short', presentation: 'hombre' }));
   choices[0].click();
   assert.equal(page.state('look.presentation'), 'mujer');
+  assert.equal(page.state('look.hair'), 'long');
+  assert.equal(page.state('look.outfit'), 5);
+  assert.equal(page.get('#shirt-options').children.length, 7);
+  const woman = avatarSVG({ skin: 1, shirt: 0, outfit: 5, hair: 'long', presentation: 'mujer' });
+  const man = avatarSVG({ skin: 1, shirt: 1, outfit: 1, hair: 'short', presentation: 'hombre' });
+  assert.match(woman, /fill="#d8588f"/);
+  assert.notEqual(woman, man);
+  // The long locks are still visible at shoulder height on the finished sprite.
+  const pixel = (svg, x, y) => [...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" fill="(#[0-9a-f]+)"\/>/g)]
+    .filter(([, rx, ry, w, h]) => x >= +rx && x < +rx + +w && y >= +ry && y < +ry + +h)
+    .at(-1)?.[5];
+  assert.equal(pixel(woman, 4, 30), '#594735');
+  assert.notEqual(pixel(man, 4, 30), '#594735');
+  page.get('#shirt-options').children[6].click();
+  assert.equal(page.state('look.outfit'), 6);
+  assert.equal(page.state('look.shirt'), 0);
   page.get('#avatar-form').dispatch('submit');
   await page.settle();
-  assert.equal(page.calls.find(call => call.name === 'save_student_avatar').body.p_avatar.presentation, 'mujer');
+  const saved = page.calls.find(call => call.name === 'save_student_avatar').body.p_avatar;
+  assert.equal(saved.presentation, 'mujer');
+  assert.equal(saved.hair, 'long');
+  assert.equal(saved.outfit, 6);
+  assert.ok(Buffer.byteLength(JSON.stringify(saved)) < 256);
 });
 
 test('joining a team requires the red confirmation and allows going back', async () => {

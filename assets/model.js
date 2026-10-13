@@ -1,7 +1,7 @@
 // Esta versión no autentica estudiantes ni almacena información personal.
 export const DEMO_CODE = 'DEMO2026';
 export const SKINS = ['#ecc39c', '#cd986b', '#a86c48', '#70472f'];
-export const SHIRTS = ['#557d61', '#6887ad', '#bb7251', '#b28c3e', '#937496'];
+export const SHIRTS = ['#557d61', '#6887ad', '#bb7251', '#b28c3e', '#937496', '#d8588f', '#9c69c7'];
 export const DEMO_PROFILES = [
   { id: 'demo-ana', firstName: 'Ana', lastName: 'Ruiz', skin: 1, shirt: 0, hair: 'long' },
   { id: 'demo-mateo', firstName: 'Mateo', lastName: 'López', skin: 2, shirt: 1, hair: 'short' },
@@ -40,3 +40,4 @@ export function joinTopic(topics, currentId, nextId) {
 export function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
+

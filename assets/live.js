@@ -1,15 +1,15 @@
 import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js';
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
-import { SKINS, SHIRTS, normalizeCode } from './model.js';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261013f';
+import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261013g';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment } from './world-layout.js?v=20261013f';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let courseId = '', profile = null, topics = [], selectedTopic = null;
-let look = { skin: 1, shirt: 0, hair: 'short', presentation: 'hombre' };
+let look = { skin: 1, shirt: 0, outfit: 0, hair: 'short', presentation: 'hombre' };
 let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, onArrival = null;
 let chatTimer = 0, chatLoading = false, chatTeamId = '';
 let participantColor = createParticipantPalette();
@@ -143,6 +143,7 @@ async function enterCourse(code, details = {}) {
   $('#course-title').textContent = result.course_name;
   $('#avatar-name').textContent = profile.firstName + ' ' + profile.lastName;
   look = { skin: profile.avatar?.skin ?? 1, shirt: profile.avatar?.shirt ?? 0,
+    outfit: profile.avatar?.outfit ?? profile.avatar?.shirt ?? 0,
     hair: profile.avatar?.hair ?? 'short', presentation: profile.avatar?.presentation === 'mujer' ? 'mujer' : 'hombre' };
   renderAvatarOptions();
   if (Object.keys(profile.avatar || {}).length) await enterRoom();
@@ -180,15 +181,21 @@ function renderAvatarOptions() {
     button.dataset.presentation = value;
     button.setAttribute('aria-label', 'Avatar ' + label.toLowerCase());
     button.setAttribute('aria-pressed', String(look.presentation === value));
-    button.innerHTML = avatarSVG({ ...look, presentation: value });
+    button.innerHTML = avatarSVG({ ...look, presentation: value,
+      hair: value === 'mujer' ? 'long' : 'short', outfit: value === 'mujer' ? 5 : 1 });
     button.append(element('span', label));
-    button.addEventListener('click', () => { look.presentation = value; renderAvatarOptions();
+    button.addEventListener('click', () => { if (look.presentation !== value) {
+      look.presentation = value;
+      look.hair = value === 'mujer' ? 'long' : 'short';
+      look.outfit = value === 'mujer' ? 5 : 1;
+      look.shirt = value === 'mujer' ? 0 : 1;
+    } renderAvatarOptions();
       $('#presentation-options [data-presentation="' + value + '"]').focus(); });
     return button;
   }));
   const choices = [
     ['skin-options', 'skin', SKINS.slice(0, 3), ['Claro', 'Medio', 'Oscuro']],
-    ['shirt-options', 'shirt', SHIRTS.slice(0, 3), ['Verde', 'Azul', 'Naranja']]
+    ['shirt-options', 'outfit', SHIRTS, ['Verde', 'Azul', 'Naranja', 'Mostaza', 'Violeta', 'Rosa', 'Lila']]
   ];
   for (const [id, key, colors, labels] of choices) {
     const buttons = colors.map((color, index) => {
@@ -196,7 +203,11 @@ function renderAvatarOptions() {
       button.type = 'button'; button.style.background = color;
       button.setAttribute('aria-label', labels[index]);
       button.setAttribute('aria-pressed', String(look[key] === index));
-      button.addEventListener('click', () => { look[key] = index; renderAvatarOptions(); });
+      button.addEventListener('click', () => { look[key] = index;
+        // The existing save endpoint accepts shirt 0–2; the extra outfit index
+        // preserves the wider palette in its JSON avatar without a data migration.
+        if (key === 'outfit') look.shirt = index < 3 ? index : 0;
+        renderAvatarOptions(); });
       return button;
     });
     $('#' + id).replaceChildren(...buttons);

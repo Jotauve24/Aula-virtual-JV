@@ -1,4 +1,4 @@
-import { SKINS, SHIRTS } from './model.js';
+import { SKINS, SHIRTS } from './model.js?v=20261013g';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -35,21 +35,31 @@ const obstacles = [
 
 function spriteRects(avatar, step = 0) {
   const skin = SKINS[avatar.skin] || SKINS[1];
-  const shirt = SHIRTS[avatar.shirt] || SHIRTS[0];
+  const outfit = Number.isInteger(avatar.outfit) && avatar.outfit >= 0 && avatar.outfit < SHIRTS.length
+    ? avatar.outfit : avatar.shirt;
+  const shirt = SHIRTS[outfit] || SHIRTS[0];
+  const hair = '#594735';
   const r = [];
   const add = (x, y, w, h, c) => r.push([x, y, w, h, c]);
-  if (avatar.hair === 'long') add(6, 6, 20, 23, '#594735');
+  if (avatar.hair === 'long') {
+    // Back layer falls past the shoulders instead of disappearing beneath the shirt.
+    add(4, 5, 25, 31, hair); add(3, 14, 5, 22, hair); add(26, 14, 5, 22, hair);
+  }
   add(8, 5, 16, 15, skin); add(6, 6, 2, 11, skin); add(24, 6, 2, 11, skin);
-  add(8, 3, 16, 5, '#594735'); add(6, 6, 4, 5, '#594735');
+  add(8, 3, 16, 5, hair); add(6, 6, 4, 5, hair);
   if (avatar.hair === 'curly') { add(5, 2, 21, 6, '#3e3732'); add(3, 5, 5, 10, '#3e3732'); add(24, 5, 5, 10, '#3e3732'); }
   if (avatar.direction !== 'up') { add(12, 12, 2, 2, '#35352d'); add(21, 12, 2, 2, '#35352d'); }
-  else add(8, 6, 16, 9, '#594735');
+  else add(8, 6, 16, 9, hair);
   add(13, 20, 7, 3, skin); add(8, 23, 17, 14, shirt); add(4, 25, 5, 8, shirt); add(25, 25, 5, 8, shirt);
   add(4, 33, 5, 5, skin); add(25, 33, 5, 5, skin);
   add(9, 37, 7, 9 - step, '#465552'); add(19, 37, 7, 9 + step, '#465552');
   if (avatar.presentation === 'mujer') {
-    add(8, 35, 17, 5, shirt); add(6, 40, 21, 3, shirt);
-    add(10, 43, 5, 3, '#465552'); add(20, 43, 5, 3, '#465552');
+    add(9, 34, 15, 4, shirt); add(7, 38, 19, 4, shirt); add(5, 42, 23, 3, shirt);
+  }
+  if (avatar.hair === 'long') {
+    add(3, 12, 5, 25, hair); add(26, 12, 5, 25, hair);
+    add(4, 37, 4, 4, hair); add(26, 37, 4, 4, hair);
+    add(6, 18, 2, 12, '#765c46'); add(26, 18, 2, 12, '#765c46');
   }
   add(8, 44 - step, 8, 4, '#34403d'); add(19, 44 + step, 8, 4, '#34403d');
   return r;
