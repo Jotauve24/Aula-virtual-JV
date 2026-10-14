@@ -12,7 +12,9 @@ function newCourseCode() {
   return `MAT-${part.slice(0,5)}-${part.slice(5,10)}-${part.slice(10)}`;
 }
 if (!configured) { show('login'); $('#login').hidden = true; $('#setup').hidden = false; }
-else if (signedIn()) run(loadCourses); else show('login');
+else if (signedIn()) run(async () => { await loadCourses(); const target = new URLSearchParams(location.search).get('materia');
+  if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(target || '')) await openCourse(target);
+}); else show('login');
 if (configured) googleAvailable().then(available => { $('#google-login').hidden = !available; }).catch(() => {});
 $('#google-login').addEventListener('click', signInWithGoogle);
 $('#login').addEventListener('submit', event => { event.preventDefault(); run(async () => {
@@ -84,6 +86,7 @@ async function openCourse(id) {
     ? 'El código permite ingresar al aula.'
     : 'No aparece entre las materias activas. El código y el acceso de estudiantes están bloqueados.';
   $('#toggle-course').textContent = active ? 'Deshabilitar materia' : 'Restaurar materia';
+  $('#enter-room').hidden = !active;
   $('#registration').hidden = !active;
   $('#new-topic').hidden = !active;
   $('#group-count-form').hidden = !active;
@@ -204,6 +207,9 @@ $('#toggle-course').addEventListener('click', () => run(async () => {
 }));
 $('#delete-course').addEventListener('click', () => openDeleteCourse({ ...overview.course,
   student_count: overview.students.length, topic_count: overview.topics.length }));
+$('#enter-room').addEventListener('click', () => {
+  if (overview?.course?.active) location.assign('./docente-sala.html?materia=' + encodeURIComponent(overview.course.id));
+});
 $('#back').addEventListener('click', () => run(loadCourses));
 $('#logout').addEventListener('click', () => { signOut(); show('login'); });
 
