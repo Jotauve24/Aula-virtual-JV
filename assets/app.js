@@ -1,6 +1,6 @@
 import './embed.js?v=20261012a';
 import { normalizeCode } from './model.js';
-import { drawWorld } from './world.js?v=20261014a';
+import { drawWorld } from './world.js?v=20261014b';
 import { configured } from './supabase-client.js';
 
 const form = document.querySelector('#course-form');

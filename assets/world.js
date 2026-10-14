@@ -6,25 +6,25 @@ export const WORLD_HEIGHT = 560;
 // The first ten have their own palette and workstation; later groups get a
 // fresh palette as well, since a course may have up to forty groups.
 export const ROOM_THEMES = [
-  { id: 'bosque', accent: '#126447', floor: '#c0f0a3', tile: '#47b883', rug: '#42a975', surface: '#ffe199', edge: '#81574b', chair: '#278e65', pop: '#ffcd43', card: '#e9ffe0' },
-  { id: 'oceano', accent: '#115e88', floor: '#aff0f2', tile: '#32b7cc', rug: '#359fc2', surface: '#fff0bb', edge: '#536d85', chair: '#1684b5', pop: '#ffd568', card: '#e3fbff' },
-  { id: 'arte', accent: '#9b315d', floor: '#ffd5b8', tile: '#f18589', rug: '#dc6d91', surface: '#fff0bd', edge: '#a86062', chair: '#c04485', pop: '#ffcd4b', card: '#fff0e6' },
-  { id: 'cosmos', accent: '#493994', floor: '#cfb8f9', tile: '#826ad0', rug: '#554fa1', surface: '#48588f', edge: '#373d78', chair: '#8c65c5', pop: '#ffe078', card: '#f2eaff' },
-  { id: 'biblioteca', accent: '#7b4c24', floor: '#ffe0a4', tile: '#d9a66a', rug: '#bc8a63', surface: '#ffdc9c', edge: '#855c49', chair: '#bd7252', pop: '#f8cd58', card: '#fff7df' },
-  { id: 'laboratorio', accent: '#126e65', floor: '#b6f4df', tile: '#45c8ad', rug: '#40a9a0', surface: '#e2ffe9', edge: '#5b9187', chair: '#128e80', pop: '#69e7cf', card: '#e5fff1' },
-  { id: 'musica', accent: '#8c296d', floor: '#f9c4e3', tile: '#d96db8', rug: '#a65caa', surface: '#614170', edge: '#75476c', chair: '#c34d9b', pop: '#ffcf5b', card: '#fff0fa' },
-  { id: 'tecnologia', accent: '#20528c', floor: '#bfdbff', tile: '#62a5ed', rug: '#517cbd', surface: '#294f88', edge: '#375b82', chair: '#288dc0', pop: '#70edee', card: '#e9f6ff' },
-  { id: 'cafe', accent: '#904533', floor: '#f9d4b6', tile: '#d8896b', rug: '#b57573', surface: '#ffe4ad', edge: '#805345', chair: '#ce705d', pop: '#ffc462', card: '#fff0e3' },
-  { id: 'arquitectura', accent: '#3c6570', floor: '#d7efcf', tile: '#76b7ae', rug: '#699899', surface: '#e9f7cc', edge: '#55776e', chair: '#439c88', pop: '#f6ca58', card: '#f1fff0' }
+  { id: 'bosque', accent: '#27664f', floor: '#e0e8dc', tile: '#91ad9a', rug: '#769b80', surface: '#d7b889', edge: '#80664f', chair: '#357b5e', pop: '#d7aa58', card: '#f1f6f1' },
+  { id: 'oceano', accent: '#245f79', floor: '#deeaeb', tile: '#89afbb', rug: '#6e9eb1', surface: '#e4d4b0', edge: '#6d7576', chair: '#367e9b', pop: '#cca85e', card: '#eff6f8' },
+  { id: 'arte', accent: '#9a5b4e', floor: '#efe3d6', tile: '#bc9c87', rug: '#bb8d7c', surface: '#e9d1aa', edge: '#8a6960', chair: '#a06258', pop: '#deb260', card: '#faf3ed' },
+  { id: 'cosmos', accent: '#405570', floor: '#dfe5eb', tile: '#98a9bb', rug: '#7085a3', surface: '#435a74', edge: '#344657', chair: '#516f94', pop: '#d4b76e', card: '#eff3f8' },
+  { id: 'biblioteca', accent: '#805f36', floor: '#e9e2d3', tile: '#bba783', rug: '#ad9474', surface: '#dbc59f', edge: '#7a644b', chair: '#99754f', pop: '#c49d54', card: '#f8f4eb' },
+  { id: 'laboratorio', accent: '#286e67', floor: '#dfece6', tile: '#8db5a8', rug: '#7aa79a', surface: '#e1eee3', edge: '#647f78', chair: '#408f83', pop: '#8ac9ba', card: '#eff7f3' },
+  { id: 'musica', accent: '#735367', floor: '#e8e0e5', tile: '#aa92a3', rug: '#967c92', surface: '#564a60', edge: '#735c70', chair: '#876578', pop: '#c6a76c', card: '#f5f0f4' },
+  { id: 'tecnologia', accent: '#325f82', floor: '#e0e8ef', tile: '#92acc3', rug: '#6b8da8', surface: '#3b5774', edge: '#4a6479', chair: '#4c7fa0', pop: '#86bfc7', card: '#f0f5f9' },
+  { id: 'cafe', accent: '#8b5d43', floor: '#ede1d3', tile: '#c5a68c', rug: '#af8e7a', surface: '#e1c49b', edge: '#7e604c', chair: '#ad7655', pop: '#cea060', card: '#faf3ec' },
+  { id: 'arquitectura', accent: '#4c6c69', floor: '#e1e8e4', tile: '#9bb6ae', rug: '#859e98', surface: '#d1e0d7', edge: '#637b70', chair: '#698e7f', pop: '#cab174', card: '#f0f5f1' }
 ];
 export function roomTheme(index) {
   const theme = ROOM_THEMES[index % ROOM_THEMES.length];
   if (index < ROOM_THEMES.length) return theme;
   const hue = (index * 47 + 33) % 360;
-  return { ...theme, accent: `hsl(${hue} 48% 29%)`, floor: `hsl(${hue} 38% 86%)`,
-    tile: `hsl(${hue} 32% 74%)`, rug: `hsl(${hue} 34% 68%)`,
-    chair: `hsl(${hue} 52% 42%)`, pop: `hsl(${(hue + 60) % 360} 78% 62%)`,
-    card: `hsl(${hue} 65% 96%)` };
+  return { ...theme, accent: `hsl(${hue} 34% 30%)`, floor: `hsl(${hue} 14% 91%)`,
+    tile: `hsl(${hue} 20% 69%)`, rug: `hsl(${hue} 22% 59%)`,
+    chair: `hsl(${hue} 32% 42%)`, pop: `hsl(${(hue + 60) % 360} 44% 61%)`,
+    card: `hsl(${hue} 24% 96%)` };
 }
 const obstacles = [
   { x: 129, y: 130, w: 155, h: 88 }, { x: 500, y: 130, w: 155, h: 88 },
@@ -117,7 +117,7 @@ function detail(ctx) {
     if((Math.floor(x/18)+Math.floor(y/18))%2===0) rect(ctx,x,y,18,18,'#ffffff0b');
     rect(ctx,x,y+17,17,1,'#50654d14');
   }
-  [[78,123,223,112,'#65be87'],[455,123,228,112,'#5cb9d1'],[455,363,228,113,'#e9a16e']].forEach(([x,y,w,h,c])=>{
+  [[78,123,223,112,'#89ad91'],[455,123,228,112,'#88aebb'],[455,363,228,113,'#c1a287']].forEach(([x,y,w,h,c])=>{
     rect(ctx,x+5,y+6,w,h,'#33453f24');rect(ctx,x,y,w,h,c);
     for(let i=x+8;i<x+w-8;i+=16) rect(ctx,i,y+6,1,h-12,'#ffffff20');
   });
@@ -147,11 +147,11 @@ export function drawWorld(canvas, options = {}) {
   if (options.layout) return drawRoomWorld(canvas, options);
   const ctx=canvas.getContext('2d'); if (!ctx) return;
   ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,800,560);
-  rect(ctx,36,42,730,474,'#252e5a40');rect(ctx,30,32,730,474,'#586396');rect(ctx,34,28,730,474,'#fff4d8');
+  rect(ctx,36,42,730,474,'#32475b20');rect(ctx,30,32,730,474,'#87999f');rect(ctx,34,28,730,474,'#ecebe0');
   rect(ctx,34,28,730,12,'#f7f6ea');rect(ctx,34,40,730,9,'#c4c9ad');
   // Cada espacio conserva su propio suelo, mobiliario y rótulo.
-  rect(ctx,56,58,300,200,'#b8edb4');rect(ctx,434,58,306,200,'#b2e7ee');
-  rect(ctx,56,309,300,184,'#ffddaf');rect(ctx,434,309,306,184,'#f9c9ce');
+  rect(ctx,56,58,300,200,'#dfe8d9');rect(ctx,434,58,306,200,'#d9e8ea');
+  rect(ctx,56,309,300,184,'#ece2d1');rect(ctx,434,309,306,184,'#e5dfd8');
   detail(ctx);
   for(let y=58;y<495;y+=24) for(let x=56;x<740;x+=24) {
     rect(ctx,x,y,1,22,'#66785108');rect(ctx,x,y+22,23,1,'#66785108');
@@ -432,12 +432,11 @@ function drawRoomWorld(canvas, options) {
   if (canvas.height !== layout.height) canvas.height = layout.height;
   const ctx = canvas.getContext('2d'); if (!ctx) return;
   ctx.imageSmoothingEnabled = false;
-  rect(ctx, 0, 0, layout.width, layout.height, '#263456');
-  rect(ctx, 18, 18, layout.width - 36, layout.height - 36, '#6466a3');
+  rect(ctx, 0, 0, layout.width, layout.height, '#435a6b');
+  rect(ctx, 18, 18, layout.width - 36, layout.height - 36, '#c4cfd8');
   for (let y = 20; y < layout.height - 20; y += 20) {
-    rect(ctx, 350, y, 100, 1, '#d4d2f133');
-    rect(ctx, 399, y, 1, 20, '#b8bcfa70');
-    if (y % 80 === 20) { rect(ctx, 381, y + 7, 3, 3, '#ffe284'); rect(ctx, 418, y + 7, 3, 3, '#78e4db'); }
+    rect(ctx, 350, y, 100, 1, '#e4ebef88');
+    rect(ctx, 399, y, 1, 20, '#aab9c355');
   }
   layout.rooms.forEach((room, i) => {
     const theme = roomTheme(i);
@@ -453,17 +452,17 @@ function drawRoomWorld(canvas, options) {
     themeProp(ctx, room.x + 249, room.y + 87, theme);
     room.walls.forEach(w => { rect(ctx, w.x, w.y, w.w, w.h, theme.tile); rect(ctx, w.x, w.y - 3, w.w, 3, '#fffaf0'); });
     if (room.center) {
-      rect(ctx, room.x + 130, room.y - 3, 40, 10, '#6466a3');
+      rect(ctx, room.x + 130, room.y - 3, 40, 10, '#c4cfd8');
       rect(ctx, room.x + 130, room.y + 7, 40, 4, theme.pop);
-      rect(ctx, room.x + 130, room.y + 213, 40, 10, '#6466a3');
+      rect(ctx, room.x + 130, room.y + 213, 40, 10, '#c4cfd8');
       rect(ctx, room.x + 130, room.y + 209, 40, 4, theme.pop);
     } else {
       const doorX = room.right ? room.x : room.x + room.w;
-      rect(ctx, doorX - 9, room.y + 135, 18, 59, '#6466a3');
+      rect(ctx, doorX - 9, room.y + 135, 18, 59, '#c4cfd8');
       rect(ctx, doorX - 9, room.y + 135, 18, 5, theme.pop);
     }
   });
-  rect(ctx, 369, layout.height - 51, 62, 24, '#80e7bf');
+  rect(ctx, 369, layout.height - 51, 62, 24, '#8faca2');
   if (!layout.rooms.length) sign(ctx, 400, 155, 'BIENVENIDO', '#28594c');
   for (const member of options.seated || []) {
     const theme = roomTheme(member.themeIndex);
@@ -484,7 +483,7 @@ function drawRoomWorld(canvas, options) {
     }
     occupied.push({ x, y: peer.y });
     avatar(ctx, x, peer.y, peer.avatar || {});
-    nameTag(ctx, x, peer.y + 8, peer.name || 'Compañero', '#4c315c');
+    nameTag(ctx, x, peer.y + 8, peer.name || 'Compañero', '#38586f');
   }
   if (options.player) { avatar(ctx, options.player.x, options.player.y, options.player, options.walking ? Math.sin((options.time || 0)/85)*2 : 0); nameTag(ctx, options.player.x, options.player.y + 8, 'Tú', '#28594c'); }
 }

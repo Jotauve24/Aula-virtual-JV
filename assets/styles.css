@@ -83,44 +83,42 @@ input::placeholder{color:#5b6b5f}
 @media(max-width:500px){.site-header{padding:18px}.login-layout{padding-inline:20px}.login-content h1{font-size:clamp(42px,12vw,50px)}.intro{font-size:15px}.preview-panel{margin-inline:auto}.preview-bottom span{font-size:11px}.entry-note p{font-size:12px}.site-footer{font-size:12px}.room-side p{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.button.primary{transition:none}.button.primary:not(:disabled):hover{transform:none}}
 
-/* The student entrance is its own playful invitation before the live aula. */
-body:has(.login-layout){background:radial-gradient(circle at 8% 4%,#ffe4b0 0,transparent 30%),radial-gradient(circle at 95% 92%,#dfc5f7 0,transparent 33%),#fffaf3}
+/* Student entrance: restrained navy, teal and neutral surfaces. */
+body:has(.login-layout){background:#f5f7fa}
 body:has(.login-layout) .site-header{padding-bottom:10px}
-body:has(.login-layout) .brand-mark{color:#7546ae}
-body:has(.login-layout) .version-badge{background:#e9fff2;border-color:#a7e9c8;color:#195c49;font-weight:800}
-body:has(.login-layout) .status-dot{background:#19b978;box-shadow:0 0 0 3px #19b9782b}
+body:has(.login-layout) .brand-mark{color:#203b55}
+body:has(.login-layout) .brand{color:#243b50}
+body:has(.login-layout) .version-badge{background:#f0f7f4;border-color:#d0e4dc;color:#386251;font-weight:650}
+body:has(.login-layout) .status-dot{background:#3e8a70;box-shadow:none}
+body:has(.login-layout) .button.secondary{border-color:#cbd6df;color:#314d66}
 .login-layout{gap:clamp(26px,5vw,72px)}
 .login-content{max-width:445px;padding:22px 0}
-.login-content .eyebrow{color:#953e80;font-weight:850}
-.login-content .eyebrow-line{background:#ed6f89}
-.login-content h1{font-family:ui-sans-serif,system-ui,sans-serif;font-weight:900;font-size:clamp(39px,4.3vw,61px);line-height:1.08;letter-spacing:-.055em;margin:18px 0 19px;color:#302d69}
-.login-content h1 em{font-style:normal;font-weight:900;color:#d54985}
-.login-content .intro{font-size:17px;line-height:1.6;color:#564b71}
-.login-content .intro strong{color:#91408d}
-.login-content label{color:#393167}
-.login-content .code-field{border:2px solid #a190d6;border-radius:14px;box-shadow:0 5px 0 #c6b2df66}
-.login-content .code-field:focus-within{border-color:#6849b3;box-shadow:0 0 0 4px #a88aeb4d}
-.login-content .code-field svg{stroke:#7452a7}
-.login-content .button.primary{background:#6244b0;border-color:#6244b0;box-shadow:0 6px 0 #3e327d;color:#fff}
-.login-content .button.primary:not(:disabled):hover{background:#493486;box-shadow:0 8px 0 #302460}
-.login-content .entry-note{background:#fff0d9;border:1px solid #e8b77a;border-left:5px solid #ec845f;border-radius:13px}
-.login-content .entry-note p{color:#694f49}
-.login-content .entry-note strong{color:#7f3f50}
-.preview-panel{background:linear-gradient(145deg,#a5dddf 0%,#e5c1eb 58%,#ffdbae 100%);border:2px solid #9780bc;border-radius:23px;box-shadow:0 9px 0 #8674a966,0 24px 44px #554b992b}
-.preview-panel:before,.preview-panel:after{position:absolute;pointer-events:none;content:'✦';font-size:30px;color:#fff8dc;text-shadow:3px 4px 0 #ac71ac99}
-.preview-panel:before{top:25px;right:20px}
-.preview-panel:after{bottom:62px;left:18px;color:#fff0b5;font-size:22px}
-.preview-top{position:relative;z-index:1}
-.preview-top .eyebrow{color:#474178;font-weight:850}
-.preview-top h2{font-family:ui-sans-serif,system-ui,sans-serif;font-size:clamp(25px,2.3vw,33px);font-weight:850;color:#303171;letter-spacing:-.04em}
-.preview-top .pixel-star{color:#ee5d85;font-size:46px}
-.preview-scene canvas{filter:drop-shadow(0 7px 0 #60569f66)}
-.map-caption{background:#fffaf2f2;border:1px solid #e5b689;color:#67446a;font-weight:750}
-.map-caption-dot{background:#f27188}
-.preview-bottom{position:relative;z-index:1;border-top-color:#8869b966}
-.preview-bottom span{color:#34336b;font-weight:750}
-.preview-bottom i{border:0;background:#fff6cf;color:#69449c;font-weight:850}
+.login-content .eyebrow{color:#526e86;font-weight:700;letter-spacing:.13em}
+.login-content .eyebrow-line{background:#387d94}
+.login-content h1{font-family:ui-sans-serif,system-ui,sans-serif;font-weight:750;font-size:clamp(38px,4.1vw,56px);line-height:1.12;letter-spacing:-.04em;margin:18px 0 19px;color:#203b55}
+.login-content h1 em{font-style:normal;font-weight:750;color:#287b80}
+.login-content .intro{font-size:16px;line-height:1.7;color:#617184}
+.login-content label{color:#2a4359}
+.login-content .code-field{border:1px solid #b6c7d5;border-radius:10px;box-shadow:none}
+.login-content .code-field:focus-within{border-color:#286990;box-shadow:0 0 0 3px #28699020}
+.login-content .code-field svg{stroke:#648397}
+.login-content .button.primary{background:#235f8b;border-color:#235f8b;box-shadow:0 4px 12px #203b5519;color:#fff;font-weight:650}
+.login-content .button.primary:not(:disabled):hover{background:#194b6f;transform:translateY(-1px);box-shadow:0 5px 14px #203b5524}
+.login-content .help-button{color:#607586}
+.login-content .entry-note{background:#edf5f3;border:1px solid #d5e4df;border-left:3px solid #518e80;border-radius:10px;box-shadow:none}
+.login-content .entry-note p{color:#5e726c}
+.login-content .entry-note strong{color:#355b50}
+.login-content .entry-note-icon{background:#427e6c}
+.preview-panel{background:#edf2f5;border:1px solid #cfdae3;border-radius:18px;box-shadow:0 16px 38px #203b5510}
+.preview-panel:before,.preview-panel:after{content:none}
+.preview-top .eyebrow{color:#57728b;font-weight:700}
+.preview-top h2{font-family:ui-sans-serif,system-ui,sans-serif;font-size:clamp(25px,2.3vw,30px);font-weight:700;color:#29445c;letter-spacing:-.025em}
+.preview-scene canvas{filter:drop-shadow(0 5px 8px #29445c14)}
+.map-caption{background:#fffffff2;border:1px solid #d1dce4;color:#536c7e;font-weight:550}
+.map-caption-dot{background:#478c7b}
+.preview-bottom{border-top-color:#cbd8e0}
+.preview-bottom span{color:#435f74;font-weight:600}
+.preview-bottom i{border:1px solid #c3d2de;background:#f7fafc;color:#365f7a;font-weight:700}
 @media(max-width:800px){.login-content{max-width:470px}.preview-panel{max-width:550px}}
-@media(max-width:500px){.login-content h1{font-size:clamp(38px,10vw,49px)}.login-content .intro{font-size:15px}.preview-panel{padding:22px 14px}.preview-top h2{font-size:24px}}
+@media(max-width:500px){.login-content h1{font-size:clamp(36px,9.5vw,46px)}.login-content .intro{font-size:15px}.preview-panel{padding:22px 14px}.preview-top h2{font-size:24px}}
 @media(forced-colors:active){.preview-panel,.login-content .code-field{border:2px solid CanvasText}}
-

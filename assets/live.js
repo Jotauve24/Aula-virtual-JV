@@ -2,7 +2,7 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014a';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014b';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014a';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
@@ -27,8 +27,8 @@ function show(stage) {
   $('#edit-avatar').hidden = !profile;
   $('#logout').hidden = !studentSignedIn();
   $('#room').dataset.stage = stage;
-  $('#course-title').textContent = stage === 'registration' ? 'Tu aventura empieza aquí'
-    : stage === 'avatar' ? 'Dale vida a tu personaje' : courseName;
+  $('#course-title').textContent = stage === 'registration' ? 'Bienvenido a tu aula'
+    : stage === 'avatar' ? 'Personaliza tu avatar' : courseName;
   $('#room-intro').textContent = stage === 'registration'
     ? 'Entra con el código de tu docente y prepara tu lugar en el aula.'
     : stage === 'avatar' ? 'Elige tu estilo antes de entrar a las mesas de trabajo.'
