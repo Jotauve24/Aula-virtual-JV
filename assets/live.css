@@ -116,3 +116,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 #delete-student-error{color:#9c332e;font-weight:650}
 #delete-student-progress:empty{display:none}
 @media(max-width:560px){#delete-student-dialog .delete-course-actions{flex-direction:column}#delete-student-dialog .delete-course-actions button{width:100%}}
+
+.teacher-header .brand-mark{display:block;background:transparent;border-radius:0}
