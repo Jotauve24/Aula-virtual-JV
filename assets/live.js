@@ -332,9 +332,28 @@ function homePanel() {
 }
 function teamRosterPanel(team) {
   const section = element('section', '', 'team-roster-panel');
-  section.append(element('span', 'TU EQUIPO', 'eyebrow'), element('h3', team.name),
-    element('p', team.instructions || 'El docente todavía no añadió indicaciones.'));
-  section.append(element('h4', 'Tus compañeros'));
+  section.append(element('span', 'TU EQUIPO', 'eyebrow'), element('h3', team.name));
+  const mine = team.members.find(member => member.mine);
+  const sharingCard = element('div', '', 'share-contact-card');
+  sharingCard.dataset.sharing = String(!!mine?.sharing);
+  const sharingHeading = element('div', '', 'share-contact-heading');
+  const sharingIcon = element('span', '✉', 'share-contact-icon');
+  sharingIcon.setAttribute('aria-hidden', 'true');
+  const sharingText = element('div');
+  sharingText.append(element('span', 'TU PRIVACIDAD', 'share-contact-eyebrow'),
+    element('h4', '¿Quieres compartir tus datos con tu equipo?', 'share-contact-title'));
+  sharingHeading.append(sharingIcon, sharingText);
+  const sharingDescription = element('p', 'Al activarlo, tus compañeros podrán ver tu correo y teléfono. Puedes cambiarlo cuando quieras.', 'share-contact-description');
+  const label = element('label', '', 'share-contact');
+  const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = !!mine?.sharing;
+  const toggleText = element('span', 'Sí, compartir mi correo y teléfono con mi equipo');
+  label.append(toggle, toggleText);
+  const sharingStatus = element('span', toggle.checked ? 'Visible para mi equipo' : 'Contacto privado', 'share-contact-status');
+  sharingStatus.setAttribute('role', 'status');
+  sharingCard.append(sharingHeading, sharingDescription, label, sharingStatus);
+  section.append(sharingCard,
+    element('p', team.instructions || 'El docente todavía no añadió indicaciones.'),
+    element('h4', 'Tus compañeros'));
   const roster = element('div', '', 'team-roster');
   for (const member of team.members) {
     const card = element('div', '', 'team-member');
@@ -352,18 +371,16 @@ function teamRosterPanel(team) {
     roster.append(card);
   }
   section.append(roster);
-  const mine = team.members.find(member => member.mine);
-  const label = element('label', '', 'share-contact');
-  const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = !!mine?.sharing;
-  label.append(toggle, element('span', 'Compartir mi correo y teléfono con este equipo'));
   toggle.addEventListener('change', () => run(async () => {
     toggle.disabled = true;
+    sharingStatus.textContent = 'Guardando tu preferencia…';
     try { await studentRpc('team_contact_setting', { p_course_id: courseId, p_share: toggle.checked });
       topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId })); renderTopics(); }
-    catch (error) { toggle.checked = !toggle.checked; throw error; }
+    catch (error) { toggle.checked = !toggle.checked;
+      sharingStatus.textContent = toggle.checked ? 'Visible para mi equipo' : 'Contacto privado';
+      throw error; }
     finally { toggle.disabled = false; }
   }));
-  section.append(label, element('p', 'Puedes cambiar esta opción en cualquier momento.', 'field-hint'));
   return section;
 }
 function teamChatPanel(team) {
