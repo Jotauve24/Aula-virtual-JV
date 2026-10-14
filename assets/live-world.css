@@ -322,7 +322,7 @@ body{background:#f4f7f9;--ink:#22384c;--muted:#617284;--green:#235e8b;--green-ho
 #room[data-stage="room"] .room-side .side-footer{border-top:1px solid #e0e7ed;padding-top:14px;color:#6a7e8c;font-size:12px}
 #room[data-stage="room"] .room-tools{background:#f5f8fa;border-top-color:#cad7e0}
 #room[data-stage="room"] .room-status{color:#4a657b;font-weight:600}
-#room .map-action{border:1px solid var(--table-accent);border-radius:5px;background:#fffffff0;box-shadow:0 3px 7px #203b5526}
+#room .map-action{width:25%;border:1px solid #849eaa;border-left:4px solid var(--table-accent);border-radius:5px;background:#fffffff0;box-shadow:0 3px 7px #203b5526}
 #room .map-action strong{font-weight:700}
 #room .map-action small{color:#586d7b}
 #room .map-action.is-mine{outline:2px solid #fff;box-shadow:0 0 0 3px var(--table-accent),0 3px 7px #203b5526}

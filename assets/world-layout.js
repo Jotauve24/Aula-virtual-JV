@@ -2,13 +2,13 @@
 export function createRoomLayout(count = 0) {
   count = Math.max(0, Math.floor(Number(count) || 0));
   const rows = Math.max(1, Math.ceil(count / 2));
-  const layout = { width: 800, height: rows * 240 + 80, rooms: [], obstacles: [], spawn: { x: 400, y: rows * 240 + 40 } };
+  const layout = { width: 800, height: rows * 240 + 80, rooms: [], commons: [], obstacles: [], spawn: { x: 400, y: rows * 240 + 40 } };
   for (let i = 0; i < count; i++) {
     const center = count % 2 === 1 && i === count - 1;
     const right = !center && i % 2 === 1;
     const x = center ? 250 : right ? 460 : 40, y = 40 + Math.floor(i / 2) * 240;
     const room = { x, y, w: 300, h: 220, right, center,
-      label: { x: x + 150, y: y + 38 },
+      label: { x: x + 150, y: y + 56 },
       desk: { x: x + 76, y: y + 76, w: 142, h: 74 },
       arrival: { x: x + 150, y: y + 182 },
       shelf: { x: x + 26, y: y + 12, w: 80, h: 32 },
@@ -31,6 +31,24 @@ export function createRoomLayout(count = 0) {
     }
     layout.rooms.push(room);
     layout.obstacles.push(...room.walls, room.desk, room.shelf, room.plant);
+  }
+  if (count % 2) {
+    const y = layout.rooms.at(-1).y;
+    layout.commons = [
+      { kind: 'reading', x: 40, y, objects: [
+        { kind: 'shelf', x: 71, y: y + 18, w: 80, h: 35 },
+        { kind: 'sofa', x: 55, y: y + 80, w: 118, h: 43 },
+        { kind: 'table', x: 178, y: y + 142, w: 40, h: 31 },
+        { kind: 'plant', x: 56, y: y + 159, w: 25, h: 25 }
+      ] },
+      { kind: 'lounge', x: 560, y, objects: [
+        { kind: 'shelf', x: 590, y: y + 18, w: 80, h: 35 },
+        { kind: 'sofa', x: 605, y: y + 130, w: 116, h: 43 },
+        { kind: 'table', x: 623, y: y + 80, w: 50, h: 31 },
+        { kind: 'plant', x: 714, y: y + 47, w: 28, h: 30 }
+      ] }
+    ];
+    layout.obstacles.push(...layout.commons.flatMap(area => area.objects));
   }
   return layout;
 }
