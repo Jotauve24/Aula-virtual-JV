@@ -560,15 +560,6 @@ function drawRoomWorld(canvas, options) {
   for(let i=0;i<4;i++)rect(ctx,371,layout.height-47+i*5,58,1,'#b2c4b5');
   if(!layout.rooms.length)sign(ctx,400,155,'BIENVENIDO','#28594c');
   const occupied=options.player?[{x:options.player.x,y:options.player.y}]:[];
-  for(const member of options.seated||[]){
-    const theme=roomTheme(member.themeIndex);
-    occupied.push({x:member.x,y:member.y});
-    add(member.y,()=>{
-      avatar(ctx,member.x,member.y,{...member.avatar,direction:'down'},0,true,theme.chair);
-      rect(ctx,member.x+10,member.y-23,9,6,theme.accent);rect(ctx,member.x+12,member.y-21,5,2,theme.pop);
-    });
-    names.push(()=>nameTag(ctx,member.x,member.y+8,member.name,theme.accent));
-  }
   for(const peer of options.peers||[]){
     let x=peer.x;
     for(const offset of [0,-32,32,-64,64,-96,96]){

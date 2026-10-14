@@ -2,7 +2,7 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014c';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014d';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014c';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
@@ -406,7 +406,7 @@ function updateTeamPresence() {
     const connected = online.has(node.dataset.studentId);
     node.dataset.connected = String(connected);
     node.textContent = node.dataset.studentId === profile?.id ? 'Tú · en el aula'
-      : connected ? 'En el aula ahora' : 'En su mesa · sin conexión';
+      : connected ? 'En el aula ahora' : 'Sin conexión';
   });
 }
 function teamChatPanel(team) {
@@ -593,17 +593,9 @@ function draw(time = 0) {
   const canvas = $('#world');
   const inRoom = $('#room').dataset.stage === 'room';
   if (!inRoom) { canvas.width = 800; canvas.height = 560; $('#room-map').style.aspectRatio = '10 / 7'; }
-  const activeIds = new Set([profile?.id, ...peers.map(peer => peer.id)]);
-  const seated = inRoom ? topics.flatMap((topic, roomIndex) =>
-    [...topic.members].sort((a, b) => String(a.id).localeCompare(String(b.id)))
-      .flatMap((member, seatIndex) => activeIds.has(member.id) ? [] : [{
-        ...memberSeat(layout.rooms[roomIndex], seatIndex), id: member.id,
-        name: String(member.name || 'Compañero').split(' ')[0],
-        avatar: member.avatar || {}, themeIndex: roomIndex
-      }])) : [];
   if (!$('#room').hidden) drawWorld(canvas, { layout: inRoom ? layout : undefined, labels: false, actors: false,
     player: inRoom && profile ? { ...player, ...look } : undefined,
-    peers: inRoom ? peers : [], seated, walking: path.length > 0, time });
+    peers: inRoom ? peers : [], walking: path.length > 0, time });
 }
 async function refreshPresence() {
   if (presenceLoading || document.hidden || !profile?.id || !courseId || $('#room').dataset.stage !== 'room') return;
