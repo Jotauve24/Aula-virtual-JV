@@ -167,7 +167,7 @@ $('#export-all').addEventListener('click', () => run(async () => {
     document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     teacherSuccess(`Listo: ${total} estudiantes de ${courses.length} materias en un solo archivo.`);
-  } finally { button.disabled = false; button.textContent = '↓ Descargar estudiantes de todas las materias'; }
+  } finally { button.disabled = false; button.textContent = '↓ Descargar listado'; }
 }));
 $('#new-topic').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const submit = event.target.querySelector('button[type="submit"]'); submit.disabled = true;

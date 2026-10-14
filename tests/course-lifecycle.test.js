@@ -96,7 +96,7 @@ test('docente descarga todas las materias, incluso las deshabilitadas, sin equip
   assert.match(csv, /"Sistemas II";"Juan";"Mora";"juan@ejemplo.com";"555-5";"Sin equipo"/);
   assert.match(page.get('#teacher-success').textContent, /5 estudiantes de 3 materias/);
   const html = readFileSync(new URL('../docente.html', import.meta.url), 'utf8');
-  assert.match(html, /<section id="dashboard"[\s\S]*id="export-all"[\s\S]*<section id="detail"/);
+  assert.match(html, /<div id="courses" class="course-list"><\/div><section class="roster-export-panel"[\s\S]*id="export-all"[\s\S]*<section id="disabled-area"/);
   assert.doesNotMatch(html, /id="export-roster"/);
 });
 
