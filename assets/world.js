@@ -852,12 +852,12 @@ function drawRoomWorld(canvas, options) {
     }
     occupied.push({x,y:peer.y});
     add(peer.y,()=>avatar(ctx,x,peer.y,{...peer.avatar,direction:peer.direction}));
-    names.push(()=>nameTag(ctx,x,peer.y+8,peer.name||'Compañero','#38586f'));
+    names.push(()=>nameTag(ctx,x,peer.y+8,peer.name||'Compañero',peer.role==='teacher'?'#245e89':'#38586f'));
   }
   if(options.player){
     const p=options.player;
     add(p.y,()=>avatar(ctx,p.x,p.y,p,options.walking?Math.sin((options.time||0)/85)*2:0));
-    names.push(()=>nameTag(ctx,p.x,p.y+8,'Tú','#28594c'));
+    names.push(()=>nameTag(ctx,p.x,p.y+8,options.playerName||'Tú',options.playerName?'#245e89':'#28594c'));
   }
   layers.sort((a,b)=>a.depth-b.depth).forEach(layer=>layer.draw());
   animals.forEach(animal=>{if(animal.heart)drawAnimalHeart(ctx,animal.heart);});
