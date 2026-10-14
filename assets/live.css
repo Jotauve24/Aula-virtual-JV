@@ -96,3 +96,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .course-code-panel[data-active="false"]{background:#f7f2e8;border-color:#d5c6a7;border-left-color:#a7773d}
 .course-code-panel[data-active="false"] .course-code-status{color:#754524}
 @media(max-width:650px){.course-management-actions{width:100%}.course-management-actions button{flex:1 1 170px}.delete-course-actions{flex-direction:column}#delete-course-dialog .delete-course-actions button{width:100%}}
+
+.detail-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.detail-heading .detail-actions .secondary{max-width:none}
+.detail-actions .export-roster{background:#fff1c9;border-color:#dca34e;color:#5e3a12;white-space:nowrap;box-shadow:0 5px 16px #9a6f2b1a}
+.detail-actions .export-roster:hover:not(:disabled){background:#ffe6a4;border-color:#bb8231}
+@media(max-width:650px){.detail-actions{width:100%;justify-content:stretch}.detail-actions button{flex:1 1 220px}}
+@media(max-width:420px){.detail-actions button{width:100%}}

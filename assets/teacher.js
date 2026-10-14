@@ -1,5 +1,6 @@
 import './embed.js?v=20261012a';
 import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=20261013d';
+import { rosterCsv, rosterFilename } from './teacher-export.js?v=20261013a';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 function show(id) { for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id; }
@@ -73,6 +74,7 @@ async function openCourse(id) {
   $('#group-count').value = overview.topics.length; updateGroupPreview();
   show('detail'); $('#course-title').textContent = overview.course.name;
   $('#course-summary').textContent = `${overview.students.length} estudiantes · ${overview.topics.length} temas`;
+  $('#export-roster').setAttribute('aria-label', `Descargar todos los estudiantes de ${overview.course.name} para Excel`);
   renderCourseCode();
   const active = overview.course.active;
   $('.course-management').dataset.active = String(active);
@@ -140,6 +142,24 @@ async function openCourse(id) {
   $('#registration').textContent = overview.course.registrationOpen ? 'Cerrar inscripciones' : 'Abrir inscripciones';
   $('#registration').setAttribute('aria-label', (overview.course.registrationOpen ? 'Inscripciones abiertas. Cerrar' : 'Inscripciones cerradas. Abrir') + ' para ' + overview.course.name);
 }
+$('#export-roster').addEventListener('click', () => run(async () => {
+  const button = $('#export-roster'), id = courseId;
+  button.disabled = true; button.textContent = 'Preparando listado…';
+  try {
+    // Read again so registrations made after opening the panel are included.
+    const current = await rpc('teacher_overview', { p_course_id: id });
+    if (courseId !== id) return;
+    if (!current?.course || !Array.isArray(current.students)) throw new Error('No se pudo preparar el listado.');
+    if (!current.students.length) { teacherSuccess('Esta materia todavía no tiene estudiantes registrados.'); return; }
+    const blob = new Blob([rosterCsv(current)], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = rosterFilename(current.course.name);
+    document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    teacherSuccess(`Listo: ${current.students.length} estudiantes de ${current.course.name} en un solo archivo.`);
+  } finally { button.disabled = false; button.textContent = '↓ Descargar estudiantes para Excel'; }
+}));
 $('#new-topic').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const submit = event.target.querySelector('button[type="submit"]'); submit.disabled = true;
   try {
