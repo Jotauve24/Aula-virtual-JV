@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Sala docente · AulaVirtualJv</title>
+  <link rel="icon" href="./assets/favicon.svg?v=20261014k" type="image/svg+xml">
+  <link rel="stylesheet" href="./assets/styles.css?v=20261014b">
+  <link rel="stylesheet" href="./assets/brand.css?v=20261014l">
+  <link rel="stylesheet" href="./assets/live-world.css?v=20261014m">
+  <link rel="stylesheet" href="./assets/teacher-view.css?v=20261014n">
+  <script type="module" src="./assets/teacher-view.js?v=20261014n"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir al contenido</a>
+  <header class="site-header">
+    <a class="brand" href="./docente.html" aria-label="Volver al panel docente">
+      <img class="brand-mark" src="./assets/favicon.svg?v=20261014k" width="40" height="40" alt="" aria-hidden="true">
+      <span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=20261014l" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span>
+    </a>
+    <div class="header-tools"><button id="expand-aula" class="button secondary" type="button">Ampliar aula</button><a id="back-panel" class="button secondary" href="./docente.html">← Volver a la materia</a></div>
+  </header>
+  <main id="main" tabindex="-1">
+    <p id="loading" class="teacher-view-loading" role="status">Preparando tu sala docente…</p>
+    <section id="error-view" class="teacher-view-error" role="alert" hidden>
+      <h1>No se puede abrir la sala</h1><p id="error-text"></p>
+      <a class="button primary" href="./docente.html">Volver al panel docente</a>
+    </section>
+    <section id="room" class="room-shell teacher-view" data-stage="room" hidden>
+      <div class="room-header">
+        <div class="room-heading"><span class="eyebrow">VISTA DOCENTE · AulaVirtualJv</span><h1 id="course-title">Sala de la materia</h1><p id="room-intro">Recorre el aula como Jotauve y observa a tus estudiantes conectados.</p></div>
+        <div class="room-header-actions"><span class="group-badge">Docente: Jotauve</span><span id="online-count" class="online-count" data-state="reconnecting">Conectando…</span></div>
+      </div>
+      <div class="room-layout">
+        <div class="map-column">
+          <div class="room-map-container">
+            <div class="room-map" id="room-map">
+              <canvas id="world" width="800" height="560" tabindex="0" role="img" aria-label="Sala docente interactiva. Camina con las flechas, WASD o tocando el suelo. Los alumnos conectados se mueven con sus avatares; los desconectados están sentados en sus mesas."></canvas>
+              <div id="topic-buttons"></div>
+            </div>
+            <div class="room-tools">
+              <div><p class="movement-hint">Toca el suelo para caminar, o usa las <strong>flechas</strong> y <strong>W A S D</strong>. Haz clic en el rótulo de un grupo para acercarte.</p><p class="room-legend"><span><i class="legend-live" aria-hidden="true"></i> Estudiante conectado</span><span><i class="legend-seated" aria-hidden="true"></i> Sentado · sin conexión</span></p></div>
+              <div class="dpad" aria-label="Mover a Jotauve"><button type="button" data-direction="up" aria-label="Arriba">↑</button><button type="button" data-direction="left" aria-label="Izquierda">←</button><button type="button" data-direction="down" aria-label="Abajo">↓</button><button type="button" data-direction="right" aria-label="Derecha">→</button></div>
+            </div>
+          </div>
+          <div id="room-status" class="room-status" role="status">Jotauve está en la entrada del aula.</div>
+        </div>
+        <aside class="room-side" aria-label="Estudiantes y equipos">
+          <span class="eyebrow">SEGUIMIENTO EN LA SALA</span>
+          <h2>Estudiantes y mesas</h2>
+          <p>Los estudiantes conectados se muestran de pie. Los demás conservan su lugar en la mesa.</p>
+          <p id="roster-status" class="teacher-view-roster-status" role="status">Comprobando presencia…</p>
+          <div id="teacher-topics" class="teacher-view-topics"></div>
+          <p class="side-footer">Esta es una vista docente. No ocupa cupos ni permite leer el chat privado de los equipos.</p>
+        </aside>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><span>AulaVirtualJv · Vista docente</span><span>Jotauve · 2026</span></footer>
+</body>
+</html>
