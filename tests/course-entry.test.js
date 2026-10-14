@@ -56,7 +56,8 @@ class Element {
 }
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
-  profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure } = {}) {
+  profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
+  motionReduced = true } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -78,17 +79,22 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   const sessionStorage = storage(submitted ? { [HANDOFF]: submitted } : {});
   const calls = [];
   const frames = [];
+  const pendingFrames = new Map(), documentListeners = new Map(), windowListeners = new Map();
+  let frameId = 0;
+  const motionPreference = Object.assign(new Element(), { matches: motionReduced });
   let signOutCount = 0;
   let clock = Date.now();
   const profileData = profileFixture || { firstName: 'Ana', lastName: 'Prueba', topicId: 'existing-team', avatar: {} };
   class PageDate extends Date { static now() { return clock; } }
   const context = vm.createContext({
     document: { querySelector: get, querySelectorAll: selector => selector === '.dialog-step' ? steps
-      : selector === '[data-room-tab]' ? tabs : [], createElement: () => new Element(), addEventListener() {} },
-    window: { addEventListener() {} }, localStorage, sessionStorage, Date: PageDate,
+      : selector === '[data-room-tab]' ? tabs : [], createElement: () => new Element(), hidden: false,
+      addEventListener: (name, handler) => documentListeners.set(name, handler) },
+    window: { addEventListener: (name, handler) => windowListeners.set(name, handler) }, localStorage, sessionStorage, Date: PageDate,
     configured: true, SKINS, SHIRTS, normalizeCode, ATTACHMENT_ACCEPT: '.pdf',
-    matchMedia: () => ({ matches: true }),
-    cancelAnimationFrame() {}, requestAnimationFrame: () => 1,
+    matchMedia: () => motionPreference,
+    cancelAnimationFrame: id => pendingFrames.delete(id),
+    requestAnimationFrame: handler => { pendingFrames.set(++frameId, handler); return frameId; },
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1,
     avatarSVG, drawWorld: (_canvas, options) => { frames.push(options); },
     createParticipantPalette: () => () => '#456789',
@@ -136,6 +142,11 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   const settle = () => new Promise(resolve => setImmediate(resolve));
   await settle();
   return { get, fields, calls, frames, localStorage, sessionStorage, settle, advanceTime: ms => { clock += ms; },
+    tick: (ms = 100) => { clock += ms; const callbacks = [...pendingFrames.values()]; pendingFrames.clear(); callbacks.forEach(callback => callback(clock)); },
+    pendingFrameCount: () => pendingFrames.size,
+    visibility: hidden => { context.document.hidden = hidden; documentListeners.get('visibilitychange')?.(); },
+    motion: reduced => { motionPreference.matches = reduced; motionPreference.dispatch('change'); },
+    leavePage: () => windowListeners.get('pagehide')?.(),
     state: expression => vm.runInContext(expression, context), signOutCount: () => signOutCount };
 }
 
@@ -452,4 +463,31 @@ test('a confirmed team choice updates membership and opens the team chat', async
   assert.equal(page.get('#group-badge').textContent, 'Tu equipo: Arquitectura');
   assert.equal(page.get('#team-chat-host').hidden, false);
   assert.equal(roomFixture[0].members[0].id, 'student-a');
+});
+
+test('ambient creatures animate with an idle student and stop outside the visible classroom', async () => {
+  const page = await boot({ submitted: NEW, motionReduced: false,
+    profileFixture: { id: 'student-a', firstName: 'Ana', lastName: 'Prueba', topicId: null,
+      avatar: { skin: 1, shirt: 0, hair: 'short' } } });
+  assert.equal(page.pendingFrameCount(), 1);
+  const before = page.frames.length, requests = page.calls.length;
+  page.tick(); page.tick();
+  assert.ok(page.frames.length >= before + 2, 'the map moves while the student stands still');
+  assert.equal(page.calls.length, requests, 'animal animation does not query the database');
+  page.state("setRoomTab('equipo')");
+  assert.equal(page.pendingFrameCount(), 0);
+  page.state("setRoomTab('aula')");
+  assert.equal(page.pendingFrameCount(), 1);
+  page.visibility(true);
+  assert.equal(page.pendingFrameCount(), 0);
+  page.visibility(false);
+  await page.settle();
+  assert.equal(page.pendingFrameCount(), 1);
+  page.motion(true);
+  assert.equal(page.pendingFrameCount(), 0);
+  assert.equal(page.frames.at(-1).reducedMotion, true);
+  page.motion(false);
+  assert.equal(page.pendingFrameCount(), 1);
+  page.leavePage();
+  assert.equal(page.pendingFrameCount(), 0);
 });

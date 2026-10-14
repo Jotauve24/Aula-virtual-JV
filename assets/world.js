@@ -1,4 +1,5 @@
 import { SKINS, SHIRTS } from './model.js?v=20261013g';
+import { animalFrames, drawAnimal } from './animals.js?v=20261014i';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -835,6 +836,8 @@ function drawRoomWorld(canvas, options) {
   rect(ctx,369,layout.height-51,62,24,'#839f96');
   for(let i=0;i<4;i++)rect(ctx,371,layout.height-47+i*5,58,1,'#b2c4b5');
   if(!layout.rooms.length)sign(ctx,400,155,'BIENVENIDO','#28594c');
+  for(const animal of animalFrames(layout,options.ambientTime ?? options.time ?? 0,options.reducedMotion))
+    add(animal.y,()=>drawAnimal(ctx,animal));
   const occupied=options.player?[{x:options.player.x,y:options.player.y}]:[];
   for(const peer of options.peers||[]){
     let x=peer.x;

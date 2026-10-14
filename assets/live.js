@@ -2,7 +2,7 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014h';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014i';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014h';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
@@ -17,9 +17,27 @@ let layout = createRoomLayout(0), activeTab = 'aula', roomRefresh = 0;
 let presenceTimer = 0, presenceLoading = false, peers = [], courseName = '';
 let presenceVerifiedAt = 0, presenceState = 'pending', avatarReturn = null;
 let assignedSeats = [];
+let ambientAnimation = 0, ambientLastFrame = 0;
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
+function stopAmbientAnimation() {
+  cancelAnimationFrame(ambientAnimation); ambientAnimation = 0; ambientLastFrame = 0;
+}
+function updateAmbientAnimation() {
+  stopAmbientAnimation();
+  const visible = () => !document.hidden && !$('#room').hidden && activeTab === 'aula' &&
+    $('#room').dataset.stage === 'room' && !reducedMotion.matches;
+  if (!visible()) return;
+  function animateAmbient(time) {
+    if (!visible()) { stopAmbientAnimation(); return; }
+    // Walking already redraws the whole map; idle creatures need only 12 fps.
+    if (!path.length && time - ambientLastFrame >= 80) { draw(time); ambientLastFrame = time; }
+    ambientAnimation = requestAnimationFrame(animateAmbient);
+  }
+  ambientAnimation = requestAnimationFrame(animateAmbient);
+}
 function show(stage) {
   stopAnimation();
+  stopAmbientAnimation();
   const onboarding = stage !== 'room';
   $('#in-room-dialog').hidden = !onboarding;
   closeTopic();
@@ -45,6 +63,7 @@ function show(stage) {
   document.title = 'Mi aula · Aula Encuentro';
   renderChatNotice(onboarding ? 0 : unreadCount);
   draw();
+  updateAmbientAnimation();
 }
 function message(value) {
   for (const id of ['#error', '#registration-error', '#avatar-error', '#topic-error']) {
@@ -635,7 +654,8 @@ function draw(time = 0) {
     player: inRoom && profile ? { ...player, ...look, id:profile.id } : undefined,
     seated: inRoom ? disconnectedMembers() : [],
     seatCounts: inRoom ? topics.map(topic=>topic.members.length) : [],
-    peers: inRoom ? peers : [], walking: path.length > 0, time });
+    peers: inRoom ? peers : [], walking: path.length > 0, time,
+    ambientTime: reducedMotion.matches ? 0 : Date.now(), reducedMotion: reducedMotion.matches });
 }
 async function refreshPresence() {
   if ($('#room').dataset.stage === 'room' && presenceVerifiedAt && Date.now() - presenceVerifiedAt > 15000) {
@@ -733,11 +753,17 @@ document.addEventListener('keydown', event => {
   if (direction) { event.preventDefault(); if (!$('#topic-dialog').hidden) homePanel(); moveDirection(direction); }
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) stopAnimation();
+  if (document.hidden) { stopAnimation(); stopAmbientAnimation(); }
   else if (!$('#room').hidden) { path = []; draw(); refreshPresence(); if (profile?.topicId) refreshChat(); }
+  updateAmbientAnimation();
 });
-window.addEventListener('pagehide', stopAnimation);
+window.addEventListener('pagehide', () => { stopAnimation(); stopAmbientAnimation(); });
+reducedMotion.addEventListener('change', () => {
+  if (reducedMotion.matches) { stopAnimation(); path = []; onArrival = null; }
+  draw(); updateAmbientAnimation();
+});
 function stopRoomPolling() {
+  stopAmbientAnimation();
   clearInterval(chatTimer); clearInterval(roomRefresh); clearInterval(presenceTimer);
   chatTimer = roomRefresh = presenceTimer = 0;
   peers = [];
@@ -781,6 +807,7 @@ function setRoomTab(name) {
     refreshChat(firstOpen);
   }
   else if (name === 'aula') draw();
+  updateAmbientAnimation();
 }
 for (const tab of document.querySelectorAll('[data-room-tab]')) {
   tab.addEventListener('click', () => setRoomTab(tab.dataset.roomTab));
