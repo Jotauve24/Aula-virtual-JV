@@ -1,5 +1,5 @@
 import { SKINS, SHIRTS } from './model.js?v=20261013g';
-import { animalFrames, drawAnimal } from './animals.js?v=20261014i';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=20261014j';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -626,7 +626,7 @@ function themedShelf(ctx, x, y, theme) {
   rect(ctx,x,y+29,80,4,theme.accent);
   rect(ctx,x+2,y+29,76,1,shade(theme.accent,34));rect(ctx,x+3,y+33,4,3,theme.edge);rect(ctx,x+73,y+33,4,3,theme.edge);
 }
-function themedDesk(ctx, x, y, theme, occupants = [], seatCount = 2) {
+function themedDesk(ctx, x, y, theme) {
   rect(ctx,x+3,y+47,137,8,'#303d3c33');
   rect(ctx,x+5,y+40,8,16,theme.edge);rect(ctx,x+121,y+40,8,16,theme.edge);
   if (theme.id === 'cafe' || theme.id === 'oceano') {
@@ -712,6 +712,8 @@ function themedDesk(ctx, x, y, theme, occupants = [], seatCount = 2) {
   }else if(theme.id==='bosque'){
     rect(ctx,x+54,y+31,20,5,'#607f76');rect(ctx,x+55,y+31,18,2,'#a2c5b1');
   }
+}
+function themedSeats(ctx, x, y, theme, occupants, seatCount) {
   const seats = seatCount <= 2 ? [31,106] : seatCount === 3 ? [20,68,116]
     : seatCount === 4 ? [10,49,88,127] : [-6,31,68,105,142];
   seats.forEach((dx,i)=>{
@@ -792,7 +794,8 @@ function drawRoomWorld(canvas, options) {
     add(room.shelf.y+35,()=>themedShelf(ctx,room.shelf.x,room.shelf.y,theme));
     add(room.plant.y+28,()=>cornerFurnishing(ctx,room.plant.x,room.plant.y,theme));
     const seatCount=Math.min(5,Math.max(2,options.seatCounts?.[i]||2));
-    add(room.desk.y+74,()=>themedDesk(ctx,room.desk.x+2,room.desk.y+2,theme,seatedByRoom[i],seatCount));
+    add(room.desk.y+44,()=>themedDesk(ctx,room.desk.x+2,room.desk.y+2,theme));
+    add(room.desk.y+74,()=>themedSeats(ctx,room.desk.x+2,room.desk.y+2,theme,seatedByRoom[i],seatCount));
     const extraMembers=seatedByRoom[i].filter(member=>member.seatIndex>=5).length;
     if(extraMembers)names.push(()=>nameTag(ctx,x+150,y+158,`+${extraMembers} sin conexión`,'#647789'));
     add(room.artifact.y+room.artifact.h,()=>roomArtifact(ctx,room.artifact.x,room.artifact.y,theme));
@@ -836,8 +839,8 @@ function drawRoomWorld(canvas, options) {
   rect(ctx,369,layout.height-51,62,24,'#839f96');
   for(let i=0;i<4;i++)rect(ctx,371,layout.height-47+i*5,58,1,'#b2c4b5');
   if(!layout.rooms.length)sign(ctx,400,155,'BIENVENIDO','#28594c');
-  for(const animal of animalFrames(layout,options.ambientTime ?? options.time ?? 0,options.reducedMotion))
-    add(animal.y,()=>drawAnimal(ctx,animal));
+  const animals=animalFrames(layout,options.ambientTime ?? options.time ?? 0,options.reducedMotion);
+  for(const animal of animals)add(animal.depth,()=>drawAnimal(ctx,animal));
   const occupied=options.player?[{x:options.player.x,y:options.player.y}]:[];
   for(const peer of options.peers||[]){
     let x=peer.x;
@@ -855,5 +858,6 @@ function drawRoomWorld(canvas, options) {
     names.push(()=>nameTag(ctx,p.x,p.y+8,'Tú','#28594c'));
   }
   layers.sort((a,b)=>a.depth-b.depth).forEach(layer=>layer.draw());
+  animals.forEach(animal=>{if(animal.heart)drawAnimalHeart(ctx,animal.heart);});
   names.forEach(draw=>draw());
 }

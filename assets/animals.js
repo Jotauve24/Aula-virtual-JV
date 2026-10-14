@@ -1,11 +1,13 @@
-import { findPath, isWalkable } from './world-layout.js?v=20261014h';
+import { findPath, isWalkable, canWalkSegment } from './world-layout.js?v=20261014h';
 
-// Small ambient companions: their feet use the classroom collision map, while
-// a shared clock gives everyone in the same layout the same quiet choreography.
+// Ambient animals walk on the student collision map. Only the explicit table
+// jumps leave that floor, so roaming never lets them pass through a wall.
 export const ANIMAL_SPECIES = [
   { id: 'ocelot', speed: 27, stride: 145, pause: 2600, offset: 4100 },
-  { id: 'panda', speed: 17, stride: 220, pause: 6200, offset: 12300 },
-  { id: 'goat', speed: 23, stride: 170, pause: 3400, offset: 19800 }
+  { id: 'panda', speed: 19, stride: 220, pause: 5600, offset: 21300 },
+  { id: 'goat', speed: 25, stride: 170, pause: 3400, offset: 44800 },
+  { id: 'cat', speed: 32, stride: 135, pause: 3200, offset: 15300 },
+  { id: 'dog', speed: 32, stride: 150, pause: 3200, offset: 15300 }
 ];
 const routeCache = new WeakMap();
 
@@ -25,67 +27,166 @@ function direction(from, to) {
 }
 function prepareRoutes(layout) {
   if (routeCache.has(layout)) return routeCache.get(layout);
-  const first = layout.rooms[0], second = layout.rooms[1] || first, last = layout.rooms.at(-1);
-  const pandaStops = first?.center ? [
-    { x: first.arrival.x - 35, y: first.arrival.y + 15 },
-    { x: first.arrival.x + 32, y: first.arrival.y + 10 }, first.arrival,
-    { x: first.arrival.x - 8, y: first.arrival.y + 19 }
-  ] : [{ x: 430, y: (second?.y || 40) + 193 }, { x: 441, y: (second?.y || 40) + 166 },
-    { x: 422, y: (second?.y || 40) + 128 }, { x: 413, y: (second?.y || 40) + 207 }];
-  const goals = [
-    [first?.center ? { x: first.arrival.x - 58, y: first.arrival.y + 7 } : { x: 378, y: 84 },
-      first?.arrival || { x: 330, y: 172 },
-      first?.center ? { x: first.arrival.x + 52, y: first.arrival.y + 9 } : { x: 372, y: (first?.y || 40) + 180 },
-      { x: 398, y: 270 }],
-    pandaStops,
-    [{ x: 444, y: layout.height - 64 }, last?.center ? last.arrival : { x: 416, y: (last?.y || 40) + 188 },
-      { x: 424, y: layout.height - 98 }, { x: 360, y: layout.height - 63 }]
-  ];
-  const routes = ANIMAL_SPECIES.map((species, index) => {
-    const stops = goals[index].map(point => freePoint(point, layout));
-    const segments = [];
-    let from = stops[0], facing = 'down', duration = 0;
-    for (const goal of [...stops.slice(1), stops[0]]) {
-      const points = findPath(from, goal, layout);
-      for (const to of points) {
-        const distance = Math.hypot(to.x - from.x, to.y - from.y);
-        if (distance < .01) continue;
-        const length = distance / species.speed * 1000;
-        facing = direction(from, to);
-        segments.push({ from, to, facing, start: duration, duration: length, moving: true });
-        duration += length; from = to;
-      }
-      segments.push({ from, to: from, facing, start: duration, duration: species.pause, moving: false });
-      duration += species.pause;
+  const firstY = layout.rooms[0]?.y || 40;
+  const floorPaths = new Map();
+  const homes = [{ x: 375, y: firstY + 196 }, { x: 424, y: firstY + 204 },
+    { x: 410, y: layout.height - 66 }, { x: 415, y: firstY + 205 }];
+  const routes = ANIMAL_SPECIES.slice(0, 4).map((species, index) => {
+    const home = freePoint(homes[index], layout);
+    const route = { species, segments: [], motions: [], duration: 0, distance: 0 };
+    let from = home, facing = 'down';
+    function move(to, mode = 'floor', roomIndex = -1, speed = species.speed, event = '') {
+      const distance = Math.hypot(to.x - from.x, to.y - from.y);
+      if (distance < .01) return;
+      const duration = mode.startsWith('jump') ? 850 : distance / speed * 1000;
+      facing = direction(from, to);
+      const part = { from, to, facing, mode, roomIndex, event, moving: true,
+        start: route.duration, end: route.duration + duration, duration,
+        startDistance: route.distance, endDistance: route.distance + distance, distance };
+      route.segments.push(part); route.motions.push(part);
+      route.duration += duration; route.distance += distance; from = to;
     }
-    const route = { species, segments, duration };
+    function walk(to, speed = species.speed, event = '') {
+      const goal = freePoint(to, layout), key = `${from.x},${from.y}:${goal.x},${goal.y}`;
+      let points = floorPaths.get(key);
+      if(!points){
+        // The shared pathfinder searches on a 10px grid. Give it a reachable
+        // grid goal so a 222px arrival does not exhaust the entire large map.
+        const candidates=[];
+        for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+          const point={x:Math.round(goal.x/10)*10+dx*10,y:Math.round(goal.y/10)*10+dy*10};
+          if(isWalkable(point.x,point.y,layout)&&canWalkSegment(point,goal,layout))candidates.push(point);
+        }
+        candidates.sort((a,b)=>Math.hypot(a.x-goal.x,a.y-goal.y)-Math.hypot(b.x-goal.x,b.y-goal.y));
+        points = [from,...findPath(from,candidates[0]||goal,layout)];
+        if(canWalkSegment(points.at(-1),goal,layout))points.push(goal);
+        floorPaths.set(key,points);
+        if(Math.hypot(points.at(-1).x-goal.x,points.at(-1).y-goal.y)<1)
+          floorPaths.set(`${goal.x},${goal.y}:${from.x},${from.y}`,[...points].reverse());
+      }
+      for (const point of points) move(point, 'floor', -1, speed, event);
+    }
+    function pause(duration = species.pause, mode = 'floor', roomIndex = -1) {
+      route.segments.push({ from, to: from, facing, mode, roomIndex, moving: false,
+        start: route.duration, end: route.duration + duration, duration,
+        startDistance: route.distance, endDistance: route.distance, distance: 0 });
+      route.duration += duration;
+    }
+    const rooms = layout.rooms.map((room, roomIndex) => ({ room, roomIndex }));
+    if (index === 2) rooms.reverse();
+    else if (rooms.length && index < 3) rooms.push(...rooms.splice(0, index % rooms.length));
+    for (const { room, roomIndex } of rooms) {
+      walk(room.arrival);
+      const front = { x: room.desk.x + 52, y: room.desk.y + room.desk.h + 11 };
+      walk(front);
+      // The front edge is a real take-off and landing point, not a teleport.
+      if (Math.hypot(from.x-front.x, from.y-front.y) < 1) {
+        const top = { x: room.desk.x + 52, y: room.desk.y + 24 };
+        const restingX = [21,45,117,93][index];
+        move(top, 'jump-up', roomIndex);
+        move({ x: room.desk.x + restingX, y: top.y }, 'table', roomIndex, 18);
+        pause(species.pause, 'table', roomIndex);
+        move(top, 'table', roomIndex, 22);
+        move(front, 'jump-down', roomIndex);
+      }
+      walk(room.arrival);
+      if (species.id === 'cat') {
+        // The puppy follows the same arc a little behind the kitten. These
+        // short, faster laps alternate with normal exploring and table rests.
+        walk({ x: room.x + 214, y: room.y + 190 }, 72, 'chase');
+        walk({ x: room.x + 93, y: room.y + 199 }, 72, 'chase');
+        walk(room.arrival, 72, 'chase');
+        pause(2800);
+      } else pause(1400);
+    }
+    if (!rooms.length) {
+      for (const point of [{ x: 330, y: 172 }, { x: 455, y: 210 }, { x: 408, y: 280 }]) {
+        walk(point, species.id === 'cat' ? 72 : species.speed, species.id === 'cat' ? 'chase' : ''); pause();
+      }
+    }
+    for(const area of layout.commons||[]){
+      walk({x:area.x+150,y:area.y+190});pause(1800);
+      walk({x:area.x+160,y:area.y+40});pause(1200);
+    }
+    walk(home); pause(2400);
     return route;
   });
   routeCache.set(layout, routes);
   return routes;
 }
 
+function partAt(parts, value, key) {
+  let low = 0, high = parts.length - 1;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (value < parts[mid][key]) high = mid; else low = mid + 1;
+  }
+  return parts[low];
+}
+function frameFor(species, part, fraction, clock, layout, moving, running = false, waitElapsed = 0) {
+  const x = part.from.x + (part.to.x - part.from.x) * fraction;
+  const y = part.from.y + (part.to.y - part.from.y) * fraction;
+  const jump = part.mode.startsWith('jump');
+  const table = part.mode === 'table';
+  const aboveTable = table || (part.mode === 'jump-up' ? fraction > .45 : part.mode === 'jump-down' && fraction < .55);
+  return { id: species.id, x, y, mode: part.mode, roomIndex: part.roomIndex,
+    elevation: jump ? Math.sin(fraction * Math.PI) * 14 : 0,
+    depth: aboveTable ? layout.rooms[part.roomIndex].desk.y + 47 : y,
+    direction: part.facing, moving, running, waitElapsed,
+    action: jump ? 'jump' : moving ? (running ? species.id === 'dog' ? 'chase' : 'run' : 'walk')
+      : species.id === 'panda' ? 'sit' : species.id === 'ocelot' || species.id === 'cat' ? 'sniff' : 'look',
+    step: moving ? ((Math.floor(clock / (species.stride * (running ? .55 : 1))) % 4) + 4) % 4 : 0,
+    fidget: ((Math.floor(clock / 650 + species.offset / 650) % 4) + 4) % 4,
+    blink: Math.floor(clock / 120 + species.offset) % 41 === 0 };
+}
+
+export function animalCycleDuration(layout) {
+  return Math.max(...prepareRoutes(layout).map(route => route.duration));
+}
+
 export function animalFrames(layout, time = 0, reducedMotion = false) {
   if (!layout) return [];
-  const clock = Number.isFinite(time) ? time : 0;
-  return prepareRoutes(layout).map(route => {
+  const clock = reducedMotion ? 0 : Number.isFinite(time) ? time : 0;
+  const routes = prepareRoutes(layout);
+  let catProgress;
+  const animals = routes.map(route => {
     const { species, segments, duration } = route;
     const phase = ((clock + species.offset) % duration + duration) % duration;
-    const segment = reducedMotion ? segments.find(part => !part.moving)
-      : segments.find(part => phase < part.start + part.duration) || segments.at(-1);
+    const segment = reducedMotion ? segments.find(part => !part.moving) : partAt(segments, phase, 'end');
     const fraction = reducedMotion || !segment.moving ? 0 : Math.max(0, (phase - segment.start) / segment.duration);
     const moving = !reducedMotion && segment.moving;
-    return {
-      id: species.id,
-      x: segment.from.x + (segment.to.x - segment.from.x) * fraction,
-      y: segment.from.y + (segment.to.y - segment.from.y) * fraction,
-      direction: segment.facing, moving,
-      action: moving ? 'walk' : species.id === 'panda' ? 'sit' : species.id === 'ocelot' ? 'sniff' : 'look',
-      step: moving ? ((Math.floor(clock / species.stride) % 4) + 4) % 4 : 0,
-      fidget: reducedMotion ? 0 : ((Math.floor(clock / 650 + species.offset / 650) % 4) + 4) % 4,
-      blink: !reducedMotion && Math.floor(clock / 120 + species.offset) % 41 === 0
-    };
+    const waiting = moving ? 0 : reducedMotion ? 0 : phase - segment.start;
+    if (species.id === 'cat') catProgress = { distance: segment.startDistance + segment.distance * fraction,
+      moving, running: moving && segment.event === 'chase', waiting };
+    return frameFor(species, segment, fraction, clock, layout, moving, moving && segment.event === 'chase', waiting);
   });
+  // Following by arc length keeps the pair separated even while the cat rests.
+  const route = routes[3];
+  const distance = ((catProgress.distance - 22) % route.distance + route.distance) % route.distance;
+  const part = partAt(route.motions, distance, 'endDistance');
+  animals.push(frameFor(ANIMAL_SPECIES[4], part, (distance-part.startDistance)/part.distance,
+    clock, layout, catProgress.moving, catProgress.running, catProgress.waiting));
+  if (reducedMotion) animals.forEach(animal => { animal.fidget = 0; animal.blink = false; });
+  else {
+    const paired = new Set();
+    const pairs = animals.flatMap((_,i)=>animals.slice(i+1).map((__,j)=>[i,i+j+1]));
+    // When three companions meet, alternate the greeting partner rather than
+    // letting the dog and cat monopolize every encounter.
+    const rotation=((Math.floor(clock/6000)%pairs.length)+pairs.length)%pairs.length;
+    pairs.push(...pairs.splice(0,rotation));
+    for (const [i,j] of pairs) {
+      const a=animals[i], b=animals[j];
+      if (paired.has(i) || paired.has(j) || a.moving || b.moving || a.waitElapsed < 350 || b.waitElapsed < 350 ||
+        a.mode !== b.mode || (a.mode === 'table' && a.roomIndex !== b.roomIndex)) continue;
+      const gap = Math.hypot(a.x-b.x,a.y-b.y);
+      if(gap < 8 || gap > 36) continue;
+      a.direction=direction(a,b); b.direction=direction(b,a); a.action=b.action='greet';
+      a.heart={ x:(a.x+b.x)/2, y:Math.min(a.y-a.elevation,b.y-b.elevation)-(a.mode==='table'?14:23),
+        phase:((clock%1800)+1800)%1800/1800, pair:[a.id,b.id] };
+      paired.add(i);paired.add(j);
+    }
+  }
+  return animals;
 }
 
 function paint(ctx, x, y, w, h, color) {
@@ -93,14 +194,15 @@ function paint(ctx, x, y, w, h, color) {
   ctx.fillRect(Math.round(x), Math.round(y), w, h);
 }
 export function drawAnimal(ctx, animal) {
-  const { id, x, y, direction: facing, moving, step, fidget, blink } = animal;
+  const { id, x, y: groundY, direction: facing, moving, step, fidget, blink } = animal;
+  const y = groundY - (animal.elevation || 0);
   const stride = [0, 1, 0, -1][step];
   const bob = moving && (step === 1 || step === 3) ? -1 : 0;
   const left = facing === 'left';
   const side = facing === 'left' || facing === 'right';
   const rear = facing === 'up';
   const p = (dx, dy, w, h, color) => paint(ctx,x+(left?-dx-w:dx),y+dy+bob,w,h,color);
-  paint(ctx,x-10,y+1,20,2,'#3a514726');paint(ctx,x-7,y+3,14,1,'#3a514718');
+  paint(ctx,x-10,groundY+1,20,2,'#3a514726');paint(ctx,x-7,groundY+3,14,1,'#3a514718');
   if (id === 'ocelot') {
     const gold='#c9a05b', light='#e6c47a', dark='#956b40', cream='#f0d7a0';
     if (side) {
@@ -125,6 +227,46 @@ export function drawAnimal(ctx, animal) {
       p(-3,head,6,2,light);
       if(rear) { p(-1,-3,2,6,gold);p(-1,1,2,2,dark); }
       else { p(-3,head+5,6,3,cream);p(-3,head+3,2,blink?1:2,'#496e4b');p(2,head+3,2,blink?1:2,'#496e4b');p(-1,head+5,2,1,'#68523c'); }
+    }
+  } else if (id === 'cat') {
+    const white='#e8e8de', gray='#a1aaa7', orange='#c8985a', dark='#655e50';
+    const tail=fidget===1?-2:0;
+    if(side){
+      p(-16,-10+tail,9,2,gray);p(-18,-13+tail,3,4,white);p(-13,-10+tail,3,2,dark);
+      p(-8,-5,3,5+stride,gray);p(2,-5,3,5-stride,gray);
+      p(-8,-12,17,8,white);p(-6,-13,13,3,'#faf2d9');p(-3,-12,6,7,orange);p(4,-12,4,6,dark);
+      p(-7,-5,14,2,gray);p(-5,-4,3,4-stride,white);p(5,-4,3,4+stride,white);
+      p(6,-14,9,8,white);p(7,-16,3,3,orange);p(12,-16,3,3,gray);p(7,-13,4,5,orange);
+      p(12,-13,3,2,gray);p(11,-12,2,blink?1:2,'#39778d');p(12,-12,1,1,'#edf4e8');
+      p(11,-9,5,3,white);p(15,-9,1,1,'#ba897d');
+    }else{
+      p(-6,-13,12,10,white);p(-4,-12,5,7,orange);p(2,-12,3,6,dark);
+      p(-5,-3,3,4+stride,white);p(2,-3,3,4-stride,gray);
+      const head=rear?-16:-11;
+      p(-5,head,10,8,white);p(-5,head-2,3,3,orange);p(2,head-2,3,3,gray);p(-4,head+1,4,4,orange);
+      if(rear){p(-1,-3,2,6,gray);p(-1,1,2,2,white);}
+      else{p(-3,head+3,2,blink?1:2,'#39778d');p(2,head+3,2,blink?1:2,'#39778d');p(-1,head+5,2,1,'#ba897d');}
+    }
+  } else if (id === 'dog') {
+    const gray='#a9b1af', light='#d9ddd3', shade='#7f8b89', dark='#485c62', red='#ad5c53';
+    const wag=(fidget===1||fidget===2)?-2:0;
+    if(side){
+      p(-12,-13+wag,6,3,gray);p(-15,-16+wag,4,5,light);
+      p(-8,-5,3,6+stride,shade);p(2,-5,3,6-stride,shade);
+      p(-8,-13,17,9,gray);p(-6,-14,13,3,light);p(-7,-5,14,2,shade);p(-3,-10,4,3,'#bbc1b8');
+      p(-5,-4,3,5-stride,light);p(5,-4,3,5+stride,light);p(-5,0-stride,3,1,dark);p(5,0+stride,3,1,dark);
+      p(5,-13,3,10,red);p(6,-12,1,7,'#ce8a6d');
+      p(6,-16,10,9,gray);p(6,-18,3,4,shade);p(13,-18,3,4,shade);p(7,-17,1,2,light);
+      p(7,-15,8,2,light);p(11,-12,2,blink?1:2,dark);p(12,-12,1,1,'#eff2e8');
+      p(12,-10,6,4,light);p(16,-10,2,2,dark);p(12,-7,5,1,shade);
+      if(!moving&&fidget===2)p(14,-6,2,2,'#c29185');
+    }else{
+      p(-6,-14,12,11,gray);p(-5,-14,10,2,light);p(-5,-3,3,5+stride,light);p(2,-3,3,5-stride,light);
+      p(-5,1+stride,3,1,dark);p(2,1-stride,3,1,dark);
+      const head=rear?-17:-12;
+      p(-5,head+8,10,2,red);p(-6,head,12,9,gray);p(-6,head-2,3,4,shade);p(3,head-2,3,4,shade);p(-4,head+1,8,2,light);
+      if(rear){p(-1,-3,2,5,light);p(-1,-1+wag,3,2,light);}
+      else{p(-3,head+4,2,blink?1:2,dark);p(2,head+4,2,blink?1:2,dark);p(-3,head+6,6,3,light);p(-1,head+6,2,2,dark);}
     }
   } else if (id === 'panda') {
     const white='#eeeee5', shade='#c4cec7', black='#35434a', highlight='#56616a';
@@ -173,5 +315,18 @@ export function drawAnimal(ctx, animal) {
       if(rear)p(-1,-3,2,4,light);
       else {p(-3,head+6,6,3,shade);p(-3,head+4,1,blink?1:2,'#50636b');p(2,head+4,1,blink?1:2,'#50636b');p(-1,head+7,2,1,hoof);}
     }
+  }
+  if(animal.running && side && step%2===0){
+    p(-20,0,3,1,'#b4aa9155');p(-24,-2,2,1,'#c9b99a55');
+  }
+}
+
+export function drawAnimalHeart(ctx, heart) {
+  for(let i=0;i<3;i++){
+    const phase=(heart.phase+i*.28)%1, x=heart.x-9+i*8, y=heart.y-phase*8-(i%2)*3;
+    const alpha=Math.round((1-phase)*210+35).toString(16).padStart(2,'0');
+    const color=(i%2?'#d3909b':'#bd697b')+alpha;
+    const p=(dx,dy,w,h)=>paint(ctx,x+dx,y+dy,w,h,color);
+    p(1,0,2,1);p(4,0,2,1);p(0,1,7,2);p(1,3,5,1);p(2,4,3,1);p(3,5,1,1);
   }
 }
