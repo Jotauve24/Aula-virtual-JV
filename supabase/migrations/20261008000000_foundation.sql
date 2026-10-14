@@ -1,4 +1,4 @@
--- Aula Encuentro: la identidad proviene de Supabase Auth. Ningún código de
+-- AulaVirtualJv: la identidad proviene de Supabase Auth. Ningún código de
 -- materia ni nombre de la lista es una credencial personal.
 create table public.teachers (
   user_id uuid primary key references auth.users(id) on delete cascade
@@ -226,3 +226,4 @@ grant execute on function public.my_courses(), public.create_course(text,text),
   public.request_course(text,uuid), public.my_profile(uuid),
   public.save_my_profile(uuid,text,text,text,text,jsonb),
   public.course_room(uuid), public.choose_topic(uuid,uuid) to authenticated;
+

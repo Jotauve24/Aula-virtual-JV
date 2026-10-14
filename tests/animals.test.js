@@ -43,29 +43,47 @@ test('five animals tour every room and table with continuous floor walks and exp
   }
 });
 
-test('the puppy follows the kitten during short chases, then they greet with hearts',()=>{
-  const layout=createRoomLayout(4);
-  let chases=0,greetings=0,walks=0;
-  for(let time=0;time<animalCycleDuration(layout);time+=137){
-    const animals=animalFrames(layout,time),cat=animals.find(animal=>animal.id==='cat'),dog=animals.find(animal=>animal.id==='dog');
-    if(cat.action==='run'){
-      assert.equal(dog.action,'chase');
-      assert.ok(Math.hypot(cat.x-dog.x,cat.y-dog.y)<=22.001);
-      assert.ok(cat.moving&&dog.moving);chases++;
+test('dog and cat roam separately, play only on sight, greet, and go their own ways',()=>{
+  for(const count of [0,1,3,4]){
+    const layout=createRoomLayout(count),duration=animalCycleDuration(layout);
+    let previous=animalFrames(layout,0),started=-1,chases=0,greetings=0,separated=0,episodes=0;
+    let reunionEnded=-1,leftAfterGreeting=false;
+    for(let time=80;time<duration;time+=80){
+      const animals=animalFrames(layout,time),cat=animals[3],dog=animals[4],gap=Math.hypot(cat.x-dog.x,cat.y-dog.y);
+      if(dog.action==='chase'){
+        if(previous[4].action!=='chase'){
+          const beforeCat=previous[3],beforeDog=previous[4];
+          assert.equal(beforeCat.mode,'floor');assert.equal(beforeDog.mode,'floor');
+          assert.ok(Math.hypot(beforeCat.x-beforeDog.x,beforeCat.y-beforeDog.y)<=90,'a chase starts only when the puppy sees a nearby cat');
+          assert.ok(canWalkSegment(beforeDog,beforeCat,layout),'walls and furniture block sight');
+          started=time;episodes++;
+        }
+        assert.equal(cat.action,'run');assert.ok(cat.moving&&dog.moving);chases++;
+      }else if(previous[4].action==='chase'){
+        assert.ok(time-started>=3000&&time-started<=7000,'the chase lasts only a few seconds');
+        assert.equal(cat.action,'greet');assert.equal(dog.action,'greet');
+        assert.deepEqual(cat.heart?.pair,['cat','dog'],'each chase finishes with friendship hearts');
+      }
+      if(cat.heart?.pair.includes('dog')){
+        assert.equal(cat.action,'greet');assert.equal(dog.action,'greet');
+        assert.ok(!cat.moving&&!dog.moving);assert.equal(cat.mode,dog.mode);greetings++;
+        const pixels=[],ctx={fillRect(x,y,w,h){pixels.push([x,y,w,h]);}};
+        drawAnimalHeart(ctx,cat.heart);
+        assert.equal(pixels.length,18);
+        assert.ok(pixels.every(pixel=>pixel.every(Number.isFinite)));
+      }else if(previous[3].heart?.pair.includes('dog')) reunionEnded=time;
+      if(!dog.running&&gap>70){
+        separated++;
+        if(reunionEnded>=0&&time-reunionEnded<35000)leftAfterGreeting=true;
+      }
+      previous=animals;
     }
-    if(cat.heart?.pair.includes('dog')){
-      assert.equal(cat.action,'greet');assert.equal(dog.action,'greet');
-      assert.ok(!cat.moving&&!dog.moving);
-      assert.equal(cat.mode,dog.mode);greetings++;
-      const pixels=[],ctx={fillRect(x,y,w,h){pixels.push([x,y,w,h]);}};
-      drawAnimalHeart(ctx,cat.heart);
-      assert.equal(pixels.length,18);
-      assert.ok(pixels.every(pixel=>pixel.every(Number.isFinite)));
-    }
-    if(cat.action==='walk')walks++;
+    assert.ok(episodes>0&&chases>10&&greetings>10,'every room arrangement has occasional play and hearts');
+    assert.ok(chases<duration/80*.2,'following the cat is a short exception');
+    assert.ok(separated>duration/80*.25,'the dog has an independent tour');
+    assert.ok(leftAfterGreeting,'after the hearts the companions split up again');
+    assert.ok(animalFrames(layout,24000,true).every(animal=>!animal.heart&&!animal.running));
   }
-  assert.ok(chases>10&&greetings>10&&walks>10,'play alternates with normal exploring and greetings');
-  assert.ok(animalFrames(layout,24000,true).every(animal=>!animal.heart&&!animal.running));
 });
 
 test('independent sessions share the choreography and reduced motion keeps every animal at rest', () => {

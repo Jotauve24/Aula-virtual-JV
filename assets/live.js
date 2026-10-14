@@ -2,7 +2,7 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014j';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014l';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014h';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
@@ -60,7 +60,7 @@ function show(stage) {
   if (onboarding) setRoomTab('aula');
   $('#registration h2').id = stage === 'registration' ? 'dialog-title' : 'registration-title';
   $('#avatar h2').id = stage === 'avatar' ? 'dialog-title' : 'avatar-title';
-  document.title = 'Mi aula · Aula Encuentro';
+  document.title = 'Mi aula · AulaVirtualJv';
   renderChatNotice(onboarding ? 0 : unreadCount);
   draw();
   updateAmbientAnimation();
@@ -532,7 +532,7 @@ function renderChatNotice(count) {
   $('#chat-alert-text').textContent = count === 1
     ? 'Tienes 1 mensaje nuevo en el chat de tu equipo.'
     : `Tienes ${count} mensajes nuevos en el chat de tu equipo.`;
-  document.title = count ? `(${count}) Mensajes · Mi aula · Aula Encuentro` : 'Mi aula · Aula Encuentro';
+  document.title = count ? `(${count}) Mensajes · Mi aula · AulaVirtualJv` : 'Mi aula · AulaVirtualJv';
 }
 function updateChatNotice(messages, topicId) {
   const key = `aula-chat-seen:${courseId}:${profile.id}:${topicId}`;

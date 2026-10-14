@@ -1,0 +1,6 @@
+/* Shared wordmark for student and teacher screens. */
+.brand-name{display:block;white-space:nowrap;line-height:1.3;font-weight:750}
+.brand-name .brand-light{font-weight:450}
+.brand-script{display:inline-block;width:1.8em;height:1.45em;margin-left:.04em;vertical-align:-.28em;object-fit:contain}
+@media(max-width:380px){.site-header,.teacher-header{flex-wrap:wrap;row-gap:12px}.entry-tools,.header-tools,.header-label{margin-left:auto}}
+

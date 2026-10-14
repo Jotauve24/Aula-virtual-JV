@@ -7,9 +7,10 @@ export const ANIMAL_SPECIES = [
   { id: 'panda', speed: 19, stride: 220, pause: 5600, offset: 21300 },
   { id: 'goat', speed: 25, stride: 170, pause: 3400, offset: 44800 },
   { id: 'cat', speed: 32, stride: 135, pause: 3200, offset: 15300 },
-  { id: 'dog', speed: 32, stride: 150, pause: 3200, offset: 15300 }
+  { id: 'dog', speed: 29, stride: 150, pause: 4100, offset: 3800 }
 ];
 const routeCache = new WeakMap();
+const playCache = new WeakMap();
 
 function freePoint(point, layout) {
   if (isWalkable(point.x, point.y, layout)) return { ...point };
@@ -25,13 +26,35 @@ function direction(from, to) {
   const dx = to.x - from.x, dy = to.y - from.y;
   return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
 }
+function floorPath(from, goal, layout, cache = new Map()) {
+  const key = `${from.x},${from.y}:${goal.x},${goal.y}`;
+  if (cache.has(key)) return cache.get(key);
+  let points;
+  if (canWalkSegment(from, goal, layout)) points = [from, goal];
+  else {
+    // Connect exact arrivals to reachable grid nodes without searching the
+    // entire map for a target between nodes.
+    const candidates = [];
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      const point = { x: Math.round(goal.x / 10) * 10 + dx * 10, y: Math.round(goal.y / 10) * 10 + dy * 10 };
+      if (isWalkable(point.x, point.y, layout) && canWalkSegment(point, goal, layout)) candidates.push(point);
+    }
+    candidates.sort((a, b) => Math.hypot(a.x - goal.x, a.y - goal.y) - Math.hypot(b.x - goal.x, b.y - goal.y));
+    points = [from, ...findPath(from, candidates[0] || goal, layout)];
+    if (canWalkSegment(points.at(-1), goal, layout)) points.push(goal);
+  }
+  cache.set(key, points);
+  if (Math.hypot(points.at(-1).x - goal.x, points.at(-1).y - goal.y) < 1)
+    cache.set(`${goal.x},${goal.y}:${from.x},${from.y}`, [...points].reverse());
+  return points;
+}
 function prepareRoutes(layout) {
   if (routeCache.has(layout)) return routeCache.get(layout);
   const firstY = layout.rooms[0]?.y || 40;
   const floorPaths = new Map();
   const homes = [{ x: 375, y: firstY + 196 }, { x: 424, y: firstY + 204 },
-    { x: 410, y: layout.height - 66 }, { x: 415, y: firstY + 205 }];
-  const routes = ANIMAL_SPECIES.slice(0, 4).map((species, index) => {
+    { x: 410, y: layout.height - 66 }, { x: 415, y: firstY + 205 }, { x: 435, y: firstY + 196 }];
+  const routes = ANIMAL_SPECIES.map((species, index) => {
     const home = freePoint(homes[index], layout);
     const route = { species, segments: [], motions: [], duration: 0, distance: 0 };
     let from = home, facing = 'down';
@@ -47,23 +70,7 @@ function prepareRoutes(layout) {
       route.duration += duration; route.distance += distance; from = to;
     }
     function walk(to, speed = species.speed, event = '') {
-      const goal = freePoint(to, layout), key = `${from.x},${from.y}:${goal.x},${goal.y}`;
-      let points = floorPaths.get(key);
-      if(!points){
-        // The shared pathfinder searches on a 10px grid. Give it a reachable
-        // grid goal so a 222px arrival does not exhaust the entire large map.
-        const candidates=[];
-        for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
-          const point={x:Math.round(goal.x/10)*10+dx*10,y:Math.round(goal.y/10)*10+dy*10};
-          if(isWalkable(point.x,point.y,layout)&&canWalkSegment(point,goal,layout))candidates.push(point);
-        }
-        candidates.sort((a,b)=>Math.hypot(a.x-goal.x,a.y-goal.y)-Math.hypot(b.x-goal.x,b.y-goal.y));
-        points = [from,...findPath(from,candidates[0]||goal,layout)];
-        if(canWalkSegment(points.at(-1),goal,layout))points.push(goal);
-        floorPaths.set(key,points);
-        if(Math.hypot(points.at(-1).x-goal.x,points.at(-1).y-goal.y)<1)
-          floorPaths.set(`${goal.x},${goal.y}:${from.x},${from.y}`,[...points].reverse());
-      }
+      const points = floorPath(from, freePoint(to, layout), layout, floorPaths);
       for (const point of points) move(point, 'floor', -1, speed, event);
     }
     function pause(duration = species.pause, mode = 'floor', roomIndex = -1) {
@@ -73,7 +80,7 @@ function prepareRoutes(layout) {
       route.duration += duration;
     }
     const rooms = layout.rooms.map((room, roomIndex) => ({ room, roomIndex }));
-    if (index === 2) rooms.reverse();
+    if (index === 2 || species.id === 'dog') rooms.reverse();
     else if (rooms.length && index < 3) rooms.push(...rooms.splice(0, index % rooms.length));
     for (const { room, roomIndex } of rooms) {
       walk(room.arrival);
@@ -82,7 +89,7 @@ function prepareRoutes(layout) {
       // The front edge is a real take-off and landing point, not a teleport.
       if (Math.hypot(from.x-front.x, from.y-front.y) < 1) {
         const top = { x: room.desk.x + 52, y: room.desk.y + 24 };
-        const restingX = [21,45,117,93][index];
+        const restingX = [21,45,117,93,71][index];
         move(top, 'jump-up', roomIndex);
         move({ x: room.desk.x + restingX, y: top.y }, 'table', roomIndex, 18);
         pause(species.pause, 'table', roomIndex);
@@ -91,18 +98,20 @@ function prepareRoutes(layout) {
       }
       walk(room.arrival);
       if (species.id === 'cat') {
-        // The puppy follows the same arc a little behind the kitten. These
-        // short, faster laps alternate with normal exploring and table rests.
-        walk({ x: room.x + 214, y: room.y + 190 }, 72, 'chase');
-        walk({ x: room.x + 93, y: room.y + 199 }, 72, 'chase');
-        walk(room.arrival, 72, 'chase');
-        pause(2800);
+        walk({ x: room.x + 214, y: room.y + 190 });
+        walk({ x: room.x + 93, y: room.y + 199 });
+        walk(room.arrival); pause(2800);
+      } else if (species.id === 'dog') {
+        walk({ x: room.x + 62, y: room.y + 191 });
+        pause(2100);
+        walk({ x: room.x + 227, y: room.y + 185 });
+        walk(room.arrival); pause(1600);
       } else pause(1400);
     }
     if (!rooms.length) {
-      for (const point of [{ x: 330, y: 172 }, { x: 455, y: 210 }, { x: 408, y: 280 }]) {
-        walk(point, species.id === 'cat' ? 72 : species.speed, species.id === 'cat' ? 'chase' : ''); pause();
-      }
+      const points = species.id === 'dog' ? [{ x: 490, y: 180 }, { x: 350, y: 230 }, { x: 425, y: 275 }]
+        : [{ x: 330, y: 172 }, { x: 455, y: 210 }, { x: 408, y: 280 }];
+      for (const point of points) { walk(point); pause(); }
     }
     for(const area of layout.commons||[]){
       walk({x:area.x+150,y:area.y+190});pause(1800);
@@ -111,6 +120,14 @@ function prepareRoutes(layout) {
     walk(home); pause(2400);
     return route;
   });
+  // A shared repeat boundary lets brief encounters interrupt two otherwise
+  // independent tours without changing either animal's own path or speed.
+  const pairDuration = Math.max(routes[3].duration, routes[4].duration);
+  for (const route of routes.slice(3)) if (route.duration < pairDuration) {
+    const last = route.segments.at(-1);
+    route.segments.push({ ...last, start: route.duration, end: pairDuration, duration: pairDuration - route.duration });
+    route.duration = pairDuration;
+  }
   routeCache.set(layout, routes);
   return routes;
 }
@@ -141,34 +158,129 @@ function frameFor(species, part, fraction, clock, layout, moving, running = fals
 }
 
 export function animalCycleDuration(layout) {
-  return Math.max(...prepareRoutes(layout).map(route => route.duration));
+  const routes = prepareRoutes(layout);
+  return Math.max(...routes.map(route => route.duration), preparePlay(layout, routes).duration);
+}
+
+function routeFrame(route, time, clock, layout, reducedMotion = false) {
+  const { species, segments, duration } = route;
+  const phase = ((time + species.offset) % duration + duration) % duration;
+  const part = reducedMotion ? segments.find(segment => !segment.moving) : partAt(segments, phase, 'end');
+  const fraction = reducedMotion || !part.moving ? 0 : Math.max(0, (phase - part.start) / part.duration);
+  const moving = !reducedMotion && part.moving;
+  return frameFor(species, part, fraction, clock, layout, moving, false, moving || reducedMotion ? 0 : phase - part.start);
+}
+
+function floorTrail(points, speed) {
+  const motions = []; let distance = 0;
+  for (let i = 1; i < points.length; i++) {
+    const from = points[i - 1], to = points[i], length = Math.hypot(to.x - from.x, to.y - from.y);
+    if (length < .01) continue;
+    motions.push({ from, to, facing: direction(from, to), mode: 'floor', roomIndex: -1,
+      startDistance: distance, endDistance: distance + length, distance: length });
+    distance += length;
+  }
+  return { motions, point: points[0], distance, speed, duration: distance / speed * 1000 };
+}
+function trailFrame(trail, species, distance, clock, layout, moving, running = false, waiting = 0) {
+  const part = trail.motions.length ? partAt(trail.motions, distance, 'endDistance')
+    : { from: trail.point, to: trail.point, facing: 'down', mode: 'floor', roomIndex: -1, startDistance: 0, distance: 1 };
+  const fraction = Math.min(1, Math.max(0, (distance - part.startDistance) / part.distance));
+  return frameFor(species, part, fraction, clock, layout, moving, running, waiting);
+}
+function escapeTrail(cat, dog, layout, encounter) {
+  const offsets = [[0,0],[-96,0],[96,0],[0,-96],[0,96],[-48,0],[48,0],[0,-48],[0,48],
+    [-72,-48],[72,-48],[-72,48],[72,48],[-48,-72],[48,-72],[-48,72],[48,72]];
+  const candidates = offsets.map(([dx,dy]) => ({ x: cat.x + dx, y: cat.y + dy }))
+    .filter(point => isWalkable(point.x, point.y, layout));
+  const points = [{ x: cat.x, y: cat.y }]; let length = 0;
+  for (let step = 0; step < 8 && length < 280; step++) {
+    const from = points.at(-1), previous = points.at(-2);
+    let best, score = -Infinity;
+    for (const [index, point] of candidates.entries()) {
+      const distance = Math.hypot(point.x - from.x, point.y - from.y);
+      if (distance < 40 || distance > 150 || !canWalkSegment(from, point, layout)) continue;
+      const away = step === 0 ? ((point.x - from.x) * (cat.x - dog.x) + (point.y - from.y) * (cat.y - dog.y)) / Math.hypot(cat.x - dog.x, cat.y - dog.y) : 0;
+      const backtrack = previous && Math.hypot(point.x - previous.x, point.y - previous.y) < 1 ? 65 : 0;
+      const value = distance + away * .7 - backtrack + (index + encounter * 3 + step * 5) % candidates.length;
+      if (value > score) { best = point; score = value; }
+    }
+    if (!best) break;
+    length += Math.hypot(best.x - from.x, best.y - from.y); points.push(best);
+  }
+  return length >= 260 ? floorTrail(points, 72) : null;
+}
+function preparePlay(layout, routes) {
+  if (playCache.has(layout)) return playCache.get(layout);
+  const baseDuration = routes[3].duration, events = [];
+  let extra = 0, nextEncounter = 8000;
+  // Detect meetings on the independent tours. Cache a bounded, repeatable
+  // timeline so wall-clock seeks and reopening the aula need no simulation.
+  for (let time = 8000; time < baseDuration - 8000; time += 400) {
+    if (time < nextEncounter) continue;
+    if (events.length && time > baseDuration + events[0].baseTime - 45000) break;
+    const cat = routeFrame(routes[3], time, time, layout), dog = routeFrame(routes[4], time, time, layout);
+    const gap = Math.hypot(cat.x - dog.x, cat.y - dog.y);
+    if (cat.mode !== 'floor' || dog.mode !== 'floor' || gap < 26 || gap > 86 || !canWalkSegment(dog, cat, layout)) continue;
+    const catTrail = escapeTrail(cat, dog, layout, events.length);
+    if (!catTrail) continue;
+    const catPoints = [catTrail.motions[0].from, ...catTrail.motions.map(part => part.to)];
+    const dogTrail = floorTrail([{ x: dog.x, y: dog.y }, ...catPoints], 92);
+    const dogEndDistance = gap + catTrail.distance - 22;
+    const catEnd = trailFrame(catTrail, routes[3].species, catTrail.distance, time, layout, false);
+    const dogEnd = trailFrame(dogTrail, routes[4].species, dogEndDistance, time, layout, false);
+    const returns = [catEnd, dogEnd].map((from, index) => floorTrail(floorPath(from, index ? dog : cat, layout), routes[index + 3].species.speed));
+    if (returns.some((trail, index) => {
+      const goal = index ? dog : cat, end = trail.motions.at(-1)?.to || trail.point;
+      return Math.hypot(end.x - goal.x, end.y - goal.y) > .01;
+    })) continue;
+    const chaseDuration = Math.max(catTrail.duration, dogEndDistance / dogTrail.speed * 1000);
+    const duration = chaseDuration + 2600 + Math.max(...returns.map(trail => trail.duration));
+    events.push({ baseTime: time, start: time + extra, end: time + extra + duration,
+      catTrail, dogTrail, gap, dogEndDistance, chaseDuration, returns });
+    extra += duration; nextEncounter = time + 45000;
+  }
+  const play = { events, duration: baseDuration + extra };
+  playCache.set(layout, play); return play;
+}
+function pairFrames(layout, routes, clock) {
+  const play = preparePlay(layout, routes), phase = ((clock % play.duration) + play.duration) % play.duration;
+  const event = play.events.length ? partAt(play.events, phase, 'end') : null;
+  if (!event || phase < event.start || phase >= event.end) {
+    const completed = !event ? 0 : phase >= event.end ? event.end - event.baseTime : event.start - event.baseTime;
+    return routes.slice(3).map(route => routeFrame(route, phase - completed, clock, layout));
+  }
+  const elapsed = phase - event.start;
+  let animals;
+  if (elapsed < event.chaseDuration) {
+    const catDistance = Math.min(event.catTrail.distance, elapsed * event.catTrail.speed / 1000);
+    const dogDistance = Math.min(elapsed * event.dogTrail.speed / 1000, Math.max(0, event.gap + catDistance - 22));
+    animals = [trailFrame(event.catTrail, routes[3].species, catDistance, clock, layout, catDistance < event.catTrail.distance, true),
+      trailFrame(event.dogTrail, routes[4].species, dogDistance, clock, layout, dogDistance < event.dogEndDistance, true)];
+  } else if (elapsed < event.chaseDuration + 2600) {
+    animals = [trailFrame(event.catTrail, routes[3].species, event.catTrail.distance, clock, layout, false),
+      trailFrame(event.dogTrail, routes[4].species, event.dogEndDistance, clock, layout, false)];
+    const [cat, dog] = animals;
+    cat.direction = direction(cat, dog); dog.direction = direction(dog, cat); cat.action = dog.action = 'greet';
+    cat.heart = { x: (cat.x + dog.x) / 2, y: Math.min(cat.y, dog.y) - 23,
+      phase: (elapsed - event.chaseDuration) % 1800 / 1800, pair: ['cat', 'dog'] };
+  } else {
+    const returning = elapsed - event.chaseDuration - 2600;
+    animals = event.returns.map((trail, index) => trailFrame(trail, routes[index + 3].species,
+      Math.min(trail.distance, returning * trail.speed / 1000), clock, layout, returning < trail.duration, false, Math.max(0, returning - trail.duration)));
+  }
+  return animals;
 }
 
 export function animalFrames(layout, time = 0, reducedMotion = false) {
   if (!layout) return [];
   const clock = reducedMotion ? 0 : Number.isFinite(time) ? time : 0;
   const routes = prepareRoutes(layout);
-  let catProgress;
-  const animals = routes.map(route => {
-    const { species, segments, duration } = route;
-    const phase = ((clock + species.offset) % duration + duration) % duration;
-    const segment = reducedMotion ? segments.find(part => !part.moving) : partAt(segments, phase, 'end');
-    const fraction = reducedMotion || !segment.moving ? 0 : Math.max(0, (phase - segment.start) / segment.duration);
-    const moving = !reducedMotion && segment.moving;
-    const waiting = moving ? 0 : reducedMotion ? 0 : phase - segment.start;
-    if (species.id === 'cat') catProgress = { distance: segment.startDistance + segment.distance * fraction,
-      moving, running: moving && segment.event === 'chase', waiting };
-    return frameFor(species, segment, fraction, clock, layout, moving, moving && segment.event === 'chase', waiting);
-  });
-  // Following by arc length keeps the pair separated even while the cat rests.
-  const route = routes[3];
-  const distance = ((catProgress.distance - 22) % route.distance + route.distance) % route.distance;
-  const part = partAt(route.motions, distance, 'endDistance');
-  animals.push(frameFor(ANIMAL_SPECIES[4], part, (distance-part.startDistance)/part.distance,
-    clock, layout, catProgress.moving, catProgress.running, catProgress.waiting));
+  const animals = reducedMotion ? routes.map(route => routeFrame(route, 0, 0, layout, true))
+    : [...routes.slice(0, 3).map(route => routeFrame(route, clock, clock, layout)), ...pairFrames(layout, routes, clock)];
   if (reducedMotion) animals.forEach(animal => { animal.fidget = 0; animal.blink = false; });
   else {
-    const paired = new Set();
+    const paired = new Set(animals.flatMap((animal,index) => animal.action === 'greet' ? [index] : []));
     const pairs = animals.flatMap((_,i)=>animals.slice(i+1).map((__,j)=>[i,i+j+1]));
     // When three companions meet, alternate the greeting partner rather than
     // letting the dog and cat monopolize every encounter.

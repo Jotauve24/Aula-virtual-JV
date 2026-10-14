@@ -19,8 +19,8 @@ async function api(path,{method='GET',body}={}){
   if(!response.ok){if(response.status===401&&path!=='/api/admin/login')showLogin();throw new Error(result.error||'No se pudo completar la acción.');}
   return result;
 }
-function showLogin(){csrf='';current=null;$('#dashboard').hidden=true;$('#login').hidden=false;$('#password').value='';$('#username').focus();document.title='Ingreso docente · Aula Encuentro';}
-function showDashboard(){$('#login').hidden=true;$('#dashboard').hidden=false;document.title='Panel docente · Aula Encuentro';}
+function showLogin(){csrf='';current=null;$('#dashboard').hidden=true;$('#login').hidden=false;$('#password').value='';$('#username').focus();document.title='Ingreso docente · AulaVirtualJv';}
+function showDashboard(){$('#login').hidden=true;$('#dashboard').hidden=false;document.title='Panel docente · AulaVirtualJv';}
 
 $('#login-form').addEventListener('submit',async event=>{
   event.preventDefault();errorAt('#login-error','');const button=event.target.querySelector('button');button.disabled=true;
@@ -99,3 +99,4 @@ async function previewRoster(){const area=$('#preview-area'),file=$('#roster-fil
 
 try{const session=await api('/api/admin/me');csrf=session.csrf;showDashboard();await loadCourses();}
 catch{showLogin();}
+

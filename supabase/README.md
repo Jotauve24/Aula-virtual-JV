@@ -1,4 +1,4 @@
-# Configurar Aula Encuentro con Supabase
+# Configurar AulaVirtualJv con Supabase
 
 El repositorio y GitHub Pages pueden seguir siendo públicos. Supabase guarda
 los datos y aplica los permisos. La clave publicable puede estar en el navegador;
@@ -6,7 +6,7 @@ la clave secreta y `service_role` **nunca** deben agregarse al repositorio.
 
 ## Antes de activar estudiantes
 
-El proyecto **Aula Encuentro** ya está creado y las migraciones están aplicadas.
+El proyecto **AulaVirtualJv** ya está creado y las migraciones están aplicadas.
 La URL y la clave publicable están configuradas en el sitio. La clave secreta
 permanece fuera del repositorio. Revisa con la institución el tratamiento de
 los datos personales antes de incorporar una lista real.
@@ -106,4 +106,5 @@ y define con la universidad si está permitido recoger teléfonos en este servic
 No envíes por GitHub el archivo de alumnos, credenciales, códigos personales,
 exportaciones ni capturas con datos reales. `docente.html` es una página pública
 con funciones protegidas por la base de datos; ocultar su URL no es seguridad.
+
 

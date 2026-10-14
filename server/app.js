@@ -70,8 +70,8 @@ export function createApp({storage,adminUsername,adminPassword,publicOrigin='htt
       if(path==='/favicon.svg')return staticFile(res,join(projectRoot,'assets','favicon.svg'),'image/svg+xml');
       if(path==='/'||path==='/index.html')return staticFile(res,join(projectRoot,'index.html'),'text/html; charset=utf-8');
       if(/^\/assets\/(app|world|model)\.js$/.test(path))return staticFile(res,join(projectRoot,path),'text/javascript; charset=utf-8');
-      if(path==='/assets/styles.css')return staticFile(res,join(projectRoot,path),'text/css; charset=utf-8');
-      if(path==='/assets/favicon.svg')return staticFile(res,join(projectRoot,path),'image/svg+xml');
+      if(path==='/assets/styles.css'||path==='/assets/brand.css')return staticFile(res,join(projectRoot,path),'text/css; charset=utf-8');
+      if(path==='/assets/favicon.svg'||path==='/assets/brand-jv.svg')return staticFile(res,join(projectRoot,path),'image/svg+xml');
       if(path==='/api/student/course'&&req.method==='POST'){
         const body=await readBody(req);
         if(typeof body.code!=='string'||body.code.length>48)fail('Código de materia incorrecto.');
@@ -191,3 +191,4 @@ export function startFromEnvironment(){
   server.listen(port,host,()=>{console.log(`Panel docente en ${origin}/docente/`);});
   return server;
 }
+

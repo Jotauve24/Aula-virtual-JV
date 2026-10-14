@@ -30,7 +30,7 @@ html.is-embedded .site-header{padding:16px 24px}html.is-embedded .login-layout{p
 @media(max-width:800px){html.is-embedded .preview-panel{display:none}html.is-embedded .login-layout{max-width:540px;gap:20px}html.is-embedded .login-content{width:100%;max-width:none}html.is-embedded .entry-note{margin-top:20px}}
 @media(max-width:500px){.entry-tools .version-badge{display:none}.entry-tools{gap:0}html.is-embedded .site-header{padding:14px 16px}html.is-embedded .login-layout{padding:8px 18px 20px}html.is-embedded .site-footer{padding:12px 18px}}
 
-/* Aula Encuentro visual system: warm paper, clear forest green, readable secondary text. */
+/* AulaVirtualJv visual system: warm paper, clear forest green, readable secondary text. */
 :root{--paper:#f7f8f2;--ink:#20392e;--muted:#4e6254;--green:#265b46;--green-hover:#1b4837;--mint:#e8f0e6;--line:#cad8ca;--focus:#9a5328;--warm:#a96833;--warm-ink:#724c26;--warm-soft:#f7efdf}
 body{background:radial-gradient(ellipse 58% 48% at 90% 10%,#ebf3e7 0%,transparent 75%),radial-gradient(ellipse 45% 36% at 4% 85%,#f3f0e5 0%,transparent 78%),var(--paper)}
 ::selection{background:#d5e7cf;color:var(--ink)}

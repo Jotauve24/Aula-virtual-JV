@@ -1,5 +1,5 @@
 import { SKINS, SHIRTS } from './model.js?v=20261013g';
-import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=20261014j';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=20261014l';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;

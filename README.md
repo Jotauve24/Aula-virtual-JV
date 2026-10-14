@@ -1,4 +1,4 @@
-# Aula Encuentro
+# AulaVirtualJv
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
@@ -21,7 +21,7 @@ En el editor HTML de la plataforma, usa una altura de aula en lugar de una propo
 ```html
 <iframe
   src="https://jotauve24.github.io/Aula-virtual-JV/"
-  title="Aula Encuentro"
+  title="AulaVirtualJv"
   width="100%"
   height="820"
   style="display:block;width:100%;height:85vh;min-height:680px;border:1px solid #d5dfd3;border-radius:12px;"
@@ -48,4 +48,5 @@ npm test
 Las pruebas de modelo y adjuntos se pueden ejecutar sin dependencias: `node tests/model.test.js` y `node tests/attachments.test.js`. Cubren el número de mesas, rutas sin atravesar paredes, objetivos bloqueados, formatos y límites de archivos. `tests/database.integration.sql` verifica grupos, permisos, privacidad de adjuntos e idempotencia dentro de una transacción que termina en `ROLLBACK`; requiere un entorno de Supabase de prueba con las migraciones aplicadas. No sube binarios a Storage. `npm test` también incluye el prototipo Node/SQLite y requiere sus dependencias.
 
 Para revisar la interfaz publicada, comprueba ingreso, elección de equipo, subida y descarga de un archivo, y operaciones docentes con datos ficticios.
+
 
