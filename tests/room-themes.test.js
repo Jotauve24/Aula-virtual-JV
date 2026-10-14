@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { drawWorld, roomTheme, ROOM_THEMES } from '../assets/world.js';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment } from '../assets/world-layout.js';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from '../assets/world-layout.js';
 
 test('ten desks have different themed furnishings while their walking layout stays intact', () => {
   const layout = createRoomLayout(10);
@@ -69,4 +69,14 @@ test('the map draws two overlapping students with separate visible names', () =>
   const me = names.find(([label]) => label === 'Tú');
   assert.ok(peer && me);
   assert.ok(Math.abs(peer[1] - me[1]) >= 27);
+});
+
+test('three permanent seats stay inside their team room and away from furniture', () => {
+  const layout = createRoomLayout(3);
+  for (const room of layout.rooms) for (let index = 0; index < 3; index++) {
+    const place = memberSeat(room, index);
+    assert.ok(place.x > room.x && place.x < room.x + room.w);
+    assert.ok(place.y > room.y && place.y < room.y + room.h);
+    assert.ok(isWalkable(place.x, place.y, layout), `seat ${index + 1} of room ${layout.rooms.indexOf(room) + 1}`);
+  }
 });

@@ -2,8 +2,8 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261013h';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment } from './world-layout.js?v=20261013f';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014a';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014a';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
 const $ = selector => document.querySelector(selector);
@@ -14,7 +14,7 @@ let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, on
 let chatTimer = 0, chatLoading = false, chatTeamId = '', unreadCount = 0;
 let participantColor = createParticipantPalette();
 let layout = createRoomLayout(0), activeTab = 'aula', roomRefresh = 0;
-let presenceTimer = 0, presenceLoading = false, peers = [];
+let presenceTimer = 0, presenceLoading = false, peers = [], courseName = '';
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
 function show(stage) {
   stopAnimation();
@@ -27,6 +27,12 @@ function show(stage) {
   $('#edit-avatar').hidden = !profile;
   $('#logout').hidden = !studentSignedIn();
   $('#room').dataset.stage = stage;
+  $('#course-title').textContent = stage === 'registration' ? 'Tu aventura empieza aquí'
+    : stage === 'avatar' ? 'Dale vida a tu personaje' : courseName;
+  $('#room-intro').textContent = stage === 'registration'
+    ? 'Entra con el código de tu docente y prepara tu lugar en el aula.'
+    : stage === 'avatar' ? 'Elige tu estilo antes de entrar a las mesas de trabajo.'
+    : 'Explora, crea y conversa con tu equipo.';
   $('.room-tabs').hidden = onboarding;
   if (onboarding) setRoomTab('aula');
   $('#registration h2').id = stage === 'registration' ? 'dialog-title' : 'registration-title';
@@ -139,10 +145,10 @@ async function enterCourse(code, details = {}) {
     throw new Error('No encontramos una materia con ese código. Revisa el código actual que te compartió tu docente.');
   }
   courseId = result.course_id;
+  courseName = result.course_name;
   localStorage.setItem('aula-student-course-code', code);
   profile = await studentRpc('my_profile', { p_course_id: courseId });
   $('#avatar-course').textContent = result.course_name;
-  $('#course-title').textContent = result.course_name;
   $('#avatar-name').textContent = profile.firstName + ' ' + profile.lastName;
   look = { skin: profile.avatar?.skin ?? 1, shirt: profile.avatar?.shirt ?? 0,
     outfit: profile.avatar?.outfit ?? profile.avatar?.shirt ?? 0,
@@ -238,7 +244,14 @@ async function enterRoom() {
   topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
   const newLayout = createRoomLayout(topics.length);
   const idHash = [...String(profile.id || '')].reduce((hash, char) => ((hash * 31 + char.charCodeAt(0)) >>> 0), 0);
-  player = { x: 208 + idHash % 13 * 32, y: newLayout.spawn.y, direction: 'down' };
+  const myTeamIndex = topics.findIndex(topic => topic.id === profile.topicId);
+  const myMemberIndex = myTeamIndex < 0 ? -1 : [...topics[myTeamIndex].members]
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    .findIndex(member => member.id === profile.id);
+  player = myMemberIndex < 0
+    ? { x: 208 + idHash % 13 * 32, y: newLayout.spawn.y, direction: 'down' }
+    : { ...memberSeat(newLayout.rooms[myTeamIndex], myMemberIndex), direction: 'down' };
+  layout = newLayout;
   show('room'); renderTopics(); draw();
   status(profile.topicId ? 'Tu lugar está guardado. Abre Mi equipo o Chat para coordinarte.' : 'Explora los temas y elige tu equipo.');
   clearInterval(chatTimer);
@@ -327,6 +340,7 @@ function homePanel() {
   if (team && wasHidden) refreshChat();
   const nodes = [greeting, title, intro, list];
   $('#team-roster-host').replaceChildren(team ? teamRosterPanel(team) : element('p', 'Elige un grupo en «Aula y temas» para ver aquí a tus compañeros.', 'empty-team'));
+  updateTeamPresence();
   nodes.push(element('p', 'Consulta tus compañeros en Mi equipo y comparte mensajes y archivos en Chat.', 'field-hint'));
   side(...nodes);
 }
@@ -361,6 +375,9 @@ function teamRosterPanel(team) {
     const identity = element('div', '', 'team-member-identity');
     identity.append(participantAvatar(member.name), element('strong', member.name + (member.mine ? ' · Tú' : '')));
     card.append(identity);
+    const presence = element('span', '', 'member-presence');
+    presence.dataset.studentId = member.id;
+    card.append(presence);
     if (member.email) {
       const link = element('a', member.email); link.href = 'mailto:' + member.email; card.append(link);
     }
@@ -382,6 +399,15 @@ function teamRosterPanel(team) {
     finally { toggle.disabled = false; }
   }));
   return section;
+}
+function updateTeamPresence() {
+  const online = new Set([profile?.id, ...peers.map(peer => peer.id)]);
+  document.querySelectorAll('[data-member-presence]').forEach(node => {
+    const connected = online.has(node.dataset.studentId);
+    node.dataset.connected = String(connected);
+    node.textContent = node.dataset.studentId === profile?.id ? 'Tú · en el aula'
+      : connected ? 'En el aula ahora' : 'En su mesa · sin conexión';
+  });
 }
 function teamChatPanel(team) {
   const section = element('section', '', 'team-chat');
@@ -567,8 +593,17 @@ function draw(time = 0) {
   const canvas = $('#world');
   const inRoom = $('#room').dataset.stage === 'room';
   if (!inRoom) { canvas.width = 800; canvas.height = 560; $('#room-map').style.aspectRatio = '10 / 7'; }
+  const activeIds = new Set([profile?.id, ...peers.map(peer => peer.id)]);
+  const seated = inRoom ? topics.flatMap((topic, roomIndex) =>
+    [...topic.members].sort((a, b) => String(a.id).localeCompare(String(b.id)))
+      .flatMap((member, seatIndex) => activeIds.has(member.id) ? [] : [{
+        ...memberSeat(layout.rooms[roomIndex], seatIndex), id: member.id,
+        name: String(member.name || 'Compañero').split(' ')[0],
+        avatar: member.avatar || {}, themeIndex: roomIndex
+      }])) : [];
   if (!$('#room').hidden) drawWorld(canvas, { layout: inRoom ? layout : undefined, labels: false, actors: false,
-    player: profile ? { ...player, ...look } : undefined, peers: inRoom ? peers : [], walking: path.length > 0, time });
+    player: inRoom && profile ? { ...player, ...look } : undefined,
+    peers: inRoom ? peers : [], seated, walking: path.length > 0, time });
 }
 async function refreshPresence() {
   if (presenceLoading || document.hidden || !profile?.id || !courseId || $('#room').dataset.stage !== 'room') return;
@@ -585,6 +620,7 @@ async function refreshPresence() {
       peer.y >= 28 && peer.y <= layout.height - 28);
     $('#online-count').textContent = `En el aula: ${peers.length + 1}`;
     $('#online-count').hidden = false;
+    updateTeamPresence();
     draw();
   } catch (_) {
     // A temporary disconnect must not stop movement or messaging.
@@ -668,10 +704,9 @@ $('#logout').addEventListener('click', () => {
   stopRoomPolling(); chatTeamId = '';
   $('#team-chat-host').hidden = true;
   $('#team-chat-host').replaceChildren();
-  courseId = ''; profile = null; topics = []; selectedTopic = null;
+  courseId = ''; courseName = ''; profile = null; topics = []; selectedTopic = null;
   registrationForm.reset(); questions = ['code', 'firstName', 'lastName', 'email', 'phone'];
   questionIndex = 0; renderQuestion();
-  $('#course-title').textContent = 'Bienvenido al aula';
   $('#group-badge').textContent = 'Elige tu espacio';
   $('#topic-buttons').replaceChildren();
   $('#side-content').replaceChildren(element('h2', 'La sala ya está aquí.'), element('p', 'Habla con el docente para empezar.'));
@@ -722,7 +757,7 @@ async function refreshRoom() {
   } catch (error) {
     if (error.message === 'Materia deshabilitada') {
       stopRoomPolling();
-      courseId = ''; profile = null; topics = [];
+      courseId = ''; courseName = ''; profile = null; topics = [];
       localStorage.removeItem('aula-student-course-code');
       questions = ['code', 'firstName', 'lastName', 'email', 'phone']; questionIndex = 0;
       registrationForm.elements.namedItem('code').value = '';

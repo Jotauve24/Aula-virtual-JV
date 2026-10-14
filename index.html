@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#265b46">
+  <meta name="theme-color" content="#f27b77">
   <meta name="description" content="Aula Encuentro: ingresa con el código de tu materia, crea tu avatar y encuentra tu equipo.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Ingreso de estudiantes · Aula Encuentro</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/styles.css?v=20261013b">
-  <script src="./assets/app.js?v=20261012a" type="module"></script>
+  <link rel="stylesheet" href="./assets/styles.css?v=20261014a">
+  <script src="./assets/app.js?v=20261014a" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Ir al contenido</a>
@@ -24,8 +24,8 @@
     <section class="login-layout" aria-labelledby="login-title">
       <div class="login-content">
         <div class="eyebrow"><span class="eyebrow-line"></span>INGRESO DE ESTUDIANTES</div>
-        <h1 id="login-title">Tu clase<br>empieza <em>aquí.</em></h1>
-        <p class="intro">Un avatar, un lugar y tu próximo equipo.<br>Entra con el código de tu materia.</p>
+        <h1 id="login-title">Tu próxima idea<br><em>empieza en equipo.</em></h1>
+        <p class="intro">Crea tu avatar, descubre mesas llenas de color y encuentra a tu equipo. <strong>¡Tu aula te espera!</strong></p>
         <form id="course-form" novalidate>
           <label for="course-code">Código de la materia</label>
           <div class="code-field"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 7 21M17 3l-2 18M3 9h18M2 15h18"/></svg><input id="course-code" name="course-code" placeholder="Escribe tu código" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint code-error" required></div>
@@ -37,7 +37,7 @@
         <div class="entry-note"><span class="entry-note-icon" aria-hidden="true">✓</span><p><strong>Tu espacio se guarda.</strong> Usa el mismo navegador para volver a tu equipo, consultar los temas y conversar con tus compañeros. Si cierras sesión, consulta con tu docente antes de registrarte de nuevo.</p></div>
       </div>
       <div class="preview-panel">
-        <div class="preview-top"><div><span class="eyebrow">ASÍ SERÁ TU ESPACIO</span><h2>Cada tema, un lugar para encontrarse.</h2></div><span class="pixel-star" aria-hidden="true">✳</span></div>
+        <div class="preview-top"><div><span class="eyebrow">UN AULA CON VIDA PROPIA</span><h2>Cada tema tiene su propio rincón.</h2></div><span class="pixel-star" aria-hidden="true">✳</span></div>
         <div class="preview-scene"><canvas id="preview-map" width="800" height="560" role="img" aria-label="Vista ilustrativa del aula con tres espacios de trabajo, escritorios y avatares."></canvas><div class="map-caption"><span class="map-caption-dot"></span>Vista ilustrativa del aula</div></div>
         <div class="preview-bottom"><span><i aria-hidden="true">01</i> Crea tu avatar</span><span><i aria-hidden="true">02</i> Explora el aula</span><span><i aria-hidden="true">03</i> Elige tu equipo</span></div>
       </div>

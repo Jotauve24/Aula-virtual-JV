@@ -35,6 +35,17 @@ export function createRoomLayout(count = 0) {
   return layout;
 }
 
+// Assigned members have a stable place at their table, even when their browser
+// is closed. These points also work as walkable positions when they return.
+export function memberSeat(room, index) {
+  const places = [
+    [111, 170], [189, 170], [150, 192], [78, 190], [222, 190],
+    [74, 165], [226, 165], [110, 193], [190, 193], [150, 170]
+  ];
+  const [dx, dy] = places[index % places.length];
+  return { x: room.x + dx, y: room.y + dy };
+}
+
 const defaultLayout = createRoomLayout(3);
 export function isWalkable(x, y, layout = defaultLayout) {
   const radius = 8;

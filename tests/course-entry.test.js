@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { SKINS, SHIRTS, normalizeCode } from '../assets/model.js';
+import { memberSeat } from '../assets/world-layout.js';
 
 const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', import.meta.url), 'utf8')
   .split('function rect(ctx')[0].replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '')
@@ -91,7 +92,9 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     applyParticipantColor() {}, participantAvatar: name => Object.assign(new Element(), { textContent: name }),
     chatMessage: msg => Object.assign(new Element(), { textContent: msg.body }),
     roomTheme: () => ({ accent: '#456789', card: '#eef' }), isWalkable: () => true,
+    memberSeat,
     createRoomLayout: count => ({ rooms: Array.from({ length: count }, (_, i) => ({
+      x: 40 + i * 10, y: 40 + i * 25,
       arrival: { x: 400, y: 140 + i * 30 }, label: { x: 400, y: 100 + i * 30 }
     })), width: 800, height: 560, spawn: { x: 400, y: 300 } }),
     studentSignedIn: () => !!localStorage.getItem(SESSION),
@@ -275,6 +278,35 @@ test('two connected students appear together in the same classroom', async () =>
   assert.equal(ana.frames.at(-1).peers[0].name, 'Luis');
   assert.equal(luis.frames.at(-1).peers[0].name, 'Ana');
   assert.equal(ana.frames.at(-1).player.direction, 'down');
+});
+
+test('assigned classmates stay seated while offline and return at their own table', async () => {
+  const sharedPresence = new Map();
+  const roomFixture = [{ id: 'team-1', name: 'Exploradores', position: 1, capacity: 3,
+    members: [
+      { id: 'student-c', name: 'Celia Ruiz', avatar: { skin: 0, shirt: 2, hair: 'long' } },
+      { id: 'student-a', name: 'Ana Sol', avatar: { skin: 1, shirt: 0, hair: 'curly' } },
+      { id: 'student-b', name: 'Luis Mora', avatar: { skin: 2, shirt: 1, hair: 'short' } }
+    ] }];
+  const profile = (id, firstName) => ({ id, firstName, lastName: 'Prueba',
+    topicId: 'team-1', avatar: { skin: 1, shirt: 0, hair: 'curly' } });
+  const ana = await boot({ submitted: NEW, profileFixture: profile('student-a', 'Ana'),
+    roomFixture, sharedPresence });
+  assert.equal(ana.get('#room').dataset.stage, 'room');
+  assert.equal(ana.frames.at(-1).seated.length, 2);
+  assert.deepEqual(ana.frames.at(-1).seated.map(member => member.id), ['student-b', 'student-c']);
+  assert.equal(ana.frames.at(-1).player.x, 151);
+  assert.equal(ana.frames.at(-1).player.y, 210);
+  const luis = await boot({ submitted: NEW, profileFixture: profile('student-b', 'Luis'),
+    roomFixture, sharedPresence });
+  await ana.state('refreshPresence()');
+  assert.equal(ana.frames.at(-1).seated.length, 1);
+  assert.equal(ana.frames.at(-1).seated[0].id, 'student-c');
+  assert.equal(ana.frames.at(-1).peers[0].id, 'student-b');
+  assert.equal(luis.frames.at(-1).player.x, 229);
+  sharedPresence.delete('student-b');
+  await ana.state('refreshPresence()');
+  assert.deepEqual(ana.frames.at(-1).seated.map(member => member.id), ['student-b', 'student-c']);
 });
 
 test('unread alert counts teammates, survives background refresh and clears only when chat is opened', async () => {

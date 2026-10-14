@@ -6,16 +6,16 @@ export const WORLD_HEIGHT = 560;
 // The first ten have their own palette and workstation; later groups get a
 // fresh palette as well, since a course may have up to forty groups.
 export const ROOM_THEMES = [
-  { id: 'bosque', accent: '#245d42', floor: '#a5c99e', tile: '#619476', rug: '#5b8b71', surface: '#e8bf82', edge: '#785b47', chair: '#2f896a', pop: '#f3c444', card: '#f0f8e9' },
-  { id: 'oceano', accent: '#145b77', floor: '#9bd6da', tile: '#53a7b9', rug: '#468eaa', surface: '#f0deb1', edge: '#716b61', chair: '#247da3', pop: '#20bfd1', card: '#eaf9fa' },
-  { id: 'arte', accent: '#904032', floor: '#efb79f', tile: '#d98570', rug: '#bd6b72', surface: '#ffe6bf', edge: '#9e6554', chair: '#c1457e', pop: '#f6bd42', card: '#fff2e9' },
-  { id: 'cosmos', accent: '#4d3b87', floor: '#aea5d8', tile: '#7867aa', rug: '#515887', surface: '#414f7f', edge: '#373f6b', chair: '#7955ab', pop: '#f3c86a', card: '#f2efff' },
-  { id: 'biblioteca', accent: '#704c29', floor: '#dfc38b', tile: '#aa8654', rug: '#9c7657', surface: '#eec492', edge: '#7d5943', chair: '#9a634b', pop: '#f1c14e', card: '#fbf4df' },
-  { id: 'laboratorio', accent: '#16665e', floor: '#9ed6c8', tile: '#58ae9f', rug: '#408782', surface: '#d5f3e7', edge: '#58847f', chair: '#188779', pop: '#61d6c5', card: '#ebfbf4' },
-  { id: 'musica', accent: '#842f69', floor: '#dda8cc', tile: '#b66a9d', rug: '#855887', surface: '#544062', edge: '#874e73', chair: '#b44a94', pop: '#f6bc54', card: '#fff0f9' },
-  { id: 'tecnologia', accent: '#28558b', floor: '#a9c8e9', tile: '#5d91c1', rug: '#4b6699', surface: '#29466f', edge: '#385873', chair: '#3185ba', pop: '#65d6e5', card: '#eef6ff' },
-  { id: 'cafe', accent: '#813e38', floor: '#d9b69d', tile: '#b67d67', rug: '#9e746d', surface: '#eed0a7', edge: '#714c43', chair: '#b6645b', pop: '#f4b452', card: '#fff3e8' },
-  { id: 'arquitectura', accent: '#465a47', floor: '#bfd0ad', tile: '#7e9d80', rug: '#748e79', surface: '#dce6c7', edge: '#526554', chair: '#638d73', pop: '#e4af47', card: '#f4f7e8' }
+  { id: 'bosque', accent: '#126447', floor: '#c0f0a3', tile: '#47b883', rug: '#42a975', surface: '#ffe199', edge: '#81574b', chair: '#278e65', pop: '#ffcd43', card: '#e9ffe0' },
+  { id: 'oceano', accent: '#115e88', floor: '#aff0f2', tile: '#32b7cc', rug: '#359fc2', surface: '#fff0bb', edge: '#536d85', chair: '#1684b5', pop: '#ffd568', card: '#e3fbff' },
+  { id: 'arte', accent: '#9b315d', floor: '#ffd5b8', tile: '#f18589', rug: '#dc6d91', surface: '#fff0bd', edge: '#a86062', chair: '#c04485', pop: '#ffcd4b', card: '#fff0e6' },
+  { id: 'cosmos', accent: '#493994', floor: '#cfb8f9', tile: '#826ad0', rug: '#554fa1', surface: '#48588f', edge: '#373d78', chair: '#8c65c5', pop: '#ffe078', card: '#f2eaff' },
+  { id: 'biblioteca', accent: '#7b4c24', floor: '#ffe0a4', tile: '#d9a66a', rug: '#bc8a63', surface: '#ffdc9c', edge: '#855c49', chair: '#bd7252', pop: '#f8cd58', card: '#fff7df' },
+  { id: 'laboratorio', accent: '#126e65', floor: '#b6f4df', tile: '#45c8ad', rug: '#40a9a0', surface: '#e2ffe9', edge: '#5b9187', chair: '#128e80', pop: '#69e7cf', card: '#e5fff1' },
+  { id: 'musica', accent: '#8c296d', floor: '#f9c4e3', tile: '#d96db8', rug: '#a65caa', surface: '#614170', edge: '#75476c', chair: '#c34d9b', pop: '#ffcf5b', card: '#fff0fa' },
+  { id: 'tecnologia', accent: '#20528c', floor: '#bfdbff', tile: '#62a5ed', rug: '#517cbd', surface: '#294f88', edge: '#375b82', chair: '#288dc0', pop: '#70edee', card: '#e9f6ff' },
+  { id: 'cafe', accent: '#904533', floor: '#f9d4b6', tile: '#d8896b', rug: '#b57573', surface: '#ffe4ad', edge: '#805345', chair: '#ce705d', pop: '#ffc462', card: '#fff0e3' },
+  { id: 'arquitectura', accent: '#3c6570', floor: '#d7efcf', tile: '#76b7ae', rug: '#699899', surface: '#e9f7cc', edge: '#55776e', chair: '#439c88', pop: '#f6ca58', card: '#f1fff0' }
 ];
 export function roomTheme(index) {
   const theme = ROOM_THEMES[index % ROOM_THEMES.length];
@@ -33,7 +33,7 @@ const obstacles = [
   { x: 696, y: 463, w: 37, h: 48 }, { x: 67, y: 463, w: 37, h: 48 },
 ];
 
-function spriteRects(avatar, step = 0) {
+function spriteRects(avatar, step = 0, seated = false) {
   const skin = SKINS[avatar.skin] || SKINS[1];
   const outfit = Number.isInteger(avatar.outfit) && avatar.outfit >= 0 && avatar.outfit < SHIRTS.length
     ? avatar.outfit : avatar.shirt;
@@ -52,7 +52,10 @@ function spriteRects(avatar, step = 0) {
   else add(8, 6, 16, 9, hair);
   add(13, 20, 7, 3, skin); add(8, 23, 17, 14, shirt); add(4, 25, 5, 8, shirt); add(25, 25, 5, 8, shirt);
   add(4, 33, 5, 5, skin); add(25, 33, 5, 5, skin);
-  add(9, 37, 7, 9 - step, '#465552'); add(19, 37, 7, 9 + step, '#465552');
+  if (seated) {
+    add(8, 36, 19, 6, '#465552'); add(5, 41, 11, 4, '#465552');
+    add(19, 41, 11, 4, '#465552');
+  } else { add(9, 37, 7, 9 - step, '#465552'); add(19, 37, 7, 9 + step, '#465552'); }
   if (avatar.presentation === 'mujer') {
     add(9, 34, 15, 4, shirt); add(7, 38, 19, 4, shirt); add(5, 42, 23, 3, shirt);
   }
@@ -61,16 +64,18 @@ function spriteRects(avatar, step = 0) {
     add(4, 37, 4, 4, hair); add(26, 37, 4, 4, hair);
     add(6, 18, 2, 12, '#765c46'); add(26, 18, 2, 12, '#765c46');
   }
-  add(8, 44 - step, 8, 4, '#34403d'); add(19, 44 + step, 8, 4, '#34403d');
+  if (seated) { add(4, 44, 12, 4, '#34403d'); add(19, 44, 12, 4, '#34403d'); }
+  else { add(8, 44 - step, 8, 4, '#34403d'); add(19, 44 + step, 8, 4, '#34403d'); }
   return r;
 }
 export function avatarSVG(avatar, className = '', label = '') {
   return `<svg class="${className}" viewBox="0 0 34 52" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'} shape-rendering="crispEdges">${spriteRects(avatar).map(([x,y,w,h,c]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`).join('')}</svg>`;
 }
 function rect(ctx, x, y, w, h, color) { ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
-function avatar(ctx, x, y, look, step = 0) {
+function avatar(ctx, x, y, look, step = 0, seated = false) {
   ctx.fillStyle = '#3e513129'; ctx.beginPath(); ctx.ellipse(x, y + 2, 15, 5, 0, 0, Math.PI * 2); ctx.fill();
-  spriteRects(look, step).forEach(([a,b,w,h,c]) => rect(ctx, x - 17 + a, y - 48 + b, w, h, c));
+  if (seated) { rect(ctx, x - 15, y - 22, 30, 20, '#43556c'); rect(ctx, x - 11, y - 18, 22, 13, '#6b819a'); }
+  spriteRects(look, step, seated).forEach(([a,b,w,h,c]) => rect(ctx, x - 17 + a, y - 48 + b, w, h, c));
 }
 function plant(ctx, x, y) {
   rect(ctx,x-11,y-8,22,15,'#b88360');rect(ctx,x-8,y+7,16,5,'#94654c');
@@ -112,7 +117,7 @@ function detail(ctx) {
     if((Math.floor(x/18)+Math.floor(y/18))%2===0) rect(ctx,x,y,18,18,'#ffffff0b');
     rect(ctx,x,y+17,17,1,'#50654d14');
   }
-  [[78,123,223,112,'#9dad88'],[455,123,228,112,'#94b1ab'],[455,363,228,113,'#c2ab85']].forEach(([x,y,w,h,c])=>{
+  [[78,123,223,112,'#65be87'],[455,123,228,112,'#5cb9d1'],[455,363,228,113,'#e9a16e']].forEach(([x,y,w,h,c])=>{
     rect(ctx,x+5,y+6,w,h,'#33453f24');rect(ctx,x,y,w,h,c);
     for(let i=x+8;i<x+w-8;i+=16) rect(ctx,i,y+6,1,h-12,'#ffffff20');
   });
@@ -142,11 +147,11 @@ export function drawWorld(canvas, options = {}) {
   if (options.layout) return drawRoomWorld(canvas, options);
   const ctx=canvas.getContext('2d'); if (!ctx) return;
   ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,800,560);
-  rect(ctx,36,42,730,474,'#37473113');rect(ctx,30,32,730,474,'#a9b49b');rect(ctx,34,28,730,474,'#e1dfc9');
+  rect(ctx,36,42,730,474,'#252e5a40');rect(ctx,30,32,730,474,'#586396');rect(ctx,34,28,730,474,'#fff4d8');
   rect(ctx,34,28,730,12,'#f7f6ea');rect(ctx,34,40,730,9,'#c4c9ad');
   // Cada espacio conserva su propio suelo, mobiliario y rótulo.
-  rect(ctx,56,58,300,200,'#d1d9be');rect(ctx,434,58,306,200,'#cbdcda');
-  rect(ctx,56,309,300,184,'#e8d7bc');rect(ctx,434,309,306,184,'#ded4b8');
+  rect(ctx,56,58,300,200,'#b8edb4');rect(ctx,434,58,306,200,'#b2e7ee');
+  rect(ctx,56,309,300,184,'#ffddaf');rect(ctx,434,309,306,184,'#f9c9ce');
   detail(ctx);
   for(let y=58;y<495;y+=24) for(let x=56;x<740;x+=24) {
     rect(ctx,x,y,1,22,'#66785108');rect(ctx,x,y+22,23,1,'#66785108');
@@ -177,7 +182,7 @@ export function drawWorld(canvas, options = {}) {
   if(options.decorative){avatar(ctx,407,276,{skin:1,shirt:0,hair:'curly'},Math.sin(t/180)*1.2);nameTag(ctx,407,286,'Tú');nameTag(ctx,320,307+shift,'¡Hola!');}
   if(options.player){avatar(ctx,options.player.x,options.player.y,options.player,options.walking?Math.sin(t/85)*2:0);nameTag(ctx,options.player.x,options.player.y+8,'Tú', '#28594c');}
 }
-export { isWalkable, findPath } from './world-layout.js?v=20261013f';
+export { isWalkable, findPath } from './world-layout.js?v=20261014a';
 
 function roomPattern(ctx, room, theme) {
   const x = room.x, y = room.y;
@@ -427,11 +432,12 @@ function drawRoomWorld(canvas, options) {
   if (canvas.height !== layout.height) canvas.height = layout.height;
   const ctx = canvas.getContext('2d'); if (!ctx) return;
   ctx.imageSmoothingEnabled = false;
-  rect(ctx, 0, 0, layout.width, layout.height, '#59656b');
-  rect(ctx, 18, 18, layout.width - 36, layout.height - 36, '#85858e');
+  rect(ctx, 0, 0, layout.width, layout.height, '#263456');
+  rect(ctx, 18, 18, layout.width - 36, layout.height - 36, '#6466a3');
   for (let y = 20; y < layout.height - 20; y += 20) {
-    rect(ctx, 350, y, 100, 1, '#676e78');
-    rect(ctx, 399, y, 1, 20, '#a1a0a4');
+    rect(ctx, 350, y, 100, 1, '#d4d2f133');
+    rect(ctx, 399, y, 1, 20, '#b8bcfa70');
+    if (y % 80 === 20) { rect(ctx, 381, y + 7, 3, 3, '#ffe284'); rect(ctx, 418, y + 7, 3, 3, '#78e4db'); }
   }
   layout.rooms.forEach((room, i) => {
     const theme = roomTheme(i);
@@ -447,18 +453,25 @@ function drawRoomWorld(canvas, options) {
     themeProp(ctx, room.x + 249, room.y + 87, theme);
     room.walls.forEach(w => { rect(ctx, w.x, w.y, w.w, w.h, theme.tile); rect(ctx, w.x, w.y - 3, w.w, 3, '#fffaf0'); });
     if (room.center) {
-      rect(ctx, room.x + 130, room.y - 3, 40, 10, '#85858e');
+      rect(ctx, room.x + 130, room.y - 3, 40, 10, '#6466a3');
       rect(ctx, room.x + 130, room.y + 7, 40, 4, theme.pop);
-      rect(ctx, room.x + 130, room.y + 213, 40, 10, '#85858e');
+      rect(ctx, room.x + 130, room.y + 213, 40, 10, '#6466a3');
       rect(ctx, room.x + 130, room.y + 209, 40, 4, theme.pop);
     } else {
       const doorX = room.right ? room.x : room.x + room.w;
-      rect(ctx, doorX - 9, room.y + 135, 18, 59, '#85858e');
+      rect(ctx, doorX - 9, room.y + 135, 18, 59, '#6466a3');
       rect(ctx, doorX - 9, room.y + 135, 18, 5, theme.pop);
     }
   });
-  rect(ctx, 369, layout.height - 51, 62, 24, '#8bc0a3');
+  rect(ctx, 369, layout.height - 51, 62, 24, '#80e7bf');
   if (!layout.rooms.length) sign(ctx, 400, 155, 'BIENVENIDO', '#28594c');
+  for (const member of options.seated || []) {
+    const theme = roomTheme(member.themeIndex);
+    avatar(ctx, member.x, member.y, { ...member.avatar, direction: 'down' }, 0, true);
+    rect(ctx, member.x + 10, member.y - 23, 9, 6, theme.accent);
+    rect(ctx, member.x + 12, member.y - 21, 5, 2, theme.pop);
+    nameTag(ctx, member.x, member.y + 8, member.name, theme.accent);
+  }
   const occupied = options.player ? [{ x: options.player.x, y: options.player.y }] : [];
   for (const peer of options.peers || []) {
     let x = peer.x;
