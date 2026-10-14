@@ -56,7 +56,7 @@ class Element {
 }
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
-  profileFixture, roomFixture = [], sharedPresence, messages = [] } = {}) {
+  profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -79,10 +79,13 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   const calls = [];
   const frames = [];
   let signOutCount = 0;
+  let clock = Date.now();
+  const profileData = profileFixture || { firstName: 'Ana', lastName: 'Prueba', topicId: 'existing-team', avatar: {} };
+  class PageDate extends Date { static now() { return clock; } }
   const context = vm.createContext({
     document: { querySelector: get, querySelectorAll: selector => selector === '.dialog-step' ? steps
       : selector === '[data-room-tab]' ? tabs : [], createElement: () => new Element(), addEventListener() {} },
-    window: { addEventListener() {} }, localStorage, sessionStorage,
+    window: { addEventListener() {} }, localStorage, sessionStorage, Date: PageDate,
     configured: true, SKINS, SHIRTS, normalizeCode, ATTACHMENT_ACCEPT: '.pdf',
     matchMedia: () => ({ matches: true }),
     cancelAnimationFrame() {}, requestAnimationFrame: () => 1,
@@ -91,6 +94,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     createParticipantPalette: () => () => '#456789',
     applyParticipantColor() {}, participantAvatar: name => Object.assign(new Element(), { textContent: name }),
     chatMessage: msg => Object.assign(new Element(), { textContent: msg.body }),
+    downloadTeamFile() {},
     roomTheme: () => ({ accent: '#456789', card: '#eef' }), isWalkable: () => true,
     memberSeat,
     createRoomLayout: count => ({ rooms: Array.from({ length: count }, (_, i) => ({
@@ -106,14 +110,24 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
         if (enroll) await enroll(body);
         return { course_id: 'course-fixture', course_name: 'Materia de prueba' };
       }
-      if (name === 'my_profile') return profileFixture || { firstName: 'Ana', lastName: 'Prueba', topicId: 'existing-team', avatar: {} };
+      if (name === 'my_profile') return profileData;
+      if (name === 'save_student_avatar') { profileData.avatar = body.p_avatar; return; }
+      if (name === 'choose_topic') {
+        profileData.topicId = body.p_topic_id;
+        const team = roomFixture.find(row => row.id === body.p_topic_id);
+        if (team && !team.members.some(member => member.id === profileData.id))
+          team.members.push({ id: profileData.id, name: profileData.firstName + ' ' + profileData.lastName,
+            mine: true, avatar: profileData.avatar });
+        return;
+      }
       if (name === 'course_room' && roomError) throw new Error(roomError);
       if (name === 'course_room') return roomFixture;
-      if (name === 'team_chat_read') return messages;
+      if (name === 'team_chat_read') { if (chatFailure?.()) throw new Error('Conexión temporalmente no disponible'); return messages; }
       if (name === 'classroom_presence_ping') {
-        sharedPresence?.set(profileFixture.id, { id: profileFixture.id, name: profileFixture.firstName,
-          avatar: profileFixture.avatar, x: body.p_x, y: body.p_y, direction: body.p_direction });
-        return [...(sharedPresence?.values() || [])].filter(student => student.id !== profileFixture.id);
+        if (presenceFailure?.()) throw new Error('Conexión temporalmente no disponible');
+        sharedPresence?.set(profileData.id, { id: profileData.id, name: profileData.firstName,
+          avatar: profileData.avatar, x: body.p_x, y: body.p_y, direction: body.p_direction });
+        return [...(sharedPresence?.values() || [])].filter(student => student.id !== profileData.id);
       }
       throw new Error('Unexpected RPC: ' + name);
     }
@@ -121,7 +135,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   vm.runInContext(source, context, { filename: 'assets/live.js' });
   const settle = () => new Promise(resolve => setImmediate(resolve));
   await settle();
-  return { get, fields, calls, frames, localStorage, sessionStorage, settle,
+  return { get, fields, calls, frames, localStorage, sessionStorage, settle, advanceTime: ms => { clock += ms; },
     state: expression => vm.runInContext(expression, context), signOutCount: () => signOutCount };
 }
 
@@ -336,4 +350,93 @@ test('unread alert counts teammates, survives background refresh and clears only
   messages.push({ id: 4, senderId: 'self', body: 'Yo también', mine: true });
   await page.state('refreshChat()');
   assert.equal(page.get('#chat-unread').textContent, '1');
+});
+
+test('editing the avatar can be cancelled or saved without losing the position or tab', async () => {
+  const profileFixture = { id: 'student-a', firstName: 'Ana', lastName: 'Prueba', topicId: 'team-1',
+    avatar: { skin: 1, shirt: 1, outfit: 1, hair: 'long', presentation: 'mujer' } };
+  const roomFixture = [{ id: 'team-1', name: 'Arquitectura', position: 1, capacity: 3,
+    members: [{ id: 'student-a', name: 'Ana Prueba', mine: true, avatar: profileFixture.avatar }] }];
+  const page = await boot({ submitted: NEW, profileFixture, roomFixture });
+  page.state('player.x = 410; player.y = 340; setRoomTab("equipo");');
+  page.get('#edit-avatar').click();
+  assert.equal(page.get('#room').dataset.stage, 'avatar');
+  assert.equal(page.get('#cancel-avatar').hidden, false);
+  page.get('#shirt-options').children[5].click();
+  page.get('#cancel-avatar').click();
+  assert.equal(page.get('#room').dataset.stage, 'room');
+  assert.equal(page.state('look.outfit'), 1);
+  assert.equal(page.state('activeTab'), 'equipo');
+  assert.equal(page.state('player.x'), 410);
+  assert.equal(page.calls.filter(call => call.name === 'save_student_avatar').length, 0);
+  page.get('#edit-avatar').click();
+  page.get('#shirt-options').children[6].click();
+  page.get('#avatar-form').dispatch('submit');
+  await page.settle();
+  assert.equal(page.get('#room').dataset.stage, 'room');
+  assert.equal(page.state('activeTab'), 'equipo');
+  assert.equal(page.state('player.x'), 410);
+  assert.equal(page.state('player.y'), 340);
+  assert.equal(page.calls.find(call => call.name === 'save_student_avatar').body.p_avatar.outfit, 6);
+});
+
+test('an expired connection clears stale peers and recovers the live count', async () => {
+  let failing = false;
+  const sharedPresence = new Map();
+  const student = (id, firstName) => ({ id, firstName, lastName: 'Prueba', topicId: null,
+    avatar: { skin: 1, shirt: 1, hair: 'short' } });
+  const ana = await boot({ submitted: NEW, profileFixture: student('student-a', 'Ana'),
+    sharedPresence, presenceFailure: () => failing });
+  const luis = await boot({ submitted: NEW, profileFixture: student('student-b', 'Luis'), sharedPresence });
+  await ana.state('refreshPresence()');
+  assert.equal(ana.frames.at(-1).peers.length, 1);
+  failing = true; ana.advanceTime(16000);
+  await ana.state('refreshPresence()');
+  assert.equal(ana.frames.at(-1).peers.length, 0);
+  assert.equal(ana.get('#online-count').textContent, 'Reconectando…');
+  failing = false;
+  await luis.state('refreshPresence()');
+  await ana.state('refreshPresence()');
+  assert.equal(ana.frames.at(-1).peers.length, 1);
+  assert.equal(ana.get('#online-count').dataset.state, 'live');
+  assert.equal(ana.get('#online-count').textContent, 'En el aula: 2');
+});
+
+test('a failed chat refresh preserves the loaded history and clears feedback on recovery', async () => {
+  let failing = false;
+  const profileFixture = { id: 'student-a', firstName: 'Ana', lastName: 'Prueba', topicId: 'team-1', avatar: { skin: 1 } };
+  const roomFixture = [{ id: 'team-1', name: 'Equipo 1', position: 1, capacity: 3,
+    members: [{ id: 'student-a', name: 'Ana Prueba', mine: true }] }];
+  const page = await boot({ submitted: NEW, profileFixture, roomFixture,
+    messages: [{ id: 1, senderId: 'other', body: 'Nos vemos en el aula.', mine: false }], chatFailure: () => failing });
+  const box = page.get('#team-chat-messages');
+  const history = box.children.slice();
+  assert.equal(history[0].textContent, 'Nos vemos en el aula.');
+  failing = true;
+  await page.state('refreshChat()');
+  assert.deepEqual(box.children, history);
+  assert.equal(page.get('#chat-connection-status').hidden, false);
+  failing = false;
+  await page.state('refreshChat()');
+  assert.deepEqual(box.children, history);
+  assert.equal(page.get('#chat-connection-status').hidden, true);
+});
+
+test('a confirmed team choice updates membership and opens the team chat', async () => {
+  const profileFixture = { id: 'student-a', firstName: 'Ana', lastName: 'Prueba', topicId: null,
+    registrationOpen: true, avatar: { skin: 1 } };
+  const roomFixture = [{ id: 'team-1', name: 'Arquitectura', position: 1, capacity: 3, members: [] }];
+  const page = await boot({ submitted: NEW, profileFixture, roomFixture });
+  page.state('topicPanel(topics[0])');
+  const click = label => {
+    const find = node => node.textContent === label ? node : node.children.map(find).find(Boolean);
+    const button = page.get('#topic-dialog').children.map(find).find(Boolean);
+    assert.ok(button, label); button.click();
+  };
+  click('Quiero este equipo'); click('Sí, unirme al equipo');
+  await page.settle();
+  assert.equal(page.state('profile.topicId'), 'team-1');
+  assert.equal(page.get('#group-badge').textContent, 'Tu equipo: Arquitectura');
+  assert.equal(page.get('#team-chat-host').hidden, false);
+  assert.equal(roomFixture[0].members[0].id, 'student-a');
 });

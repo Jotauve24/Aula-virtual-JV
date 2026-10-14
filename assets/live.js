@@ -2,7 +2,7 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014d';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014e';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014c';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
@@ -15,6 +15,7 @@ let chatTimer = 0, chatLoading = false, chatTeamId = '', unreadCount = 0;
 let participantColor = createParticipantPalette();
 let layout = createRoomLayout(0), activeTab = 'aula', roomRefresh = 0;
 let presenceTimer = 0, presenceLoading = false, peers = [], courseName = '';
+let presenceVerifiedAt = 0, presenceState = 'pending', avatarReturn = null;
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
 function show(stage) {
   stopAnimation();
@@ -23,6 +24,9 @@ function show(stage) {
   closeTopic();
   $('#registration').hidden = stage !== 'registration';
   $('#avatar').hidden = stage !== 'avatar';
+  $('#cancel-avatar').hidden = stage !== 'avatar' || !avatarReturn;
+  $('#avatar-form button[type="submit"]').textContent = avatarReturn
+    ? 'Guardar cambios y volver al aula' : 'Guardar y explorar el aula ↗';
   $('#teacher').hidden = !onboarding;
   $('#edit-avatar').hidden = !profile;
   $('#logout').hidden = !studentSignedIn();
@@ -231,14 +235,27 @@ function renderAvatarOptions() {
 }
 $('#avatar-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const submit = $('#avatar-form button[type="submit"]');
-  submit.disabled = true;
+  submit.disabled = true; $('#cancel-avatar').disabled = true;
   try {
     await studentRpc('save_student_avatar', { p_course_id: courseId, p_avatar: look });
     profile = await studentRpc('my_profile', { p_course_id: courseId });
     await enterRoom();
-  } finally { submit.disabled = false; }
+  } finally { submit.disabled = false; $('#cancel-avatar').disabled = false; }
 }); });
-$('#edit-avatar').addEventListener('click', () => { show('avatar'); renderAvatarOptions(); });
+$('#edit-avatar').addEventListener('click', () => {
+  if ($('#room').dataset.stage !== 'room') return;
+  avatarReturn = { courseId, player: { ...player }, look: { ...look }, tab: activeTab };
+  show('avatar'); renderAvatarOptions();
+  $('#presentation-options button[aria-pressed="true"]')?.focus();
+});
+function returnFromAvatar() {
+  if (!avatarReturn || $('#avatar-form button[type="submit"]').disabled) return;
+  const saved = avatarReturn; avatarReturn = null;
+  player = saved.player; look = saved.look;
+  message(''); show('room'); setRoomTab(saved.tab);
+  $('#edit-avatar').focus(); refreshPresence(); refreshRoom();
+}
+$('#cancel-avatar').addEventListener('click', returnFromAvatar);
 
 async function enterRoom() {
   topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
@@ -248,9 +265,13 @@ async function enterRoom() {
   const myMemberIndex = myTeamIndex < 0 ? -1 : [...topics[myTeamIndex].members]
     .sort((a, b) => String(a.id).localeCompare(String(b.id)))
     .findIndex(member => member.id === profile.id);
-  player = myMemberIndex < 0
-    ? { x: 208 + idHash % 13 * 32, y: newLayout.spawn.y, direction: 'down' }
-    : { ...memberSeat(newLayout.rooms[myTeamIndex], myMemberIndex), direction: 'down' };
+  const returning = avatarReturn?.courseId === courseId ? avatarReturn : null;
+  player = returning && isWalkable(returning.player.x, returning.player.y, newLayout)
+    ? { ...returning.player }
+    : myMemberIndex < 0
+      ? { x: 208 + idHash % 13 * 32, y: newLayout.spawn.y, direction: 'down' }
+      : { ...memberSeat(newLayout.rooms[myTeamIndex], myMemberIndex), direction: 'down' };
+  avatarReturn = null;
   layout = newLayout;
   show('room'); renderTopics(); draw();
   status(profile.topicId ? 'Tu lugar está guardado. Abre Mi equipo o Chat para coordinarte.' : 'Explora los temas y elige tu equipo.');
@@ -259,6 +280,7 @@ async function enterRoom() {
   clearInterval(roomRefresh); roomRefresh = setInterval(refreshRoom, 15000);
   clearInterval(presenceTimer); presenceTimer = setInterval(refreshPresence, 2500);
   refreshPresence();
+  if (returning) setRoomTab(returning.tab);
 }
 function sortTopics(rows) {
   return rows.sort((a, b) => (a.position || 0) - (b.position || 0) || a.id.localeCompare(b.id));
@@ -404,9 +426,9 @@ function updateTeamPresence() {
   const online = new Set([profile?.id, ...peers.map(peer => peer.id)]);
   document.querySelectorAll('[data-member-presence]').forEach(node => {
     const connected = online.has(node.dataset.studentId);
-    node.dataset.connected = String(connected);
+    node.dataset.connected = connected ? 'true' : presenceState === 'live' ? 'false' : 'unknown';
     node.textContent = node.dataset.studentId === profile?.id ? 'Tú · en el aula'
-      : connected ? 'En el aula ahora' : 'Sin conexión';
+      : connected ? 'En el aula ahora' : presenceState === 'live' ? 'Sin conexión' : 'Actualizando conexión…';
   });
 }
 function teamChatPanel(team) {
@@ -419,6 +441,9 @@ function teamChatPanel(team) {
   heading.append(element('span', 'CHAT DEL EQUIPO', 'eyebrow'), title);
   header.append(icon, heading, element('span', 'Solo tu equipo', 'chat-private-badge'));
   section.append(header, element('p', 'Cada integrante tiene su color. Aquí pueden ponerse de acuerdo.', 'chat-description'));
+  const connection = element('p', '', 'chat-connection-status');
+  connection.id = 'chat-connection-status'; connection.setAttribute('role', 'status'); connection.hidden = true;
+  section.append(connection);
   const messages = element('div', '', 'chat-messages'); messages.id = 'team-chat-messages';
   messages.setAttribute('role', 'log'); messages.setAttribute('aria-label', 'Mensajes de tu equipo');
   messages.setAttribute('aria-relevant', 'additions'); messages.tabIndex = 0;
@@ -507,6 +532,8 @@ async function refreshChat(forceBottom = false) {
   try {
     const messages = await studentRpc('team_chat_read', { p_course_id: currentCourseId, p_topic_id: topicId });
     if (!box.isConnected || courseId !== currentCourseId || profile?.topicId !== topicId) return;
+    const connection = $('#chat-connection-status');
+    if (connection) { connection.hidden = true; connection.textContent = ''; }
     updateChatNotice(messages, topicId);
     const signature = JSON.stringify(messages);
     if (box.dataset.signature === signature) {
@@ -519,9 +546,10 @@ async function refreshChat(forceBottom = false) {
     box.dataset.signature = signature;
     box.dataset.lastMessage = messages.length ? String(messages.at(-1).id) : '';
     if (nearBottom || forceBottom) box.scrollTop = box.scrollHeight;
-  } catch (error) { if (box.isConnected) {
-    delete box.dataset.signature;
-    box.replaceChildren(element('p', error.message, 'chat-empty'));
+  } catch (error) { if (box.isConnected && courseId === currentCourseId && profile?.topicId === topicId) {
+    const connection = $('#chat-connection-status');
+    if (connection) { connection.textContent = 'No pudimos actualizar el chat. Volveremos a intentarlo.'; connection.hidden = false; }
+    if (!box.dataset.signature) box.replaceChildren(element('p', 'Conectando con tu equipo…', 'chat-empty'));
   } }
   finally { chatLoading = false; }
 }
@@ -598,6 +626,11 @@ function draw(time = 0) {
     peers: inRoom ? peers : [], walking: path.length > 0, time });
 }
 async function refreshPresence() {
+  if ($('#room').dataset.stage === 'room' && presenceVerifiedAt && Date.now() - presenceVerifiedAt > 15000) {
+    peers = []; presenceState = 'reconnecting';
+    $('#online-count').textContent = 'Reconectando…'; $('#online-count').dataset.state = presenceState;
+    updateTeamPresence(); draw();
+  }
   if (presenceLoading || document.hidden || !profile?.id || !courseId || $('#room').dataset.stage !== 'room') return;
   const currentCourseId = courseId, studentId = profile.id;
   presenceLoading = true;
@@ -607,15 +640,21 @@ async function refreshPresence() {
       p_direction: player.direction
     });
     if (courseId !== currentCourseId || profile?.id !== studentId || $('#room').dataset.stage !== 'room') return;
+    presenceVerifiedAt = Date.now(); presenceState = 'live';
     peers = (Array.isArray(nearby) ? nearby : []).filter(peer => peer.id !== studentId &&
       Number.isFinite(peer.x) && Number.isFinite(peer.y) && peer.x >= 28 && peer.x <= layout.width - 28 &&
       peer.y >= 28 && peer.y <= layout.height - 28);
     $('#online-count').textContent = `En el aula: ${peers.length + 1}`;
+    $('#online-count').dataset.state = presenceState;
     $('#online-count').hidden = false;
     updateTeamPresence();
     draw();
   } catch (_) {
-    // A temporary disconnect must not stop movement or messaging.
+    if (courseId === currentCourseId && profile?.id === studentId && $('#room').dataset.stage === 'room') {
+      presenceState = 'reconnecting';
+      $('#online-count').textContent = 'Reconectando…'; $('#online-count').dataset.state = presenceState;
+      $('#online-count').hidden = false; updateTeamPresence();
+    }
   } finally { presenceLoading = false; }
 }
 function walkTo(target, arrived = null) {
@@ -665,6 +704,9 @@ function moveDirection(direction) {
 document.querySelectorAll('[data-direction]').forEach(button =>
   button.addEventListener('click', () => moveDirection(button.dataset.direction)));
 document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && $('#room').dataset.stage === 'avatar' && avatarReturn) {
+    event.preventDefault(); returnFromAvatar(); return;
+  }
   if ($('#room').dataset.stage !== 'room' || activeTab !== 'aula' || event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.key === 'Escape' && !$('#topic-dialog').hidden) { event.preventDefault(); homePanel(); return; }
   if (event.target.closest('input,textarea,select,[contenteditable="true"]')) return;
@@ -687,6 +729,7 @@ function stopRoomPolling() {
   clearInterval(chatTimer); clearInterval(roomRefresh); clearInterval(presenceTimer);
   chatTimer = roomRefresh = presenceTimer = 0;
   peers = [];
+  presenceVerifiedAt = 0; presenceState = 'pending'; avatarReturn = null;
   $('#online-count').hidden = true;
   renderChatNotice(0);
 }

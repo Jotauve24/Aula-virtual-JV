@@ -127,7 +127,8 @@ function plant(ctx, x, y) {
 function pixelWindow(ctx,x,y,w=82,h=31){
   pixelShadow(ctx,x,y,w,h);rect(ctx,x,y,w,h,'#526d7b');rect(ctx,x+3,y+3,w-6,h-7,'#aadadd');
   rect(ctx,x+4,y+4,w-8,3,'#d8f1e8');rect(ctx,x+4,y+h-14,w-8,8,'#9ecaa3');
-  for(let i=0;i<3;i++){rect(ctx,x+8+i*21,y+h-18-(i%2)*3,15,7,'#83bfa0');rect(ctx,x+10+i*21,y+6,4,8,'#effcff88');}
+  const panes=Math.max(1,Math.floor((w-8)/21));
+  for(let i=0;i<panes;i++){rect(ctx,x+4+i*21,y+h-18-(i%2)*3,15,7,'#83bfa0');rect(ctx,x+7+i*21,y+6,4,8,'#effcff88');}
   rect(ctx,x+Math.floor(w/2)-1,y+3,3,h-6,'#638a95');rect(ctx,x+3,y+Math.floor(h/2),w-6,2,'#638a95');
   rect(ctx,x-2,y+h-4,w+4,5,'#879b9f');rect(ctx,x-2,y+h-4,w+4,2,'#c8d4cb');
 }
@@ -239,6 +240,7 @@ function sign(ctx, x, y, label, color) {
 }
 function nameTag(ctx,x,y,text,color='#4d6551') {
   ctx.font='11px system-ui, sans-serif'; const width=ctx.measureText(text).width+15;
+  x=Math.max(width/2+8,Math.min(WORLD_WIDTH-width/2-8,x));
   rect(ctx,x-width/2,y,width,19,'#fcfcf4');ctx.fillStyle=color;ctx.textAlign='center';ctx.fillText(text,x,y+13);
 }
 export function drawWorld(canvas, options = {}) {
