@@ -111,6 +111,52 @@ function officeChair(ctx, x, y, color) {
   rect(ctx,x-18,y-19,7,3,'#6f8190');rect(ctx,x+11,y-19,7,3,'#6f8190');
   rect(ctx,x-13,y,4,3,'#293b46');rect(ctx,x+9,y,4,3,'#293b46');
 }
+function seatedDeskAvatar(ctx, x, y, look, chairColor) {
+  // Lobby illustration only. The chair, body and backrest share one anchor;
+  // the rear view keeps the legs behind the desk instead of splaying them out.
+  const skin = SKINS[look.skin] || SKINS[1];
+  const shirt = SHIRTS[look.shirt] || SHIRTS[0];
+  const hair = look.hair === 'curly' ? '#3e3732' : '#594735';
+  const p = (dx,dy,w,h,color) => rect(ctx,x+dx,y+dy,w,h,color);
+
+  // Chair base and cushion sit behind the student.
+  p(-13,-2,27,3,'#2a3c4929');p(-2,-14,4,13,'#40525f');
+  p(-12,-2,24,2,'#3e505b');p(-2,-4,4,7,'#3e505b');
+  p(-13,0,4,3,'#293b46');p(9,0,4,3,'#293b46');
+  p(-12,-12,24,6,'#394b59');p(-10,-12,20,3,shade(chairColor,17));
+
+  // Shoulders and bent forearms reach toward the keyboard.
+  p(-8,-30,16,17,shirt);p(-11,-29,22,6,shirt);
+  p(-7,-29,3,12,shade(shirt,20));p(5,-28,3,11,shade(shirt,-24));
+  p(-14,-31,5,9,shade(shirt,-12));p(9,-31,5,9,shade(shirt,-20));
+  p(-13,-33,4,5,skin);p(9,-33,4,5,skin);
+  p(-12,-33,3,1,shade(skin,18));p(9,-33,3,1,shade(skin,18));
+  p(-3,-33,6,4,skin);p(-4,-29,8,2,shade(shirt,-24));
+
+  // Foreground backrest hides the lower torso, giving the seated pose depth.
+  p(-10,-25,20,2,'#394b59');p(-12,-23,24,12,'#394b59');
+  p(-10,-23,20,10,chairColor);p(-8,-23,16,2,shade(chairColor,25));
+  p(-7,-20,14,5,shade(chairColor,10));p(-1,-19,2,5,shade(chairColor,-22));
+  p(-16,-20,4,10,'#3d505e');p(12,-20,4,10,'#3d505e');
+  p(-17,-21,7,3,'#6f8190');p(10,-21,7,3,'#6f8190');
+
+  // A smaller head and distinct rear hairstyles match the furniture scale.
+  p(-7,-43,14,12,skin);p(-9,-39,2,4,skin);p(7,-39,2,4,skin);
+  if (look.hair === 'long') {
+    p(-7,-46,14,2,hair);p(-9,-44,18,15,hair);p(-8,-29,16,5,hair);
+    p(-8,-24,5,3,hair);p(4,-24,4,2,hair);
+    p(-6,-42,2,15,'#765c46');p(-4,-44,9,2,'#765c46');
+    p(5,-39,2,13,'#493a2e');
+  } else if (look.hair === 'curly') {
+    p(-6,-46,12,2,hair);p(-8,-44,16,10,hair);p(-6,-34,12,2,hair);
+    p(-10,-42,3,5,hair);p(7,-42,3,5,hair);
+    [[-5,-43],[-1,-45],[4,-43],[-7,-38],[2,-38]].forEach(([dx,dy])=>p(dx,dy,3,2,'#625349'));
+  } else {
+    p(-6,-45,12,2,hair);p(-8,-43,16,9,hair);p(-6,-34,12,2,hair);
+    p(-5,-43,8,2,'#765c46');p(-6,-40,2,4,'#765c46');
+    p(5,-41,2,7,'#493a2e');
+  }
+}
 function plant(ctx, x, y) {
   pixelShadow(ctx,x-13,y+2,29,12);
   rect(ctx,x-12,y-10,25,20,'#5d6b6b');rect(ctx,x-10,y-8,21,17,'#a28a70');
@@ -179,7 +225,7 @@ function pixelRoundTable(ctx,x,y,w=49,h=31){
   [w-22,w-10,w-4,w-4,w-4,w-4,w-10].forEach((size,i)=>rect(ctx,x+(w-size)/2,y+2+i*4,size,4,'#dec096'));
   rect(ctx,x+12,y+5,w-24,2,'#f1d8ae');rect(ctx,x+21,y+11,8,8,'#ecf1e5');rect(ctx,x+23,y+12,4,3,'#81a395');
 }
-function desk(ctx, x, y) {
+function desk(ctx, x, y, occupants = []) {
   pixelShadow(ctx,x,y,138,53);rect(ctx,x+6,y+38,7,17,'#52636b');rect(ctx,x+123,y+38,7,17,'#52636b');
   rect(ctx,x-2,y-2,140,47,'#657d87');rect(ctx,x,y,136,40,'#e7eceb');
   rect(ctx,x+1,y+1,134,3,'#fffdf3');rect(ctx,x,y+39,136,6,'#8fa4ad');
@@ -187,7 +233,10 @@ function desk(ctx, x, y) {
   pixelMonitor(ctx,x+14,y+5,'#63aeb7');pixelMonitor(ctx,x+86,y+5,'#7aa6c1');
   pixelLamp(ctx,x+65,y+20);coffee(ctx,x+66,y+34);
   rect(ctx,x+49,y+28,10,9,'#d5b183');rect(ctx,x+50,y+29,8,6,'#f5e7c8');rect(ctx,x+54,y+30,1,5,'#a5b2ab');
-  officeChair(ctx,x+31,y+71,'#59798a');officeChair(ctx,x+106,y+71,'#59798a');
+  [31,106].forEach((dx,i)=>{
+    if(occupants[i]) seatedDeskAvatar(ctx,x+dx,y+71,occupants[i],'#59798a');
+    else officeChair(ctx,x+dx,y+71,'#59798a');
+  });
 }
 function shelf(ctx,x,y) {
   pixelShadow(ctx,x,y,80,35);rect(ctx,x,y,80,32,'#687988');rect(ctx,x+3,y+3,74,25,'#344d5e');
@@ -259,7 +308,11 @@ export function drawWorld(canvas, options = {}) {
   // Muros bajos y aperturas hacia el pasillo central.
   [[56,259,235,7],[326,259,30,7],[434,259,34,7],[514,259,226,7],[56,300,100,7],[207,300,149,7],[434,300,37,7],[516,300,224,7]].forEach(([x,y,w,h])=>{rect(ctx,x,y,w,h,'#adbca0');rect(ctx,x,y-4,w,4,'#f7f8ee');});
   shelf(ctx,121,67);shelf(ctx,622,67);shelf(ctx,623,462);
-  desk(ctx,139,140);desk(ctx,510,140);desk(ctx,510,381);
+  const previewLooks=options.actors===false?[]:[
+    {skin:1,shirt:3,hair:'short'}, {skin:0,shirt:1,hair:'long'}, {skin:2,shirt:2,hair:'curly'}
+  ];
+  desk(ctx,139,140,[previewLooks[0]]);desk(ctx,510,140,[previewLooks[1]]);
+  desk(ctx,510,381,[null,previewLooks[2]]);
   // Illustrated lobby: lounge seating and a textured shared reading corner.
   pixelShadow(ctx,96,351,207,129);rect(ctx,94,348,207,129,'#9caeaf');
   for(let yy=356;yy<470;yy+=12)for(let xx=102;xx<295;xx+=12){rect(ctx,xx,yy,7,1,'#dfe7d655');rect(ctx,xx+6,yy+1,1,6,'#dfe7d655');}
@@ -270,8 +323,6 @@ export function drawWorld(canvas, options = {}) {
   [275,489].forEach(x=>pixelWindow(ctx,x,24,50,24));
   rect(ctx,367,462,60,38,'#9eaf8c');for(let i=0;i<5;i++)rect(ctx,369,468+i*6,56,1,'#b6c5a0');
   if(options.labels!==false) {sign(ctx,217,114,'ARQUITECTURA','#58714e');sign(ctx,587,114,'REDES','#547471');sign(ctx,587,354,'SEGURIDAD','#7e7150');sign(ctx,207,333,'PUNTO DE ENCUENTRO','#8b765a');}
-  const actors=[{x:170,y:217,skin:1,shirt:3,hair:'short',direction:'up'}, {x:541,y:217,skin:0,shirt:1,hair:'long',direction:'up'}, {x:616,y:456,skin:2,shirt:2,hair:'curly',direction:'up'}];
-  if(options.actors!==false) actors.forEach(p=>avatar(ctx,p.x,p.y,p,0,true));
   const t=options.time||0;
   const shift=options.decorative?Math.sin(t/1800)*18:0;
   if(options.actors!==false){
