@@ -2,7 +2,7 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014e';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014g';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014c';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
@@ -16,6 +16,7 @@ let participantColor = createParticipantPalette();
 let layout = createRoomLayout(0), activeTab = 'aula', roomRefresh = 0;
 let presenceTimer = 0, presenceLoading = false, peers = [], courseName = '';
 let presenceVerifiedAt = 0, presenceState = 'pending', avatarReturn = null;
+let assignedSeats = [];
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
 function show(stage) {
   stopAnimation();
@@ -289,6 +290,9 @@ let locationsForTopics = [];
 function renderTopics() {
   stopAnimation(); path = []; onArrival = null;
   layout = createRoomLayout(topics.length);
+  assignedSeats = topics.flatMap((topic,roomIndex)=>[...topic.members]
+    .sort((a,b)=>String(a.id).localeCompare(String(b.id)))
+    .map((member,seatIndex)=>({id:member.id,roomIndex,seatIndex,avatar:member.avatar||{}})));
   locationsForTopics = layout.rooms.map(room => [room.arrival.x, room.arrival.y]);
   if (!isWalkable(player.x, player.y, layout)) player = { ...player, ...layout.spawn };
   $('#room-map').style.aspectRatio = layout.width + ' / ' + layout.height;
@@ -617,12 +621,20 @@ function topicPanel(topic, confirmJoin = false) {
   if (confirmJoin) dialog.querySelector('#join-confirm-title')?.focus();
   status('Estás viendo el tema ' + topic.name + '.');
 }
+function disconnectedMembers() {
+  // Wait for a verified presence response before treating anyone as offline.
+  if(presenceState!=='live')return [];
+  const connected=new Set([profile?.id,...peers.map(peer=>peer.id)]);
+  return assignedSeats.filter(member=>!connected.has(member.id));
+}
 function draw(time = 0) {
   const canvas = $('#world');
   const inRoom = $('#room').dataset.stage === 'room';
   if (!inRoom) { canvas.width = 800; canvas.height = 560; $('#room-map').style.aspectRatio = '10 / 7'; }
   if (!$('#room').hidden) drawWorld(canvas, { layout: inRoom ? layout : undefined, labels: false, actors: false,
-    player: inRoom && profile ? { ...player, ...look } : undefined,
+    player: inRoom && profile ? { ...player, ...look, id:profile.id } : undefined,
+    seated: inRoom ? disconnectedMembers() : [],
+    seatCounts: inRoom ? topics.map(topic=>topic.members.length) : [],
     peers: inRoom ? peers : [], walking: path.length > 0, time });
 }
 async function refreshPresence() {
@@ -653,7 +665,7 @@ async function refreshPresence() {
     if (courseId === currentCourseId && profile?.id === studentId && $('#room').dataset.stage === 'room') {
       presenceState = 'reconnecting';
       $('#online-count').textContent = 'Reconectando…'; $('#online-count').dataset.state = presenceState;
-      $('#online-count').hidden = false; updateTeamPresence();
+      $('#online-count').hidden = false; updateTeamPresence(); draw();
     }
   } finally { presenceLoading = false; }
 }
@@ -730,6 +742,7 @@ function stopRoomPolling() {
   chatTimer = roomRefresh = presenceTimer = 0;
   peers = [];
   presenceVerifiedAt = 0; presenceState = 'pending'; avatarReturn = null;
+  assignedSeats = [];
   $('#online-count').hidden = true;
   renderChatNotice(0);
 }

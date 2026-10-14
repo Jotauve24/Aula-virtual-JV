@@ -112,10 +112,12 @@ function officeChair(ctx, x, y, color) {
   rect(ctx,x-13,y,4,3,'#293b46');rect(ctx,x+9,y,4,3,'#293b46');
 }
 function seatedDeskAvatar(ctx, x, y, look, chairColor) {
-  // Lobby illustration only. The chair, body and backrest share one anchor;
+  // The chair, body and backrest share one anchor;
   // the rear view keeps the legs behind the desk instead of splaying them out.
   const skin = SKINS[look.skin] || SKINS[1];
-  const shirt = SHIRTS[look.shirt] || SHIRTS[0];
+  const outfit = Number.isInteger(look.outfit) && look.outfit >= 0 && look.outfit < SHIRTS.length
+    ? look.outfit : look.shirt;
+  const shirt = SHIRTS[outfit] || SHIRTS[0];
   const hair = look.hair === 'curly' ? '#3e3732' : '#594735';
   const p = (dx,dy,w,h,color) => rect(ctx,x+dx,y+dy,w,h,color);
 
@@ -431,7 +433,7 @@ function themedShelf(ctx, x, y, theme) {
   rect(ctx,x,y+29,80,4,theme.accent);
   rect(ctx,x+2,y+29,76,1,shade(theme.accent,34));rect(ctx,x+3,y+33,4,3,theme.edge);rect(ctx,x+73,y+33,4,3,theme.edge);
 }
-function themedDesk(ctx, x, y, theme) {
+function themedDesk(ctx, x, y, theme, occupants = [], seatCount = 2) {
   rect(ctx,x+3,y+47,137,8,'#303d3c33');
   rect(ctx,x+5,y+40,8,16,theme.edge);rect(ctx,x+121,y+40,8,16,theme.edge);
   if (theme.id === 'cafe' || theme.id === 'oceano') {
@@ -517,7 +519,13 @@ function themedDesk(ctx, x, y, theme) {
   }else if(theme.id==='bosque'){
     rect(ctx,x+54,y+31,20,5,'#607f76');rect(ctx,x+55,y+31,18,2,'#a2c5b1');
   }
-  officeChair(ctx,x+31,y+71,theme.chair);officeChair(ctx,x+106,y+71,theme.chair);
+  const seats = seatCount <= 2 ? [31,106] : seatCount === 3 ? [20,68,116]
+    : seatCount === 4 ? [10,49,88,127] : [-6,31,68,105,142];
+  seats.forEach((dx,i)=>{
+    const member=occupants.find(person=>person.seatIndex===i);
+    if(member)seatedDeskAvatar(ctx,x+dx,y+71,member.avatar||{},theme.chair);
+    else officeChair(ctx,x+dx,y+71,theme.chair);
+  });
 }
 function cornerFurnishing(ctx, x, y, theme) {
   if (theme.id === 'bosque' || theme.id === 'cafe') {
@@ -563,6 +571,12 @@ function drawRoomWorld(canvas, options) {
   rect(ctx,18,18,layout.width-36,5,'#f9f4e8');
   const layers=[],names=[];
   const add=(depth,draw)=>layers.push({depth,draw});
+  const connectedIds=new Set([options.player?.id,...(options.peers||[]).map(peer=>peer.id)].filter(Boolean));
+  const seatedByRoom=layout.rooms.map(()=>[]);
+  for(const member of options.seated||[]){
+    if(!connectedIds.has(member.id)&&Number.isInteger(member.roomIndex)&&seatedByRoom[member.roomIndex])
+      seatedByRoom[member.roomIndex].push(member);
+  }
   layout.rooms.forEach((room,i)=>{
     const theme=roomTheme(i),x=room.x,y=room.y;
     if(['cosmos','musica','tecnologia'].includes(theme.id)){
@@ -584,7 +598,10 @@ function drawRoomWorld(canvas, options) {
     rect(ctx,x+178,y+39,46,14,'#fffff01f');
     add(room.shelf.y+35,()=>themedShelf(ctx,room.shelf.x,room.shelf.y,theme));
     add(room.plant.y+28,()=>cornerFurnishing(ctx,room.plant.x,room.plant.y,theme));
-    add(room.desk.y+74,()=>themedDesk(ctx,room.desk.x+2,room.desk.y+2,theme));
+    const seatCount=Math.min(5,Math.max(2,options.seatCounts?.[i]||2));
+    add(room.desk.y+74,()=>themedDesk(ctx,room.desk.x+2,room.desk.y+2,theme,seatedByRoom[i],seatCount));
+    const extraMembers=seatedByRoom[i].filter(member=>member.seatIndex>=5).length;
+    if(extraMembers)names.push(()=>nameTag(ctx,x+150,y+158,`+${extraMembers} sin conexión`,'#647789'));
     add(y+180,()=>themeProp(ctx,x+25,y+154,theme));
     add(y+116,()=>themeProp(ctx,x+249,y+87,theme));
     if(room.center){

@@ -121,7 +121,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
         return;
       }
       if (name === 'course_room' && roomError) throw new Error(roomError);
-      if (name === 'course_room') return roomFixture;
+      if (name === 'course_room') return JSON.parse(JSON.stringify(roomFixture));
       if (name === 'team_chat_read') { if (chatFailure?.()) throw new Error('Conexión temporalmente no disponible'); return messages; }
       if (name === 'classroom_presence_ping') {
         if (presenceFailure?.()) throw new Error('Conexión temporalmente no disponible');
@@ -294,33 +294,46 @@ test('two connected students appear together in the same classroom', async () =>
   assert.equal(ana.frames.at(-1).player.direction, 'down');
 });
 
-test('only connected classmates appear in the room and return near their team table', async () => {
+test('disconnected members sit at their team and connected students appear only once', async () => {
   const sharedPresence = new Map();
+  let presenceFails = false;
   const roomFixture = [{ id: 'team-1', name: 'Exploradores', position: 1, capacity: 3,
     members: [
-      { id: 'student-c', name: 'Celia Ruiz', avatar: { skin: 0, shirt: 2, hair: 'long' } },
+      { id: 'student-c', name: 'Celia Ruiz', avatar: { skin: 0, shirt: 2, outfit: 5, hair: 'long' } },
       { id: 'student-a', name: 'Ana Sol', avatar: { skin: 1, shirt: 0, hair: 'curly' } },
       { id: 'student-b', name: 'Luis Mora', avatar: { skin: 2, shirt: 1, hair: 'short' } }
     ] }];
   const profile = (id, firstName) => ({ id, firstName, lastName: 'Prueba',
     topicId: 'team-1', avatar: { skin: 1, shirt: 0, hair: 'curly' } });
   const ana = await boot({ submitted: NEW, profileFixture: profile('student-a', 'Ana'),
-    roomFixture, sharedPresence });
+    roomFixture, sharedPresence, presenceFailure: () => presenceFails });
   assert.equal(ana.get('#room').dataset.stage, 'room');
-  assert.equal(ana.frames.at(-1).seated, undefined);
+  assert.deepEqual(Array.from(ana.frames.at(-1).seated, member => member.id), ['student-b', 'student-c']);
+  assert.equal(ana.frames.at(-1).seated[1].avatar.outfit, 5);
   assert.equal(ana.frames.at(-1).peers.length, 0);
   assert.equal(ana.frames.at(-1).player.x, 151);
   assert.equal(ana.frames.at(-1).player.y, 210);
   const luis = await boot({ submitted: NEW, profileFixture: profile('student-b', 'Luis'),
     roomFixture, sharedPresence });
   await ana.state('refreshPresence()');
-  assert.equal(ana.frames.at(-1).seated, undefined);
+  assert.deepEqual(Array.from(ana.frames.at(-1).seated, member => member.id), ['student-c']);
+  assert.equal(ana.frames.at(-1).seated[0].seatIndex, 2);
   assert.equal(ana.frames.at(-1).peers.length, 1);
   assert.equal(ana.frames.at(-1).peers[0].id, 'student-b');
   assert.equal(luis.frames.at(-1).player.x, 229);
   sharedPresence.delete('student-b');
   await ana.state('refreshPresence()');
   assert.equal(ana.frames.at(-1).peers.length, 0);
+  assert.deepEqual(Array.from(ana.frames.at(-1).seated, member => member.id), ['student-b', 'student-c']);
+  roomFixture[0].members = roomFixture[0].members.filter(member => member.id !== 'student-c');
+  await ana.state('refreshRoom()');
+  assert.deepEqual(Array.from(ana.frames.at(-1).seated, member => member.id), ['student-b']);
+  presenceFails = true;
+  await ana.state('refreshPresence()');
+  assert.equal(ana.frames.at(-1).seated.length, 0, 'unknown presence must not mark people as offline');
+  presenceFails = false;
+  await ana.state('refreshPresence()');
+  assert.deepEqual(Array.from(ana.frames.at(-1).seated, member => member.id), ['student-b']);
 });
 
 test('unread alert counts teammates, survives background refresh and clears only when chat is opened', async () => {
