@@ -2,8 +2,8 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014l';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014h';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014m';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014m';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
 const $ = selector => document.querySelector(selector);
@@ -289,7 +289,7 @@ async function enterRoom() {
   player = returning && isWalkable(returning.player.x, returning.player.y, newLayout)
     ? { ...returning.player }
     : myMemberIndex < 0
-      ? { x: 208 + idHash % 13 * 32, y: newLayout.spawn.y, direction: 'down' }
+      ? { x: 272 + idHash % 9 * 32, y: newLayout.spawn.y, direction: 'down' }
       : { ...memberSeat(newLayout.rooms[myTeamIndex], myMemberIndex), direction: 'down' };
   avatarReturn = null;
   layout = newLayout;
@@ -306,14 +306,23 @@ function sortTopics(rows) {
   return rows.sort((a, b) => (a.position || 0) - (b.position || 0) || a.id.localeCompare(b.id));
 }
 let locationsForTopics = [];
+let renderedTopicOrder = '';
 function renderTopics() {
-  stopAnimation(); path = []; onArrival = null;
-  layout = createRoomLayout(topics.length);
+  const roomOrder = topics.map(topic => topic.id).join(',');
+  const geometryChanged = layout.rooms.length !== topics.length;
+  if (geometryChanged || roomOrder !== renderedTopicOrder) {
+    stopAnimation(); path = []; onArrival = null;
+    if (geometryChanged) layout = createRoomLayout(topics.length);
+  }
+  renderedTopicOrder = roomOrder;
   assignedSeats = topics.flatMap((topic,roomIndex)=>[...topic.members]
     .sort((a,b)=>String(a.id).localeCompare(String(b.id)))
     .map((member,seatIndex)=>({id:member.id,roomIndex,seatIndex,avatar:member.avatar||{}})));
   locationsForTopics = layout.rooms.map(room => [room.arrival.x, room.arrival.y]);
-  if (!isWalkable(player.x, player.y, layout)) player = { ...player, ...layout.spawn };
+  if (!isWalkable(player.x, player.y, layout)) {
+    stopAnimation(); path = []; onArrival = null;
+    player = { ...player, ...layout.spawn };
+  }
   $('#room-map').style.aspectRatio = layout.width + ' / ' + layout.height;
   draw();
   const mine = topics.find(t => t.id === profile.topicId);
@@ -326,7 +335,12 @@ function renderTopics() {
     button.style.setProperty('--table-accent', theme.accent);
     button.style.setProperty('--table-soft', theme.card);
     button.style.left = locations[i][0] / 8 + '%'; button.style.top = locations[i][1] / layout.height * 100 + '%';
-    button.append(element('strong', topic.name), element('small', topic.members.length + ' de ' + topic.capacity + ' lugares'));
+    const occupancy = topic.members.length + '/' + topic.capacity;
+    const details = topic.name + ', ' + topic.members.length + ' de ' + topic.capacity + ' lugares ocupados. Abrir el tema.';
+    button.title = details; button.setAttribute('aria-label', details);
+    const count = element('small', occupancy + ' ');
+    count.append(element('span', 'lugares', 'map-place-word'));
+    button.append(element('strong', topic.name), count);
     button.addEventListener('click', () => openTopic(topic, { x: locations[i][2], y: locations[i][3] }));
     return button;
   }));
@@ -336,7 +350,13 @@ function renderTopics() {
   if (activeTopic) topicPanel(activeTopic);
 }
 function side(...nodes) { $('#side-content').replaceChildren(...nodes); }
-function openTopic(topic, target) { setRoomTab('aula'); walkTo(target, () => topicPanel(topic)); }
+function openTopic(topic, target) {
+  setRoomTab('aula');
+  walkTo(target, () => {
+    const current = topics.find(row => row.id === topic.id);
+    if (current) topicPanel(current);
+  });
+}
 function renderTeamChat(team) {
   const host = $('#team-chat-host');
   if (!team) {
@@ -422,6 +442,7 @@ function teamRosterPanel(team) {
     card.append(identity);
     const presence = element('span', '', 'member-presence');
     presence.dataset.studentId = member.id;
+    presence.dataset.memberPresence = '';
     card.append(presence);
     if (member.email) {
       const link = element('a', member.email); link.href = 'mailto:' + member.email; card.append(link);
@@ -448,9 +469,10 @@ function teamRosterPanel(team) {
 function updateTeamPresence() {
   const online = new Set([profile?.id, ...peers.map(peer => peer.id)]);
   document.querySelectorAll('[data-member-presence]').forEach(node => {
-    const connected = online.has(node.dataset.studentId);
+    const own = node.dataset.studentId === profile?.id;
+    const connected = own || presenceState === 'live' && online.has(node.dataset.studentId);
     node.dataset.connected = connected ? 'true' : presenceState === 'live' ? 'false' : 'unknown';
-    node.textContent = node.dataset.studentId === profile?.id ? 'Tú · en el aula'
+    node.textContent = own ? 'Tú · en el aula'
       : connected ? 'En el aula ahora' : presenceState === 'live' ? 'Sin conexión' : 'Actualizando conexión…';
   });
 }
@@ -769,6 +791,7 @@ function stopRoomPolling() {
   peers = [];
   presenceVerifiedAt = 0; presenceState = 'pending'; avatarReturn = null;
   assignedSeats = [];
+  renderedTopicOrder = '';
   $('#online-count').hidden = true;
   renderChatNotice(0);
 }
@@ -822,14 +845,18 @@ for (const tab of document.querySelectorAll('[data-room-tab]')) {
 let refreshingRoom = false;
 async function refreshRoom() {
   if (document.hidden || !courseId || $('#room').dataset.stage !== 'room' || refreshingRoom) return;
+  const currentCourseId = courseId, studentId = profile?.id;
+  const stillCurrent = () => courseId === currentCourseId && profile?.id === studentId && $('#room').dataset.stage === 'room';
   refreshingRoom = true;
   try {
-    const [rows, currentProfile] = await Promise.all([studentRpc('course_room', {p_course_id:courseId}), studentRpc('my_profile',{p_course_id:courseId})]);
+    const [rows, currentProfile] = await Promise.all([studentRpc('course_room', {p_course_id:currentCourseId}), studentRpc('my_profile',{p_course_id:currentCourseId})]);
+    if (!stillCurrent()) return;
     const ordered = sortTopics(rows);
     if (JSON.stringify(ordered) !== JSON.stringify(topics) || currentProfile.topicId !== profile.topicId || currentProfile.registrationOpen !== profile.registrationOpen) {
       topics = ordered; profile = currentProfile; renderTopics();
     }
   } catch (error) {
+    if (!stillCurrent()) return;
     if (error.message === 'Materia deshabilitada') {
       stopRoomPolling();
       courseId = ''; courseName = ''; profile = null; topics = [];

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { SKINS, SHIRTS, normalizeCode } from '../assets/model.js';
-import { memberSeat } from '../assets/world-layout.js';
+import { memberSeat, createRoomLayout, isWalkable, findPath, canWalkSegment } from '../assets/world-layout.js';
 
 const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', import.meta.url), 'utf8')
   .split('function rect(ctx')[0].replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '')
@@ -57,7 +57,7 @@ class Element {
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
-  motionReduced = true } = {}) {
+  motionReduced = true, realLayout = false } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -85,10 +85,13 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   let signOutCount = 0;
   let clock = Date.now();
   const profileData = profileFixture || { firstName: 'Ana', lastName: 'Prueba', topicId: 'existing-team', avatar: {} };
+  const descendants = node => [node, ...node.children.flatMap(descendants)];
+  const presenceNodes = () => [...new Set([...nodes.values()].flatMap(descendants))]
+    .filter(node => Object.hasOwn(node.dataset, 'memberPresence'));
   class PageDate extends Date { static now() { return clock; } }
   const context = vm.createContext({
     document: { querySelector: get, querySelectorAll: selector => selector === '.dialog-step' ? steps
-      : selector === '[data-room-tab]' ? tabs : [], createElement: () => new Element(), hidden: false,
+      : selector === '[data-room-tab]' ? tabs : selector === '[data-member-presence]' ? presenceNodes() : [], createElement: () => new Element(), hidden: false,
       addEventListener: (name, handler) => documentListeners.set(name, handler) },
     window: { addEventListener: (name, handler) => windowListeners.set(name, handler) }, localStorage, sessionStorage, Date: PageDate,
     configured: true, SKINS, SHIRTS, normalizeCode, ATTACHMENT_ACCEPT: '.pdf',
@@ -101,9 +104,10 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     applyParticipantColor() {}, participantAvatar: name => Object.assign(new Element(), { textContent: name }),
     chatMessage: msg => Object.assign(new Element(), { textContent: msg.body }),
     downloadTeamFile() {},
-    roomTheme: () => ({ accent: '#456789', card: '#eef' }), isWalkable: () => true,
+    roomTheme: () => ({ accent: '#456789', card: '#eef' }), isWalkable: realLayout ? isWalkable : () => true,
+    findPath: realLayout ? findPath : (_from, to) => [to], canWalkSegment: realLayout ? canWalkSegment : () => true,
     memberSeat,
-    createRoomLayout: count => ({ rooms: Array.from({ length: count }, (_, i) => ({
+    createRoomLayout: realLayout ? createRoomLayout : count => ({ rooms: Array.from({ length: count }, (_, i) => ({
       x: 40 + i * 10, y: 40 + i * 25,
       arrival: { x: 400, y: 140 + i * 30 }, label: { x: 400, y: 100 + i * 30 }
     })), width: 800, height: 560, spawn: { x: 400, y: 300 } }),
@@ -490,4 +494,84 @@ test('ambient creatures animate with an idle student and stop outside the visibl
   assert.equal(page.pendingFrameCount(), 1);
   page.leavePage();
   assert.equal(page.pendingFrameCount(), 0);
+});
+
+test('new students enter on free floor and can leave the entrance in every room layout', async () => {
+  for (const count of [0, 1, 4, 40]) for (let student = 0; student < 18; student++) {
+    const roomFixture = Array.from({ length: count }, (_, i) => ({ id: 'team-' + i,
+      name: 'Grupo ' + (i + 1), position: i, capacity: 4, members: [] }));
+    const page = await boot({ submitted: NEW, realLayout: true, roomFixture,
+      profileFixture: { id: 'student-' + student, firstName: 'Ana', lastName: 'Prueba', topicId: null, avatar: { skin: 1 } } });
+    const layout = page.state('layout'), player = page.frames.at(-1).player;
+    assert.ok(isWalkable(player.x, player.y, layout), 'registration must not spawn the student inside a bench');
+    assert.ok(canWalkSegment(player, layout.spawn, layout), 'the entrance connects to the central hall');
+  }
+});
+
+test('a group refresh preserves the walk and opens the latest topic on arrival', async () => {
+  const roomFixture = [{ id: 'team-1', name: 'Grupo 1', position: 1, capacity: 4, members: [] }];
+  const page = await boot({ submitted: NEW, roomFixture, motionReduced: false,
+    profileFixture: { id: 'student-a', firstName: 'Ana', lastName: 'Prueba', topicId: null, avatar: { skin: 1 } } });
+  const layout = page.state('layout');
+  page.get('#topic-buttons').children[0].click();
+  assert.ok(page.state('path.length') > 0);
+  roomFixture[0].members.push({ id: 'student-b', name: 'Luis Mora' });
+  roomFixture[0].name = 'Trabajo actualizado';
+  await page.state('refreshRoom()');
+  assert.strictEqual(page.state('layout'), layout, 'membership updates reuse the geometry and animal routes');
+  assert.ok(page.state('path.length') > 0, 'a new teammate must not stop a walking student');
+  for (let frame = 0; frame < 100 && page.state('path.length'); frame++) page.tick();
+  assert.equal(page.state('path.length'), 0);
+  assert.equal(page.state('selectedTopic.name'), 'Trabajo actualizado');
+  assert.equal(page.state('selectedTopic.members.length'), 1);
+  assert.equal(page.get('#topic-dialog').open, true);
+  page.state('walkTo({x:500,y:300})');
+  roomFixture.push({ id: 'team-2', name: 'Grupo 2', position: 2, capacity: 3, members: [] });
+  await page.state('refreshRoom()');
+  assert.notStrictEqual(page.state('layout'), layout);
+  assert.equal(page.state('path.length'), 0, 'a changed floor plan discards the old path');
+});
+
+test('team presence badges show online, offline and unknown connection states', async () => {
+  const sharedPresence = new Map(); let failing = false;
+  const roomFixture = [{ id: 'team-1', name: 'Grupo 1', position: 1, capacity: 3,
+    members: [{ id: 'student-a', name: 'Ana Prueba', mine: true }, { id: 'student-b', name: 'Luis Mora' }] }];
+  const page = await boot({ submitted: NEW, roomFixture, sharedPresence, presenceFailure: () => failing,
+    profileFixture: { id: 'student-a', firstName: 'Ana', lastName: 'Prueba', topicId: 'team-1', avatar: { skin: 1 } } });
+  const find = (node, id) => node.className === 'member-presence' && node.dataset.studentId === id
+    ? node : node.children.map(child => find(child, id)).find(Boolean);
+  const badge = id => find(page.get('#team-roster-host'), id);
+  assert.equal(badge('student-a').textContent, 'Tú · en el aula');
+  assert.equal(badge('student-b').textContent, 'Sin conexión');
+  sharedPresence.set('student-b', { id: 'student-b', name: 'Luis', x: 400, y: 300, direction: 'down' });
+  await page.state('refreshPresence()');
+  assert.equal(badge('student-b').textContent, 'En el aula ahora');
+  assert.equal(badge('student-b').dataset.connected, 'true');
+  failing = true;
+  await page.state('refreshPresence()');
+  assert.equal(badge('student-b').textContent, 'Actualizando conexión…');
+  assert.equal(badge('student-b').dataset.connected, 'unknown');
+  failing = false; sharedPresence.delete('student-b');
+  await page.state('refreshPresence()');
+  assert.equal(badge('student-b').textContent, 'Sin conexión');
+  assert.equal(badge('student-b').dataset.connected, 'false');
+});
+
+test('a delayed room response cannot restore a profile after leaving its course', async () => {
+  const roomFixture = [{ id: 'old-team', name: 'Materia anterior', position: 1, capacity: 4, members: [] }];
+  const page = await boot({ submitted: NEW, roomFixture,
+    profileFixture: { id: 'student-a', firstName: 'Ana', lastName: 'Prueba', topicId: null, avatar: { skin: 1 } } });
+  const pending = page.state(`(() => {
+    const originalRpc = studentRpc;
+    studentRpc = async (name, body) => {
+      if (name === 'course_room') await new Promise(resolve => { globalThis.releaseRoom = resolve; });
+      return originalRpc(name, body);
+    };
+    return refreshRoom();
+  })()`);
+  page.state("stopRoomPolling(); courseId = ''; profile = null; topics = []; show('registration'); releaseRoom();");
+  await pending;
+  assert.equal(page.state('profile'), null);
+  assert.equal(page.state('topics.length'), 0);
+  assert.equal(page.get('#room').dataset.stage, 'registration');
 });

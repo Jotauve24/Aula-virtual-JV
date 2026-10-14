@@ -76,24 +76,40 @@ export function memberSeat(room, index) {
 }
 
 const defaultLayout = createRoomLayout(3);
+const WALK_RADIUS = 8;
 export function isWalkable(x, y, layout = defaultLayout) {
-  const radius = 8;
+  const radius = WALK_RADIUS;
   return Number.isFinite(x) && Number.isFinite(y) && x >= 28 && x <= layout.width - 28 &&
     y >= 28 && y <= layout.height - 28 && !layout.obstacles.some(o =>
       x > o.x - radius && x < o.x + o.w + radius && y > o.y - radius && y < o.y + o.h + radius);
 }
 
 export function canWalkSegment(from, to, layout = defaultLayout) {
-  const steps = Math.max(1, Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / 3));
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    if (!isWalkable(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t, layout)) return false;
-  }
-  return true;
+  if (!isWalkable(from.x, from.y, layout) || !isWalkable(to.x, to.y, layout)) return false;
+  const dx = to.x - from.x, dy = to.y - from.y;
+  // Check the entire segment against each open obstacle rectangle. Sampling
+  // points can miss a thin corner, letting a diagonal walk clip through it.
+  return !layout.obstacles.some(o => {
+    const left = o.x - WALK_RADIUS, right = o.x + o.w + WALK_RADIUS;
+    const top = o.y - WALK_RADIUS, bottom = o.y + o.h + WALK_RADIUS;
+    let entry = 0, exit = 1;
+    if (dx === 0) { if (from.x <= left || from.x >= right) return false; }
+    else {
+      const a = (left - from.x) / dx, b = (right - from.x) / dx;
+      entry = Math.max(entry, Math.min(a, b)); exit = Math.min(exit, Math.max(a, b));
+    }
+    if (dy === 0) { if (from.y <= top || from.y >= bottom) return false; }
+    else {
+      const a = (top - from.y) / dy, b = (bottom - from.y) / dy;
+      entry = Math.max(entry, Math.min(a, b)); exit = Math.min(exit, Math.max(a, b));
+    }
+    return entry < exit;
+  });
 }
 
 export function findPath(from, to, layout = defaultLayout) {
-  if (!isWalkable(from.x, from.y, layout)) return [];
+  if (!isWalkable(from.x, from.y, layout) || !Number.isFinite(to.x) || !Number.isFinite(to.y)) return [];
+  if (canWalkSegment(from, to, layout)) return [{ x: to.x, y: to.y }];
   const step = 10, cols = Math.ceil(layout.width / step), rows = Math.ceil(layout.height / step);
   const point = index => ({ x: index % cols * step, y: Math.floor(index / cols) * step });
   let start = -1, closest = Infinity;
@@ -112,7 +128,7 @@ export function findPath(from, to, layout = defaultLayout) {
     const current = queue[i], p = point(current);
     const distance = (p.x - to.x) ** 2 + (p.y - to.y) ** 2;
     if (distance < bestDistance) { best = current; bestDistance = distance; }
-    if (distance < 1) break;
+    if (distance < step * step * 4 && canWalkSegment(p, to, layout)) break;
     for (const [dx, dy] of [[step,0],[-step,0],[0,step],[0,-step]]) {
       const next = { x: p.x + dx, y: p.y + dy };
       if (next.x < 0 || next.x >= cols * step || next.y < 0 || next.y >= rows * step) continue;

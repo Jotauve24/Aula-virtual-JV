@@ -1,5 +1,6 @@
 import { SKINS, SHIRTS } from './model.js?v=20261013g';
-import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=20261014l';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=20261014m';
+import { canWalkSegment } from './world-layout.js?v=20261014m';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -471,7 +472,7 @@ export function drawWorld(canvas, options = {}) {
   if(options.decorative){avatar(ctx,407,276,{skin:1,shirt:0,hair:'curly'},Math.sin(t/180)*1.2);nameTag(ctx,407,286,'Tú');nameTag(ctx,320,307+shift,'¡Hola!');}
   if(options.player){avatar(ctx,options.player.x,options.player.y,options.player,options.walking?Math.sin(t/85)*2:0);nameTag(ctx,options.player.x,options.player.y+8,'Tú', '#28594c');}
 }
-export { isWalkable, findPath } from './world-layout.js?v=20261014h';
+export { isWalkable, findPath } from './world-layout.js?v=20261014m';
 
 function roomArtwork(ctx, x, y, theme) {
   const dark = theme.accent, light = '#f7f5e9';
@@ -846,7 +847,8 @@ function drawRoomWorld(canvas, options) {
     let x=peer.x;
     for(const offset of [0,-32,32,-64,64,-96,96]){
       const candidate=Math.max(32,Math.min(layout.width-32,peer.x+offset));
-      if(!occupied.some(other=>Math.abs(other.x-candidate)<27&&Math.abs(other.y-peer.y)<45)){x=candidate;break;}
+      if(canWalkSegment(peer,{x:candidate,y:peer.y},layout)&&
+        !occupied.some(other=>Math.abs(other.x-candidate)<27&&Math.abs(other.y-peer.y)<45)){x=candidate;break;}
     }
     occupied.push({x,y:peer.y});
     add(peer.y,()=>avatar(ctx,x,peer.y,{...peer.avatar,direction:peer.direction}));

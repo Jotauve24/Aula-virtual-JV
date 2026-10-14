@@ -81,6 +81,30 @@ test('three permanent seats stay inside their team room and away from furniture'
   }
 });
 
+test('a diagonal walk cannot clip a thin corner between collision samples', () => {
+  const layout = createRoomLayout(1), from = { x: 410, y: 250 }, to = { x: 420, y: 240 };
+  assert.ok(isWalkable(from.x, from.y, layout));
+  assert.ok(isWalkable(to.x, to.y, layout));
+  assert.equal(canWalkSegment(from, to, layout), false);
+  const path = findPath(from, to, layout);
+  assert.deepEqual(path.at(-1), to);
+  let previous = from;
+  for (const point of path) { assert.ok(canWalkSegment(previous, point, layout)); previous = point; }
+});
+
+test('separating overlapping avatars keeps them on the same accessible floor', () => {
+  const layout = createRoomLayout(4), names = [];
+  const position = { x: 54, y: 140 };
+  assert.ok(isWalkable(position.x, position.y, layout));
+  const ctx = { fillRect() {}, beginPath() {}, ellipse() {}, fill() {},
+    measureText: text => ({ width: text.length * 7 }), fillText: (text, x) => names.push([text, x]) };
+  drawWorld({ width: 0, height: 0, getContext: () => ctx }, { layout,
+    player: { ...position, skin: 1 }, peers: [{ ...position, name: 'Ana', avatar: { skin: 2 } }] });
+  const x = names.find(([name]) => name === 'Ana')[1];
+  assert.ok(Math.abs(x - position.x) >= 27);
+  assert.ok(canWalkSegment(position, { x, y: position.y }, layout), 'visual separation must not cross a wall');
+});
+
 test('entrance furniture has collision while the center path reaches the rooms', () => {
   for (const count of [0, 1, 3, 4, 10, 39, 40]) {
     const layout = createRoomLayout(count);
