@@ -13,7 +13,7 @@ test('ten desks have different themed furnishings while their walking layout sta
   const canvas = { width: 0, height: 0, getContext: () => ctx };
   drawWorld(canvas, { layout });
   assert.equal(canvas.width, 800);
-  assert.equal(canvas.height, 1280);
+  assert.equal(canvas.height, 1312);
   assert.equal(JSON.stringify(layout), before);
   assert.equal(ROOM_THEMES.length, 10);
   assert.equal(new Set(ROOM_THEMES.map(t => t.id)).size, 10);
@@ -78,5 +78,23 @@ test('three permanent seats stay inside their team room and away from furniture'
     assert.ok(place.x > room.x && place.x < room.x + room.w);
     assert.ok(place.y > room.y && place.y < room.y + room.h);
     assert.ok(isWalkable(place.x, place.y, layout), `seat ${index + 1} of room ${layout.rooms.indexOf(room) + 1}`);
+  }
+});
+
+test('entrance furniture has collision while the center path reaches the rooms', () => {
+  for (const count of [0, 1, 3, 4, 10, 39, 40]) {
+    const layout = createRoomLayout(count);
+    for (const object of layout.exterior) {
+      assert.equal(isWalkable(object.x + object.w / 2, object.y + object.h / 2, layout), false);
+    }
+    const hall = { x: 400, y: layout.height - 102 };
+    const path = findPath(layout.spawn, hall, layout);
+    assert.deepEqual(path.at(-1), hall, `central entrance with ${count} groups`);
+    for (const room of [layout.rooms[0], layout.rooms.at(-1)].filter(Boolean)) {
+      const route = findPath(layout.spawn, room.arrival, layout);
+      assert.deepEqual(route.at(-1), room.arrival);
+      assert.ok([layout.spawn, ...route].every((point, index, points) =>
+        index === 0 || canWalkSegment(points[index - 1], point, layout)));
+    }
   }
 });

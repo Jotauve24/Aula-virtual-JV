@@ -2,7 +2,7 @@
 export function createRoomLayout(count = 0) {
   count = Math.max(0, Math.floor(Number(count) || 0));
   const rows = Math.max(1, Math.ceil(count / 2));
-  const layout = { width: 800, height: rows * 240 + 80, rooms: [], commons: [], obstacles: [], spawn: { x: 400, y: rows * 240 + 40 } };
+  const layout = { width: 800, height: rows * 240 + 112, rooms: [], commons: [], exterior: [], obstacles: [], spawn: { x: 400, y: rows * 240 + 65 } };
   for (let i = 0; i < count; i++) {
     const center = count % 2 === 1 && i === count - 1;
     const right = !center && i % 2 === 1;
@@ -12,7 +12,8 @@ export function createRoomLayout(count = 0) {
       desk: { x: x + 76, y: y + 76, w: 142, h: 74 },
       arrival: { x: x + 150, y: y + 182 },
       shelf: { x: x + 26, y: y + 12, w: 80, h: 32 },
-      plant: { x: x + 256, y: y + 34, w: 28, h: 28 } };
+      plant: { x: x + 256, y: y + 34, w: 28, h: 28 },
+      artifact: { x: x + 25, y: y + 154, w: 28, h: 34 } };
     if (center) {
       // A centered final room bridges the hall above and the entrance below.
       // Both openings must be real gaps in the collision map, not just paint.
@@ -30,7 +31,7 @@ export function createRoomLayout(count = 0) {
       ];
     }
     layout.rooms.push(room);
-    layout.obstacles.push(...room.walls, room.desk, room.shelf, room.plant);
+    layout.obstacles.push(...room.walls, room.desk, room.shelf, room.plant, room.artifact);
   }
   if (count % 2) {
     const y = layout.rooms.at(-1).y;
@@ -50,6 +51,16 @@ export function createRoomLayout(count = 0) {
     ];
     layout.obstacles.push(...layout.commons.flatMap(area => area.objects));
   }
+  // The landscaped entrance leaves a broad central route to every classroom.
+  layout.exterior = [
+    { kind: 'palm', x: 98, y: layout.height - 43, w: 30, h: 22 },
+    { kind: 'bench', x: 166, y: layout.height - 53, w: 90, h: 29 },
+    { kind: 'flowers', x: 283, y: layout.height - 39, w: 38, h: 14 },
+    { kind: 'flowers', x: 479, y: layout.height - 39, w: 38, h: 14 },
+    { kind: 'bench', x: 544, y: layout.height - 53, w: 90, h: 29 },
+    { kind: 'palm', x: 672, y: layout.height - 43, w: 30, h: 22 }
+  ];
+  layout.obstacles.push(...layout.exterior);
   return layout;
 }
 

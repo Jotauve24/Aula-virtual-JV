@@ -2,8 +2,8 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014g';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014c';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014h';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014h';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
 const $ = selector => document.querySelector(selector);
