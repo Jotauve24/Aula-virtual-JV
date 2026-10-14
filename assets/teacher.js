@@ -1,6 +1,6 @@
 import './embed.js?v=20261012a';
 import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=20261013d';
-import { allCoursesCsv } from './teacher-export.js?v=20261013b';
+import { allCoursesXlsx } from './teacher-export.js?v=20261013c';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 function show(id) { for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id; }
@@ -123,7 +123,13 @@ async function openCourse(id) {
       const name = document.createElement('strong'); name.textContent = `${student.lastName}, ${student.firstName}`;
       const contact = document.createElement('span'); contact.textContent = [student.email || 'Sin correo', student.phone || 'Sin teléfono'].join(' · ');
       row.append(name, contact);
-      if (group.id && active) {
+      if (!group.id) {
+        const remove = document.createElement('button'); remove.type = 'button';
+        remove.className = 'danger-outline'; remove.textContent = 'Eliminar';
+        remove.setAttribute('aria-label', `Eliminar de ${overview.course.name} a ${student.firstName} ${student.lastName}`);
+        remove.addEventListener('click', () => openDeleteStudent(student));
+        row.append(remove);
+      } else if (active) {
         const release = document.createElement('button'); release.type = 'button';
         release.className = 'button secondary'; release.textContent = 'Liberar del grupo';
         release.addEventListener('click', () => {
@@ -160,10 +166,12 @@ $('#export-all').addEventListener('click', () => run(async () => {
     }
     const total = overviews.reduce((count, item) => count + item.students.length, 0);
     if (!total) { teacherSuccess('Tus materias todavía no tienen estudiantes registrados.'); return; }
-    const blob = new Blob([allCoursesCsv(overviews)], { type: 'text/csv;charset=utf-8' });
+    const blob = new Blob([allCoursesXlsx(overviews)], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url; link.download = 'Estudiantes_todas_las_materias.csv';
+    link.href = url; link.download = 'Estudiantes_todas_las_materias.xlsx';
     document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     teacherSuccess(`Listo: ${total} estudiantes de ${courses.length} materias en un solo archivo.`);
@@ -198,6 +206,51 @@ $('#delete-course').addEventListener('click', () => openDeleteCourse({ ...overvi
   student_count: overview.students.length, topic_count: overview.topics.length }));
 $('#back').addEventListener('click', () => run(loadCourses));
 $('#logout').addEventListener('click', () => { signOut(); show('login'); });
+
+let deleteStudentTarget = null, deletingStudent = false;
+function openDeleteStudent(student) {
+  deleteStudentTarget = { id: student.id, courseId, courseName: overview.course.name };
+  $('#delete-student-name').textContent = `${student.firstName} ${student.lastName}`;
+  $('#delete-student-course').textContent = overview.course.name;
+  $('#delete-student-details').textContent = [student.email || 'Sin correo', student.phone || 'Sin teléfono'].join(' · ');
+  $('#delete-student-progress').textContent = '';
+  $('#delete-student-error').hidden = true;
+  $('#delete-student-dialog').showModal();
+}
+$('#delete-student-dialog').addEventListener('cancel', event => { if (deletingStudent) event.preventDefault(); });
+$('#cancel-delete-student').addEventListener('click', () => {
+  if (deletingStudent) return;
+  $('#delete-student-dialog').close(); deleteStudentTarget = null;
+});
+$('#confirm-delete-student').addEventListener('click', async () => {
+  const target = deleteStudentTarget;
+  if (!target || deletingStudent) return;
+  deletingStudent = true;
+  const submit = $('#confirm-delete-student'); submit.disabled = true;
+  $('#cancel-delete-student').disabled = true;
+  $('#delete-student-error').hidden = true;
+  const progress = $('#delete-student-progress');
+  try {
+    progress.textContent = 'Revisando archivos del estudiante…';
+    const args = { p_course_id: target.courseId, p_student_id: target.id };
+    const paths = await rpc('teacher_unassigned_student_file_paths', args);
+    progress.textContent = paths.length ? 'Retirando sus archivos…' : 'Eliminando su registro…';
+    await deleteTeacherCourseFiles(target.courseId, paths);
+    progress.textContent = 'Eliminando su registro…';
+    await rpc('teacher_delete_unassigned_student', args);
+    $('#delete-student-dialog').close(); deleteStudentTarget = null;
+    try {
+      await openCourse(target.courseId);
+      teacherSuccess('Estudiante eliminado de esta materia. Ya no aparece en el listado general.');
+    } catch { alertError('El estudiante fue eliminado, pero no se pudo actualizar la lista. Recarga el panel.'); }
+  } catch (error) {
+    progress.textContent = '';
+    $('#delete-student-error').textContent = error.message;
+    $('#delete-student-error').hidden = false;
+  } finally {
+    deletingStudent = false; submit.disabled = false; $('#cancel-delete-student').disabled = false;
+  }
+});
 
 let deleteTarget = null, deletingCourse = false;
 function openDeleteCourse(course) {

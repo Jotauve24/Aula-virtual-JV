@@ -8,8 +8,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Panel docente · Aula Encuentro</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/live.css?v=20261013g">
-  <script type="module" src="./assets/teacher.js?v=20261013g"></script>
+  <link rel="stylesheet" href="./assets/live.css?v=20261013h">
+  <script type="module" src="./assets/teacher.js?v=20261013h"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Ir al contenido</a>
@@ -43,6 +43,7 @@
     </section>
     <dialog id="edit-topic-dialog"><form id="edit-topic-form" class="panel-card"><span class="eyebrow">EDITAR GRUPO</span><h2>Tema y cupos</h2><label for="edit-topic-name">Tema</label><input id="edit-topic-name" name="name" minlength="2" maxlength="80" required><label for="edit-topic-instructions">Indicaciones</label><textarea id="edit-topic-instructions" name="instructions" maxlength="1000" rows="4"></textarea><label for="edit-topic-capacity">Cupos</label><input id="edit-topic-capacity" name="capacity" type="number" min="1" max="100" required><p id="edit-topic-error" role="alert" hidden></p><div class="field-pair"><button class="secondary" id="cancel-topic-edit" type="button">Cancelar</button><button class="primary" type="submit">Guardar cambios</button></div></form></dialog>
     <dialog id="delete-course-dialog" aria-labelledby="delete-course-title"><form id="delete-course-form" class="panel-card"><span class="eyebrow">ELIMINACIÓN PERMANENTE</span><h2 id="delete-course-title">Eliminar materia</h2><p>Se borrarán estudiantes, equipos, mensajes y archivos de <strong id="delete-course-name"></strong>. Su código dejará de funcionar. Esta acción no se puede deshacer.</p><p id="delete-course-counts" class="delete-course-counts"></p><label for="delete-course-confirmation">Escribe el nombre exacto de la materia para confirmar</label><input id="delete-course-confirmation" type="text" autocomplete="off" required><p id="delete-course-progress" role="status"></p><p id="delete-course-error" role="alert" hidden></p><div class="delete-course-actions"><button id="cancel-course-delete" class="secondary" type="button">Cancelar</button><button id="confirm-course-delete" class="danger" type="submit" disabled>Eliminar definitivamente</button></div></form></dialog>
+    <dialog id="delete-student-dialog" aria-labelledby="delete-student-title"><div class="panel-card"><span class="eyebrow">SIN EQUIPO</span><h2 id="delete-student-title">Eliminar estudiante</h2><p>¿Eliminar definitivamente a <strong id="delete-student-name"></strong> de <strong id="delete-student-course"></strong>?</p><p id="delete-student-details"></p><p>Se borrará su registro, mensajes y archivos de esta materia. Dejará de aparecer en el listado y perderá el acceso actual. Si conserva el código y las inscripciones están abiertas, podrá registrarse de nuevo.</p><p id="delete-student-progress" role="status"></p><p id="delete-student-error" role="alert" hidden></p><div class="delete-course-actions"><button id="cancel-delete-student" class="secondary" type="button">Cancelar</button><button id="confirm-delete-student" class="danger" type="button">Eliminar estudiante</button></div></div></dialog>
     <p id="teacher-success" role="status" hidden></p><p id="error" role="alert" hidden></p>
   </main>
   <footer class="teacher-footer"><span>Aula Encuentro / Aprender también es encontrarse.</span><a href="./">Volver al ingreso</a></footer>

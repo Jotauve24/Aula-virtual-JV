@@ -104,3 +104,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .roster-export-panel button{flex:none;min-height:40px;padding:8px 13px;font-size:12px;background:#f5e7cf;border-color:#c99a58;color:#65451f;white-space:nowrap}
 .roster-export-panel button:hover:not(:disabled){background:#f1dbb6;border-color:#a97735}
 @media(max-width:740px){.roster-export-panel{align-items:stretch;flex-direction:column}.roster-export-panel button{width:100%}}
+
+.teacher-student .danger-outline{min-height:34px;padding:7px 11px;font-size:11px}
+#delete-student-dialog{width:min(510px,calc(100% - 28px));max-height:90dvh;padding:0;border:0;border-radius:18px;box-shadow:0 25px 80px #281f1d55}
+#delete-student-dialog::backdrop{background:#25382e88}
+#delete-student-dialog .panel-card{margin:0;border:2px solid #be6155;box-shadow:none}
+#delete-student-dialog h2{font-size:27px}
+#delete-student-dialog p{font-size:13px;margin-bottom:12px}
+#delete-student-dialog strong{color:var(--ink);overflow-wrap:anywhere}
+#delete-student-details{padding:9px 12px;background:#fff0e9;border-radius:8px;overflow-wrap:anywhere}
+#delete-student-error{color:#9c332e;font-weight:650}
+#delete-student-progress:empty{display:none}
+@media(max-width:560px){#delete-student-dialog .delete-course-actions{flex-direction:column}#delete-student-dialog .delete-course-actions button{width:100%}}
