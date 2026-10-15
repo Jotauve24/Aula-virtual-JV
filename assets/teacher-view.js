@@ -7,7 +7,7 @@ const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const queryCourseId = new URLSearchParams(location.search).get('materia') || '';
 const validId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryCourseId);
-const teacherAvatar = Object.freeze({ skin: 1, shirt: 1, outfit: 0, hair: 'short', presentation: 'hombre' });
+const teacherAvatar = Object.freeze({ skin: 1, shirt: 0, outfit: 0, hair: 'short', presentation: 'hombre', character: 'zombie' });
 let courseId = '', topics = [], layout = createRoomLayout(0), player = { x: 400, y: 300, direction: 'up' };
 let seated = [], peers = [], path = [], animation = 0, previousFrame = 0, lastDraw = 0;
 let lastPresence = 0, state = 'pending', pingRunning = false, roomRunning = false;
