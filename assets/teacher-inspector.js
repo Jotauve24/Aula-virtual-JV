@@ -21,6 +21,7 @@ function changeTab(name){
     $('#panel-'+button.dataset.adminTab).hidden=!current;
   }
   if(name==='chat') refreshTeacherChat();
+  else if(name==='aula') context().draw?.();
 }
 document.querySelectorAll('[data-admin-tab]').forEach(button=>{
   button.addEventListener('click',()=>changeTab(button.dataset.adminTab));
@@ -47,7 +48,7 @@ export function inspectTopic(topic){
   for(let i=topic.members.length;i<topic.capacity;i++)people.append(el('li','Lugar disponible','free'));
   const actions=el('div','','admin-inspector-actions');
   const buttons=[
-    ['Ver mi equipo',()=>selectTeam(topic.id)],
+    ['Entrar a este grupo (prueba)',()=>selectTeam(topic.id)],
     ['Ver chat',()=>selectTeam(topic.id,'chat')],
     ['Caminar a la mesa',()=>{const c=context(),i=c.topics.findIndex(t=>t.id===topic.id);closeDialog();c.walkTo(c.layout.rooms[i].arrival);}],
     ['Cerrar',closeDialog]
@@ -152,22 +153,4 @@ export function renderSelectedTeam(){
     chatHost.replaceChildren(realChatPanel(picked));
   }
   if(tab==='chat')refreshTeacherChat();
-}
-export function drawZombie(canvas,player,walking,time=0){
-  const ctx=canvas.getContext('2d');if(!ctx)return;
-  ctx.save();ctx.imageSmoothingEnabled=false;
-  const x=Math.round(player.x)-17,y=Math.round(player.y)-48;
-  const step=walking?Math.round(Math.sin(time/85)*2):0;
-  const pixel=(dx,dy,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x+dx,y+dy,w,h);};
-  pixel(8,4,18,18,'#527e46');pixel(10,3,14,3,'#729e5b');
-  pixel(7,9,2,11,'#456b3b');pixel(26,9,2,11,'#456b3b');
-  if(player.direction==='up'){pixel(12,9,10,5,'#426b3e');}
-  else{pixel(11,12,4,4,'#eff9d4');pixel(20,12,4,4,'#eff9d4');
-       pixel(12,13,2,2,'#253c1f');pixel(21,13,2,2,'#253c1f');pixel(15,19,6,2,'#304d2b');}
-  pixel(13,21,8,3,'#527e46');
-  pixel(8,24,18,14,'#2b9794');pixel(5,25,4,12,'#2b9794');pixel(26,25,4,12,'#2b9794');
-  pixel(5,36,4,4,'#527e46');pixel(26,36,4,4,'#527e46');
-  pixel(10,38,6,8-step,'#424575');pixel(19,38,6,8+step,'#424575');
-  pixel(9,45-step,8,3,'#222d43');pixel(18,45+step,8,3,'#222d43');
-  ctx.restore();
 }
