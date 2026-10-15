@@ -11,13 +11,52 @@ const el=(tag,value='',css='')=>{
   return node;
 };
 const demo=createDemoExperience();
-let context=()=>({}), activeTab='aula';
+let context=()=>({}), activeTab='aula', demoUnread=0;
+let demoChatPaint=null, noticeTimer=0;
 const selectedTeam=()=>context().topics.find(t=>t.id===demo.chosenId)||null;
 
 export const isDemoTeam=id=>demo.chosenId===id;
 export function configureTeacherInspector(getContext) {
   context=getContext;
   $('#restart-demo')?.addEventListener('click',resetDemonstration);
+  $('#demo-message-trigger')?.addEventListener('click',simulateIncomingMessage);
+  $('#demo-chat-alert-open')?.addEventListener('click',()=>changeTab('chat'));
+}
+function renderDemoNotice() {
+  const active=!!selectedTeam();
+  const button=$('#demo-message-trigger');
+  if(button)button.hidden=!active;
+  const pill=$('#demo-chat-unread');
+  if(pill){
+    pill.hidden=!demoUnread;
+    pill.textContent=demoUnread>99?'99+':String(demoUnread);
+  }
+  const alert=$('#demo-chat-alert');
+  if(alert){
+    alert.hidden=!demoUnread || activeTab==='chat';
+    $('#demo-chat-alert-text').textContent=demoUnread===1?
+      'Tienes 1 mensaje nuevo de un compañero de ejemplo.':
+      'Tienes '+demoUnread+' mensajes nuevos de tu compañero de ejemplo.';
+  }
+}
+function simulateIncomingMessage(){
+  const topic=selectedTeam();
+  if(!topic||!demo.receive(topic.id))return;
+  if(activeTab!=='chat'){
+    demoUnread++;
+    renderDemoNotice();
+    const banner=$('#demo-chat-alert');
+    if(banner && !banner.hidden){
+      banner.classList.remove('chat-just-arrived');
+      void banner.offsetWidth;
+      banner.classList.add('chat-just-arrived');
+      clearTimeout(noticeTimer);
+      noticeTimer=setTimeout(()=>banner.classList.remove('chat-just-arrived'),1150);
+    }
+    document.dispatchEvent(new CustomEvent('aulajv:chat-received',{detail:{count:1,demo:true}}));
+  }
+  demoChatPaint?.();
+  context().status('Mensaje ficticio recibido. Entra a Chat para mostrarlo.');
 }
 function closeTopic(){
   const dialog=$('#topic-dialog');
@@ -33,6 +72,12 @@ function changeTab(tab) {
     button.tabIndex=selected?0:-1;
     $('#panel-'+button.dataset.adminTab).hidden=!selected;
   }
+  if(tab==='chat'){
+    demoUnread=0;
+    clearTimeout(noticeTimer);
+    $('#demo-chat-alert')?.classList.remove('chat-just-arrived');
+  }
+  renderDemoNotice();
   if(tab==='aula')context().draw?.();
 }
 document.querySelectorAll('[data-admin-tab]').forEach(button=>{
@@ -54,6 +99,9 @@ function refreshDemo() {
 }
 export function resetDemonstration(){
   demo.reset();
+  demoUnread=0;
+  demoChatPaint=null;
+  clearTimeout(noticeTimer);
   closeTopic();
   changeTab('aula');
   refreshDemo();
@@ -231,6 +279,7 @@ function demoChatPanel(topic){
     messages.scrollTop=messages.scrollHeight;
   };
   paint();
+  demoChatPaint=paint;
   const form=el('form','','chat-form');form.id='team-chat-form';
   const label=el('label','Escribe a tu equipo');label.htmlFor='team-chat-input';
   const input=document.createElement('input');
@@ -285,6 +334,7 @@ function demoChatPanel(topic){
 export function renderSelectedTeam(){
   const topic=selectedTeam();
   $('#group-badge').textContent=topic?'Tu equipo: '+topic.name:'Tu equipo: sin asignar';
+  renderDemoNotice();
   const nodes=$('#teacher-topics').querySelectorAll('details');
   for(const detail of nodes){
     let button=detail.querySelector('.admin-view-group');
@@ -298,7 +348,9 @@ export function renderSelectedTeam(){
   if(!topic){
     roster.replaceChildren(el('p','Elige un grupo en «Aula y temas» para ver aquí a tus compañeros.','empty-team'));
     chat.replaceChildren(el('p','Elige un equipo en «Aula y temas» para conversar.','empty-team'));
-    delete chat.dataset.topicId;return;
+    delete chat.dataset.topicId;
+    demoChatPaint=null;
+    return;
   }
   roster.replaceChildren(teamRosterPanel(topic));
   if(chat.dataset.topicId!==topic.id){
