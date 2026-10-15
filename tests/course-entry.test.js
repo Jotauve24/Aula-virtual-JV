@@ -575,3 +575,16 @@ test('a delayed room response cannot restore a profile after leaving its course'
   assert.equal(page.state('topics.length'), 0);
   assert.equal(page.get('#room').dataset.stage, 'registration');
 });
+
+test('new students see first-time steps and returning students have a separate recovery action', async () => {
+  const page = await boot({ submitted: NEW, signedIn: false });
+  assert.equal(page.state('questions[questionIndex]'), 'firstName');
+  assert.equal(page.get('#dialog-progress').textContent, 'PASO 1 DE 4 · REGISTRO POR PRIMERA VEZ');
+  assert.equal(page.get('#dialog-description').textContent,
+    'Escribe tus nombres para comenzar a crear tu perfil.');
+  assert.equal(page.get('#next-question').hidden, false);
+  const html = readFileSync(new URL('../live.html', import.meta.url), 'utf8');
+  assert.match(html, /¿Ya habías ingresado antes a esta materia\?/);
+  assert.match(html, /id="student-sign-in"[^>]*>Recuperar mi perfil anterior<\/button>/);
+  assert.match(html, /id="next-question"[^>]*>Continuar →<\/button>/);
+});
