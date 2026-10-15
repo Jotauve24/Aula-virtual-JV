@@ -1,5 +1,8 @@
 /* AulaVirtualJv · Recoverability without changing existing registration styling. */
-.student-registered-link { display:block; margin:13px auto 0; background:transparent; border:0; padding:7px 10px; color:#2c5e83; font:700 12px/1.4 ui-sans-serif,system-ui,sans-serif; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+/* Keep the recovery option visible, but visually separate from first registration. */
+.student-returning-entry { margin-top:16px; padding-top:15px; border-top:1px solid #e1e9ee; text-align:center; }
+.student-returning-question { margin:0; color:#647b8b; font:500 13px/1.5 ui-sans-serif,system-ui,sans-serif; }
+.student-registered-link { display:inline-block; margin:5px auto 0; background:transparent; border:0; padding:9px 10px; color:#2c5e83; font:700 13px/1.4 ui-sans-serif,system-ui,sans-serif; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
 .student-registered-link:hover,.student-registered-link:focus-visible { color:#123e63; }
 .student-account-dialog { position:fixed; inset:0; margin:auto; transform:none; width:min(490px,calc(100% - 30px)); max-height:90dvh; padding:0; border:1px solid #d1dfe7; border-radius:15px; box-shadow:0 25px 80px #172e4540; background:#fff; color:#203b55; overflow-y:auto; }
 .student-account-dialog::backdrop { background:#14293e9c; }
