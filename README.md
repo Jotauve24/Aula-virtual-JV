@@ -46,7 +46,7 @@ carpeta de recursos del proyecto.
 
 Al abrir una materia, el docente encuentra su código en **Código de la materia** y puede copiarlo. Las materias creadas antes de esta función conservaban solo una huella del código, que no permite recuperar el original. En esos casos, **Generar código nuevo** pide confirmación y guarda uno consultable. El anterior deja de funcionar; los estudiantes pueden ingresar con el nuevo desde su misma sesión y conservan sus perfiles y equipos.
 
-El código de materia no verifica la identidad individual. El correo declarado es de contacto y tampoco se verifica. El perfil estudiantil depende de la sesión anónima guardada en ese navegador: cerrar sesión o borrar los datos del sitio puede impedir recuperar ese perfil. Para cambiar de equipo, el estudiante debe pedir al docente que libere su lugar. La presencia de estudiantes y docentes se consulta periódicamente y muestra sus últimas posiciones, con una caducidad breve para usuarios desconectados.
+El código de materia no verifica la identidad individual. En la primera inscripción el correo es de contacto, sin verificar. La sesión del navegador permite volver normalmente; antes de cerrar sesión o borrar datos, el alumno puede proteger su cuenta con correo verificado. Si pierde la sesión sin protegerla, la recuperación automática solo funciona cuando el correo verificado coincide con un único perfil anónimo y no conectado; los casos ambiguos requieren revisión. Para cambiar de equipo, el estudiante debe pedir al docente que libere su lugar. La presencia de estudiantes y docentes se consulta periódicamente y muestra sus últimas posiciones, con una caducidad breve para usuarios desconectados.
 
 ## Incrustar en E-ducativa
 
@@ -65,7 +65,7 @@ En el editor HTML de la plataforma, usa una altura de aula en lugar de una propo
 <p><a href="https://jotauve24.github.io/Aula-virtual-JV/" target="_blank" rel="noopener">Abrir el aula en otra pestaña</a></p>
 ```
 
-El aula adapta su distribución al ancho disponible. **Ampliar aula** permite trabajar a pantalla completa cuando la plataforma lo admite; el enlace abre la misma aula fuera del iframe si hace falta. Usa siempre el mismo navegador para conservar el perfil.
+El aula adapta su distribución al ancho disponible. **Ampliar aula** permite trabajar a pantalla completa cuando la plataforma lo admite; el enlace abre la misma aula fuera del iframe si hace falta. Para cambiar de navegador, utiliza «Recuperar tu cuenta» con un correo verificado.
 
 ## Configuración y desarrollo
 

@@ -56,7 +56,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     if (name === 'teacher_delete_course') { assert.equal(course.active, false); course = null; return; }
     throw new Error('RPC inesperado: ' + name);
   };
-  vm.runInNewContext(source, {
+  const pageActions = vm.runInNewContext(source+'\n({openCourse,loadCourses})', {
     document: { querySelector: get, querySelectorAll: () => [], hidden: false,
       createTextNode: text => { const node = new Element(); node.textContent = text; return node; },
       body: { append() {} }, createElement: tag => {
@@ -75,7 +75,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     }
   }, { filename: 'assets/teacher.js' });
   await new Promise(resolve => setImmediate(resolve));
-  return { get, calls, downloads, current: () => course };
+  return { get, calls, downloads, current: () => course, openCourse: pageActions.openCourse, loadCourses: pageActions.loadCourses };
 }
 
 test('docente descarga todas las materias, incluso las deshabilitadas, sin equipo e inscritos recientemente', async () => {
@@ -187,4 +187,32 @@ test('a file removal error leaves the course disabled and prevents record deleti
   assert.equal(page.current().active, false);
   assert.equal(page.calls.some(([name]) => name === 'teacher_delete_course'), false);
   assert.match(page.get('#delete-course-error').textContent, /Storage no disponible/);
+});
+
+test('an old course response cannot replace the most recently selected subject',async()=>{
+  let release;
+  const slow=new Promise(resolve=>{release=resolve;});
+  const page=await boot({extraCourses:[{id:'course-2',name:'Sistemas II',student_count:1,topic_count:0}],
+    overviewById:{'course-2':slow}});
+  const older=page.openCourse('course-2');
+  await page.openCourse('course-1');
+  assert.equal(page.get('#course-title').textContent,'Mantenimiento');
+  release({course:{id:'course-2',name:'Sistemas II',active:true,registrationOpen:true},
+    students:[],topics:[]});
+  await older;
+  assert.equal(page.get('#course-title').textContent,'Mantenimiento');
+  assert.equal(page.get('#detail').hidden,false);
+});
+test('logging out invalidates in-flight course details',async()=>{
+  let release;
+  const pending=new Promise(resolve=>{release=resolve;});
+  const page=await boot({extraCourses:[{id:'course-2',name:'Sistemas II',student_count:1,topic_count:0}],
+    overviewById:{'course-2':pending}});
+  const request=page.openCourse('course-2');
+  page.get('#logout').click();
+  release({course:{id:'course-2',name:'Sistemas II',active:true,registrationOpen:true},
+    students:[],topics:[]});
+  await request;
+  assert.equal(page.get('#login').hidden,false);
+  assert.equal(page.get('#detail').hidden,true);
 });
