@@ -1,0 +1,25 @@
+/* A small, quiet sound control in the existing header; no extra cards. */
+.site-header .retro-sound-toggle {
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:6px; flex:none; min-height:38px; padding:8px 12px;
+  border:1px solid #c8d9e2; border-radius:9px;
+  background:#f7fafc; color:#315a74;
+  font:700 12px/1.2 ui-sans-serif,system-ui,sans-serif;
+  white-space:nowrap; cursor:pointer;
+}
+.site-header .retro-sound-toggle:hover {
+  background:#eaf2f6; border-color:#91b3c6;
+}
+.site-header .retro-sound-toggle:focus-visible {
+  outline:3px solid #2e729b; outline-offset:2px;
+}
+.site-header .retro-sound-toggle[aria-pressed="false"] {
+  background:#f5f6f7; border-color:#d6dee3; color:#6b7b86;
+}
+@media(max-width:650px) {
+  .site-header .header-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+  .site-header .retro-sound-toggle{min-height:38px;font-size:11px;padding:8px 10px}
+}
+@media(forced-colors:active) {
+  .site-header .retro-sound-toggle{border:1px solid ButtonText}
+}
