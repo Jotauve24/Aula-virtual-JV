@@ -244,5 +244,5 @@ async function initialize() {
     roomTimer=setInterval(refreshRoom,15000);
   } catch(error) { fail('No se pudo abrir la sala. Comprueba tu sesión docente e inténtalo nuevamente.'); }
 }
-configureTeacherInspector(()=>({ topics, layout, peers, state, courseId, walkTo, status }));
+configureTeacherInspector(()=>({ topics, layout, peers, state, courseId, walkTo, status, draw }));
 initialize();
