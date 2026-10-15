@@ -12,6 +12,7 @@ let courseId = '', topics = [], layout = createRoomLayout(0), player = { x: 400,
 let seated = [], peers = [], path = [], animation = 0, previousFrame = 0, lastDraw = 0;
 let lastPresence = 0, state = 'pending', pingRunning = false, roomRunning = false;
 let pingTimer = 0, roomTimer = 0, destroyed = false;
+let activeTab = 'aula', selectedTeamId = '';
 
 function status(value) { $('#room-status').textContent = value; }
 function fail(value) {
@@ -84,12 +85,7 @@ function renderTopicButtons() {
     const name = document.createElement('strong'); name.textContent = topic.name;
     const capacity = document.createElement('small'); capacity.textContent = occupancy + ' lugares';
     button.append(name,capacity);
-    button.addEventListener('click',() => {
-      walkTo(room.arrival);
-      const item = [...document.querySelectorAll('.teacher-view-topic')].find(node => node.dataset.topicId === topic.id);
-      if (item) item.open = true;
-      status('Vas hacia ' + topic.name + '.');
-    });
+    button.addEventListener('click',() => inspectTopic(topic));
     return button;
   }));
 }
@@ -108,13 +104,14 @@ function applyTopics(rows) {
     .sort((a,b) => String(a.id).localeCompare(String(b.id)))
     .map((member,seatIndex) => ({id:member.id,roomIndex,seatIndex,avatar:member.avatar||{}})));
   $('#room-map').style.aspectRatio = layout.width + ' / ' + layout.height;
-  renderTopicButtons(); renderRoster(); draw();
+  if (selectedTeamId && !topics.some(topic=>topic.id===selectedTeamId)) selectedTeamId = '';
+  renderTopicButtons(); renderRoster(); renderSelectedTeam(); draw();
 }
 function draw(time = 0) {
   if (destroyed || $('#room').hidden) return;
   const connected = state === 'live' ? onlineIds() : new Set();
   drawWorld($('#world'), { layout, labels:false, actors:false,
-    player: { ...player, ...teacherAvatar, id:'teacher-local' }, playerName:'Jotauve',
+    player: { ...player, ...teacherAvatar, id:'teacher-local' }, hidePlayerName:true,
     peers: state === 'live' ? peers : [],
     seated: state === 'live' ? seated.filter(member => !connected.has(member.id)) : [],
     seatCounts: topics.map(topic => topic.members.length),
@@ -131,7 +128,7 @@ function loop(time) {
     player.direction = Math.abs(dx)>Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
     if (distance <= step) { player.x = next.x; player.y = next.y; path.shift(); }
     else { player.x += dx/distance*step; player.y += dy/distance*step; }
-    if (!path.length) status('Jotauve llegó a su destino.');
+    if (!path.length) status('Llegaste a tu destino.');
   }
   if (path.length || !reducedMotion.matches && time - lastDraw >= 55) {
     draw(time); lastDraw = time;
@@ -163,11 +160,12 @@ $('#world').addEventListener('click',event => {
   const x = (event.clientX-bounds.left)/bounds.width*layout.width;
   const y = (event.clientY-bounds.top)/bounds.height*layout.height;
   const index = layout.rooms.findIndex(room => x>=room.desk.x&&x<=room.desk.x+room.desk.w&&y>=room.desk.y&&y<=room.desk.y+room.desk.h);
-  walkTo(index>=0?layout.rooms[index].arrival:{x,y});
+  if(index >= 0 && topics[index]) inspectTopic(topics[index]);
+  else walkTo({x,y});
 });
 document.querySelectorAll('[data-direction]').forEach(button => button.addEventListener('click',()=>moveDirection(button.dataset.direction)));
 document.addEventListener('keydown',event=>{
-  if ($('#room').hidden || document.hidden || event.altKey || event.ctrlKey || event.metaKey) return;
+  if ($('#room').hidden || document.hidden || activeTab !== 'aula' || event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]')) return;
   const dir = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',W:'up',s:'down',S:'down',a:'left',A:'left',d:'right',D:'right'}[event.key];
   if (dir) {event.preventDefault();moveDirection(dir);}
