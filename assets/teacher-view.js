@@ -1,5 +1,5 @@
 import './embed.js?v=20261012a';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, drawZombie } from './teacher-inspector.js?v=20261014p';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam } from './teacher-inspector.js?v=20261014p';
 import { configured, signedIn, rpc } from './supabase-client.js?v=20261013d';
 import { drawWorld, roomTheme } from './world.js?v=20261014n';
 import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=20261014m';
@@ -8,12 +8,12 @@ const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const queryCourseId = new URLSearchParams(location.search).get('materia') || '';
 const validId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryCourseId);
-const teacherAvatar = Object.freeze({ skin: 1, shirt: 0, outfit: 0, hair: 'short', presentation: 'hombre', character: 'zombie' });
+const teacherAvatar = Object.freeze({ character:'zombie' });
 let courseId = '', topics = [], layout = createRoomLayout(0), player = { x: 400, y: 300, direction: 'up' };
 let seated = [], peers = [], path = [], animation = 0, previousFrame = 0, lastDraw = 0;
 let lastPresence = 0, state = 'pending', pingRunning = false, roomRunning = false;
 let pingTimer = 0, roomTimer = 0, destroyed = false;
-let activeTab = 'aula', selectedTeamId = '';
+let selectedTeamId = '';
 
 function status(value) { $('#room-status').textContent = value; }
 function fail(value) {
@@ -63,7 +63,7 @@ function renderPresenceSummary() {
   const text = state === 'live' ? `En el aula: ${peers.length + 1}` : 'Reconectando…';
   $('#online-count').textContent = text;
   $('#roster-status').textContent = state === 'live'
-    ? `${peers.length} estudiante${peers.length === 1 ? '' : 's'} conectado${peers.length === 1 ? '' : 's'} · Jotauve presente`
+    ? `${peers.length} estudiante${peers.length === 1 ? '' : 's'} conectado${peers.length === 1 ? '' : 's'} · docente presente`
     : 'Actualizando la conexión de estudiantes…';
   document.querySelectorAll('[data-student-id]').forEach(node => {
     const active = online?.has(node.dataset.studentId);
@@ -81,7 +81,7 @@ function renderTopicButtons() {
     button.style.setProperty('--table-accent',theme.accent);
     button.style.setProperty('--table-soft',theme.card);
     const occupancy = topic.members.length + '/' + topic.capacity;
-    button.title = `${topic.name}: ${occupancy} estudiantes. Caminar a este grupo.`;
+    button.title = `${topic.name}: ${occupancy} estudiantes. Abrir el grupo.`;
     button.setAttribute('aria-label',button.title);
     const name = document.createElement('strong'); name.textContent = topic.name;
     const capacity = document.createElement('small'); capacity.textContent = occupancy + ' lugares';
@@ -109,16 +109,15 @@ function applyTopics(rows) {
   renderTopicButtons(); renderRoster(); renderSelectedTeam(); draw();
 }
 function draw(time = 0) {
-  if (destroyed || $('#room').hidden) return;
+  if (destroyed || $('#room').hidden || $('#panel-aula').hidden) return;
   const connected = state === 'live' ? onlineIds() : new Set();
   drawWorld($('#world'), { layout, labels:false, actors:false,
-    
+    player: { ...player, ...teacherAvatar, id:'teacher-local' }, hidePlayerName:true,
     peers: state === 'live' ? peers : [],
     seated: state === 'live' ? seated.filter(member => !connected.has(member.id)) : [],
     seatCounts: topics.map(topic => topic.members.length),
     walking:path.length>0, time, ambientTime:reducedMotion.matches?0:Date.now(),
     reducedMotion:reducedMotion.matches });
-  drawZombie($('#world'),player,path.length>0,time);
 }
 function loop(time) {
   if (destroyed || document.hidden) { animation = 0; return; }
@@ -168,6 +167,8 @@ $('#world').addEventListener('click',event => {
 document.querySelectorAll('[data-direction]').forEach(button => button.addEventListener('click',()=>moveDirection(button.dataset.direction)));
 document.addEventListener('keydown',event=>{
   if ($('#room').hidden || $('#panel-aula').hidden || document.hidden || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (event.key === 'Escape' && $('#topic-dialog').open) { event.preventDefault(); $('#topic-dialog').close();$('#topic-dialog').hidden=true; return; }
+  if ($('#topic-dialog').open) return;
   if (event.target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]')) return;
   const dir = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',W:'up',s:'down',S:'down',a:'left',A:'left',d:'right',D:'right'}[event.key];
   if (dir) {event.preventDefault();moveDirection(dir);}
