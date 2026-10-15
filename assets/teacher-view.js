@@ -65,6 +65,11 @@ function renderPresenceSummary() {
   $('#roster-status').textContent = state === 'live'
     ? `${peers.length} estudiante${peers.length === 1 ? '' : 's'} conectado${peers.length === 1 ? '' : 's'} · docente presente`
     : 'Actualizando la conexión de estudiantes…';
+  document.querySelectorAll('[data-admin-student-id]').forEach(node => {
+    const active=online?.has(node.dataset.adminStudentId);
+    node.dataset.connected=online?(active?'true':'false'):'unknown';
+    node.textContent=online?(active?'En el aula ahora':'Sin conexión'):'Actualizando conexión…';
+  });
   document.querySelectorAll('[data-student-id]').forEach(node => {
     const active = online?.has(node.dataset.studentId);
     node.dataset.online = active ? 'true' : 'false';
