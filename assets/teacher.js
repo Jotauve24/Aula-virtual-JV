@@ -126,7 +126,7 @@ function onlineStudentList(students, observedAt, fetchedAt) {
   for (const student of students) {
     const row = document.createElement('li'); row.className = 'teacher-online-student';
     const initials = document.createElement('span'); initials.className = 'teacher-student-initials';
-    initials.textContent = student.name.trim().split(/\\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase();
+    initials.textContent = student.name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase();
     initials.setAttribute('aria-hidden', 'true');
     const identity = document.createElement('div'); identity.className = 'teacher-student-online-identity';
     const name = document.createElement('strong'); name.textContent = student.name;
