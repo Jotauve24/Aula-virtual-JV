@@ -40,7 +40,26 @@ function shade(color, amount) {
   if (!/^[0-9a-f]{6}$/i.test(hex)) return color;
   return '#' + [0, 2, 4].map(i => Math.max(0, Math.min(255, parseInt(hex.slice(i, i + 2), 16) + amount)).toString(16).padStart(2, '0')).join('');
 }
+function zombieRects(direction, step = 0) {
+  const pixels=[];
+  const add=(x,y,w,h,color)=>pixels.push([x,y,w,h,color]);
+  add(8,4,18,18,'#527e46');add(10,3,14,3,'#729e5b');
+  add(6,8,3,12,'#456b3b');add(26,8,3,12,'#456b3b');
+  if(direction==='up') add(12,9,10,5,'#426b3e');
+  else {
+    add(11,12,4,4,'#eff9d4');add(20,12,4,4,'#eff9d4');
+    add(12,13,2,2,'#253c1f');add(21,13,2,2,'#253c1f');
+    add(15,19,6,2,'#304d2b');
+  }
+  add(13,21,8,3,'#527e46');
+  add(8,24,18,14,'#2b9794');add(5,25,4,12,'#2b9794');add(26,25,4,12,'#2b9794');
+  add(5,36,4,4,'#527e46');add(26,36,4,4,'#527e46');
+  add(10,38,6,8-step,'#424575');add(19,38,6,8+step,'#424575');
+  add(9,45-step,8,3,'#222d43');add(18,45+step,8,3,'#222d43');
+  return pixels;
+}
 function spriteRects(avatar, step = 0, seated = false) {
+  if (avatar?.character === 'zombie') return zombieRects(avatar.direction, step);
   const skin = SKINS[avatar.skin] || SKINS[1];
   const outfit = Number.isInteger(avatar.outfit) && avatar.outfit >= 0 && avatar.outfit < SHIRTS.length
     ? avatar.outfit : avatar.shirt;
@@ -851,13 +870,14 @@ function drawRoomWorld(canvas, options) {
         !occupied.some(other=>Math.abs(other.x-candidate)<27&&Math.abs(other.y-peer.y)<45)){x=candidate;break;}
     }
     occupied.push({x,y:peer.y});
-    add(peer.y,()=>avatar(ctx,x,peer.y,{...peer.avatar,direction:peer.direction}));
-    names.push(()=>nameTag(ctx,x,peer.y+8,peer.name||'Compañero',peer.role==='teacher'?'#245e89':'#38586f'));
+    const look = peer.role === 'teacher' ? { character:'zombie', direction:peer.direction } : { ...peer.avatar, direction:peer.direction };
+    add(peer.y,()=>avatar(ctx,x,peer.y,look));
+    if(peer.role !== 'teacher') names.push(()=>nameTag(ctx,x,peer.y+8,peer.name||'Compañero','#38586f'));
   }
   if(options.player){
     const p=options.player;
     add(p.y,()=>avatar(ctx,p.x,p.y,p,options.walking?Math.sin((options.time||0)/85)*2:0));
-    names.push(()=>nameTag(ctx,p.x,p.y+8,options.playerName||'Tú',options.playerName?'#245e89':'#28594c'));
+    if(!options.hidePlayerName) names.push(()=>nameTag(ctx,p.x,p.y+8,options.playerName||'Tú',options.playerName?'#245e89':'#28594c'));
   }
   layers.sort((a,b)=>a.depth-b.depth).forEach(layer=>layer.draw());
   animals.forEach(animal=>{if(animal.heart)drawAnimalHeart(ctx,animal.heart);});
