@@ -142,7 +142,7 @@ function loop(time) {
   animation = requestAnimationFrame(loop);
 }
 function beginAnimation() {
-  if (destroyed || document.hidden || animation) return;
+  if (destroyed || document.hidden || animation || reducedMotion.matches) return;
   previousFrame = 0;
   animation = requestAnimationFrame(loop);
 }
@@ -215,7 +215,14 @@ document.addEventListener('visibilitychange',()=>{
   if (document.hidden) {cancelAnimationFrame(animation);animation=0;path=[];}
   else if (!destroyed) {beginAnimation();refreshPresence();refreshRoom();}
 });
-reducedMotion.addEventListener('change',()=>{if(reducedMotion.matches)path=[];draw();});
+reducedMotion.addEventListener('change',()=>{
+  if(reducedMotion.matches){
+    path=[];
+    cancelAnimationFrame(animation);
+    animation=0;
+  } else beginAnimation();
+  draw();
+});
 $('#back-panel').addEventListener('click', async event=>{
   if (!courseId) return;
   event.preventDefault();
