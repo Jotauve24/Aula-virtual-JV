@@ -52,9 +52,9 @@ export function buildTeacherPresenceStats(courses, rows) {
   };
 }
 
-export function presenceAgeLabel(seenAt, observedAt, fetchedAt = Date.now()) {
+export function presenceAgeLabel(seenAt, observedAt, fetchedAt = Date.now(), now = Date.now()) {
   const seen = Date.parse(seenAt), observed = Date.parse(observedAt);
   if (!Number.isFinite(seen) || !Number.isFinite(observed)) return 'Señal reciente';
-  const seconds = Math.max(0, Math.round((observed - seen) / 1000 + (Date.now() - fetchedAt) / 1000));
+  const seconds = Math.max(0, Math.round((observed - seen) / 1000 + (now - fetchedAt) / 1000));
   return seconds <= 2 ? 'Ahora mismo' : 'Hace ' + seconds + ' s';
 }
