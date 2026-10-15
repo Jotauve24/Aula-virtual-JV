@@ -2,6 +2,25 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
+## Sonido retro opcional
+
+El aula estudiantil y ZombieAdmin tienen un control **🔉 Sonido / 🔇 Sin sonido**
+en el encabezado. Por defecto, la música ambiental suena **solo dentro de la sala**
+y a un volumen inicial del **3,5 %**; nunca durante el registro ni cuando la
+pestaña está oculta. El estado de silencio se recuerda en ese navegador.
+Los pasos de registro, la selección de equipo y algunos envíos reproducen
+efectos cortos originales de estilo 8 bits, sin sonidos al caminar o teclear.
+
+La pista de música fue facilitada por el docente a través de una dirección
+externa y **no está almacenada ni redistribuida en este repositorio**. Si
+el servidor externo no permite reproducirla, se usa una melodía sintética
+original y discreta, para que el aula no quede completamente muda.
+Los navegadores pueden exigir un clic antes de reproducir audio.
+**Antes de usar una grabación reconocible de Nintendo en una página pública,
+comprueba los derechos de uso**. Para un despliegue permanente es mejor
+utilizar música retro propia o con licencia compatible y alojarla en la
+carpeta de recursos del proyecto.
+
 ## Sitio publicado
 
 - **Recuperación voluntaria de cuentas estudiantiles:** los estudiantes existentes mantienen su sesión anónima, equipo y avatar. En el aula pueden proteger su perfil mediante correo verificado y regresar desde otro navegador. Quienes perdieron la sesión pueden recuperarla automáticamente tras verificar su correo si ese correo identifica **un solo perfil** en la materia, el perfil antiguo es anónimo y no está conectado. Los casos ambiguos siguen requiriendo una comprobación adicional para evitar asignar el equipo equivocado. Esta función requiere Manual Linking y redirecciones configuradas en Supabase (ver supabase/README.md).
