@@ -79,7 +79,7 @@ test('signing out on the student side never signs out the teacher',()=>{
   assert.equal(x.api.studentSignedIn(),false);
   assert.equal(x.api.signedIn(),true);
 });
-test('failed protection never deletes or replaces the student's original session',async()=>{
+test('failed protection preserves the original student session',async()=>{
   const x=start({initial:{'aula-student-session':JSON.stringify(session)},fetchError:true});
   await assert.rejects(async()=>x.api.protectStudentAccount('ana@ejemplo.com'),/Verificación pendiente/);
   assert.equal(x.api.studentSignedIn(),true);
