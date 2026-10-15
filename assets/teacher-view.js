@@ -1,4 +1,5 @@
 import './embed.js?v=20261012a';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, drawZombie } from './teacher-inspector.js?v=20261014p';
 import { configured, signedIn, rpc } from './supabase-client.js?v=20261013d';
 import { drawWorld, roomTheme } from './world.js?v=20261014n';
 import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=20261014m';
@@ -111,12 +112,13 @@ function draw(time = 0) {
   if (destroyed || $('#room').hidden) return;
   const connected = state === 'live' ? onlineIds() : new Set();
   drawWorld($('#world'), { layout, labels:false, actors:false,
-    player: { ...player, ...teacherAvatar, id:'teacher-local' }, hidePlayerName:true,
+    
     peers: state === 'live' ? peers : [],
     seated: state === 'live' ? seated.filter(member => !connected.has(member.id)) : [],
     seatCounts: topics.map(topic => topic.members.length),
     walking:path.length>0, time, ambientTime:reducedMotion.matches?0:Date.now(),
     reducedMotion:reducedMotion.matches });
+  drawZombie($('#world'),player,path.length>0,time);
 }
 function loop(time) {
   if (destroyed || document.hidden) { animation = 0; return; }
@@ -165,7 +167,7 @@ $('#world').addEventListener('click',event => {
 });
 document.querySelectorAll('[data-direction]').forEach(button => button.addEventListener('click',()=>moveDirection(button.dataset.direction)));
 document.addEventListener('keydown',event=>{
-  if ($('#room').hidden || document.hidden || activeTab !== 'aula' || event.altKey || event.ctrlKey || event.metaKey) return;
+  if ($('#room').hidden || $('#panel-aula').hidden || document.hidden || event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]')) return;
   const dir = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',W:'up',s:'down',S:'down',a:'left',A:'left',d:'right',D:'right'}[event.key];
   if (dir) {event.preventDefault();moveDirection(dir);}
@@ -236,4 +238,5 @@ async function initialize() {
     roomTimer=setInterval(refreshRoom,15000);
   } catch(error) { fail('No se pudo abrir la sala. Comprueba tu sesión docente e inténtalo nuevamente.'); }
 }
+configureTeacherInspector(()=>({ topics, layout, peers, state, courseId, walkTo, status }));
 initialize();
