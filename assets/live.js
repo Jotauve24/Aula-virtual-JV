@@ -2,7 +2,7 @@ import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.
 import './embed.js?v=20261012a';
 import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
 import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014m';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014q';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014m';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
 
@@ -484,7 +484,7 @@ function teamChatPanel(team) {
   const heading = element('div', '', 'team-chat-heading');
   const title = element('h2', team.name); title.id = 'team-chat-title';
   heading.append(element('span', 'CHAT DEL EQUIPO', 'eyebrow'), title);
-  header.append(icon, heading, element('span', 'Solo tu equipo', 'chat-private-badge'));
+  header.append(icon, heading, element('span', 'Equipo y docente', 'chat-private-badge'));
   section.append(header, element('p', 'Cada integrante tiene su color. Aquí pueden ponerse de acuerdo.', 'chat-description'));
   const connection = element('p', '', 'chat-connection-status');
   connection.id = 'chat-connection-status'; connection.setAttribute('role', 'status'); connection.hidden = true;
@@ -543,7 +543,7 @@ function teamChatPanel(team) {
     finally { send.disabled = false; attach.disabled = false; remove.disabled = false; input.disabled = false; uploadStatus.hidden = true; input.focus(); }
   });
   section.append(messages, form,
-    element('p', 'Solo quienes integran este equipo pueden leer y escribir aquí.', 'field-hint'));
+    element('p', 'Los integrantes del equipo pueden escribir. El docente de la materia puede supervisar sus mensajes y archivos.', 'field-hint'));
   return section;
 }
 function renderChatNotice(count) {
