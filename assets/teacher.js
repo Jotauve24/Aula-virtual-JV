@@ -1,10 +1,11 @@
 import './embed.js?v=20261012a';
 import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=20261013d';
 import { allCoursesXlsx } from './teacher-export.js?v=20261013c';
-import { buildTeacherPresenceStats } from './teacher-live-model.js?v=20261015b';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=20261015c';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let dashboardCourses = [], liveTimer = 0, liveGeneration = 0, liveRefreshing = false;
+let liveRosterSnapshot = null, lastLiveFetch = 0;
 function stopDashboardPresence() {
   if (liveTimer) clearInterval(liveTimer);
   liveTimer = 0;
@@ -12,7 +13,7 @@ function stopDashboardPresence() {
 }
 function show(id) {
   for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id;
-  if (id !== 'dashboard') stopDashboardPresence();
+  if (id !== 'dashboard' && id !== 'detail') stopDashboardPresence();
 }
 function alertError(value) { $('#error').textContent = value; $('#error').hidden = !value; }
 async function run(task) { alertError(''); try { await task(); } catch (error) { alertError(error.message); } }
@@ -41,35 +42,45 @@ async function loadCourses() {
     empty.textContent = 'Todavía no tienes materias. Crea la primera para obtener su código.';
     list.replaceChildren(empty);
   } else list.replaceChildren(...courses.sort((a, b) => a.name.localeCompare(b.name, 'es')).map(course => {
+    const card = document.createElement('article');
+    card.className = 'course-card teacher-course-live-card';
+    card.dataset.courseId = course.id;
     const button = document.createElement('button');
-    button.className = 'course-card teacher-course-live-card';
+    button.className = 'teacher-course-open-main';
     button.type = 'button';
-    button.setAttribute('aria-label', 'Abrir materia ' + course.name);
-
+    button.setAttribute('aria-label', 'Administrar ' + course.name);
     const heading = document.createElement('div'); heading.className = 'teacher-course-heading';
     const title = document.createElement('strong'); title.textContent = course.name;
-    const live = document.createElement('span');
-    live.className = 'teacher-course-live-pill'; live.dataset.online = 'pending';
-    const dot = document.createElement('span'); dot.className = 'teacher-online-dot';
-    dot.setAttribute('aria-hidden', 'true');
-    const liveLabel = document.createElement('span');
-    liveLabel.dataset.liveCourseId = course.id;
+    const live = document.createElement('span'); live.className = 'teacher-course-live-pill'; live.dataset.online = 'pending';
+    const dot = document.createElement('span'); dot.className = 'teacher-online-dot'; dot.setAttribute('aria-hidden', 'true');
+    const liveLabel = document.createElement('span'); liveLabel.dataset.liveCourseId = course.id;
     liveLabel.textContent = '— en línea';
     live.append(dot, liveLabel); heading.append(title, live);
-
     const meta = document.createElement('div'); meta.className = 'teacher-course-meta';
     const students = document.createElement('span');
-    const studentNumber = document.createElement('b');
-    studentNumber.textContent = String(course.student_count);
+    const studentNumber = document.createElement('b'); studentNumber.textContent = String(course.student_count);
     students.append(studentNumber, document.createTextNode(' inscritos'));
-    const topics = document.createElement('span');
-    topics.textContent = course.topic_count + ' grupos';
-    const open = document.createElement('span');
-    open.className = 'teacher-course-open'; open.textContent = 'Administrar materia →';
-    meta.append(students, topics, open);
-    button.append(heading, meta);
+    const topics = document.createElement('span'); topics.textContent = course.topic_count + ' grupos';
+    const open = document.createElement('span'); open.className = 'teacher-course-open'; open.textContent = 'Administrar materia →';
+    meta.append(students, topics, open); button.append(heading, meta);
     button.addEventListener('click', () => run(() => openCourse(course.id)));
-    return button;
+
+    const details = document.createElement('details');
+    details.className = 'teacher-course-presence'; details.dataset.rosterCourseId = course.id;
+    const summary = document.createElement('summary');
+    const summaryText = document.createElement('span'); summaryText.textContent = 'Ver estudiantes conectados';
+    const summaryCount = document.createElement('span'); summaryCount.className = 'teacher-presence-summary-count';
+    summaryCount.dataset.rosterCountId = course.id; summaryCount.textContent = 'Comprobando…';
+    summary.append(summaryText, summaryCount);
+    const roster = document.createElement('div'); roster.className = 'teacher-online-list';
+    const idle = document.createElement('p'); idle.className = 'teacher-online-empty'; idle.textContent = 'Comprobando conexiones…';
+    roster.append(idle);
+    details.append(summary, roster);
+    details.addEventListener('toggle', () => {
+      if (details.open) renderCourseRoster(course.id, roster);
+    });
+    card.append(button, details);
+    return card;
   }));
   $('#disabled-area').hidden = !disabled.length;
   $('#disabled-courses').replaceChildren(...disabled.sort((a, b) => a.name.localeCompare(b.name, 'es')).map(course => {
@@ -93,6 +104,7 @@ async function loadCourses() {
     actions.append(restore, remove); card.append(open, actions); return card;
   }));
   dashboardCourses = courses;
+  liveRosterSnapshot = null;
   $('#summary-active-courses').textContent = String(courses.length);
   $('#summary-enrolled').textContent = String(courses.reduce((total, row) => total + Number(row.student_count), 0));
   $('#summary-online').textContent = courses.length ? '—' : '0';
@@ -109,7 +121,55 @@ function startDashboardPresence() {
   liveTimer = setInterval(refresh, 5000);
   refresh();
 }
+function onlineStudentList(students, observedAt, fetchedAt) {
+  const list = document.createElement('ul'); list.className = 'teacher-online-students';
+  for (const student of students) {
+    const row = document.createElement('li'); row.className = 'teacher-online-student';
+    const initials = document.createElement('span'); initials.className = 'teacher-student-initials';
+    initials.textContent = student.name.trim().split(/\\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase();
+    initials.setAttribute('aria-hidden', 'true');
+    const identity = document.createElement('div'); identity.className = 'teacher-student-online-identity';
+    const name = document.createElement('strong'); name.textContent = student.name;
+    const group = document.createElement('small'); group.textContent = student.group || 'Sin equipo';
+    identity.append(name, group);
+    const last = document.createElement('time'); last.dateTime = student.seen_at;
+    last.textContent = presenceAgeLabel(student.seen_at, observedAt, fetchedAt);
+    last.title = 'Última señal de actividad';
+    row.append(initials, identity, last); list.append(row);
+  }
+  return list;
+}
+function renderCourseRoster(id, host) {
+  if (!host) return;
+  if (!liveRosterSnapshot) {
+    const text = document.createElement('p'); text.className = 'teacher-online-empty';
+    text.textContent = 'Esperando datos de presencia…'; host.replaceChildren(text); return;
+  }
+  const students = liveRosterSnapshot.studentsByCourse.get(id) || [];
+  if (!students.length) {
+    const empty = document.createElement('p'); empty.className = 'teacher-online-empty';
+    empty.textContent = 'No hay estudiantes conectados en esta materia.';
+    host.replaceChildren(empty); return;
+  }
+  host.replaceChildren(onlineStudentList(students, liveRosterSnapshot.observedAtByCourse.get(id), lastLiveFetch));
+}
+function updateLiveRosterViews() {
+  document.querySelectorAll('[data-roster-course-id]').forEach(details => {
+    if (details.open) renderCourseRoster(details.dataset.rosterCourseId, details.querySelector('.teacher-online-list'));
+  });
+  if (!$('#detail').hidden) {
+    const active = !!overview?.course?.active;
+    $('#detail-live-panel').hidden = !active;
+    if (active) {
+      const id = overview.course.id;
+      const count = liveRosterSnapshot?.byCourse.get(id);
+      $('#detail-live-count').textContent = count === undefined ? '— en línea' : count + ' en línea';
+      renderCourseRoster(id, $('#detail-online-list'));
+    }
+  }
+}
 function markPresenceUnavailable() {
+  liveRosterSnapshot = null;
   $('#summary-online').textContent = '—';
   $('#live-monitor-status').dataset.state = 'error';
   $('#live-updated').textContent = 'Sin conexión · reintentando';
@@ -117,32 +177,47 @@ function markPresenceUnavailable() {
     label.textContent = '— en línea';
     label.parentElement.dataset.online = 'pending';
   });
+  document.querySelectorAll('[data-roster-count-id]').forEach(label => {
+    label.textContent = 'Sin conexión';
+  });
+  document.querySelectorAll('.teacher-online-list').forEach(host => {
+    const notice = document.createElement('p'); notice.className = 'teacher-online-empty';
+    notice.textContent = 'La presencia no está disponible. Reintentando…'; host.replaceChildren(notice);
+  });
+  $('#detail-live-count').textContent = '— en línea';
   $('#live-error').textContent = 'La presencia en vivo no está disponible. Reintentaremos automáticamente sin interrumpir el panel.';
   $('#live-error').hidden = false;
 }
 async function refreshDashboardPresence(generation = liveGeneration) {
-  if (liveRefreshing || document.hidden || $('#dashboard').hidden || !dashboardCourses.length) return;
+  if (liveRefreshing || document.hidden || ($('#dashboard').hidden && $('#detail').hidden) || !dashboardCourses.length) return;
   liveRefreshing = true;
   try {
     const rows = await rpc('teacher_live_course_counts');
-    if (generation !== liveGeneration || $('#dashboard').hidden) return;
+    if (generation !== liveGeneration || ($('#dashboard').hidden && $('#detail').hidden)) return;
     const stats = buildTeacherPresenceStats(dashboardCourses, rows);
+    liveRosterSnapshot = stats;
+    lastLiveFetch = Date.now();
     $('#summary-online').textContent = String(stats.online);
     document.querySelectorAll('[data-live-course-id]').forEach(label => {
       const count = stats.byCourse.get(label.dataset.liveCourseId) ?? 0;
       label.textContent = count + ' en línea';
       label.parentElement.dataset.online = count > 0 ? 'true' : 'false';
     });
+    document.querySelectorAll('[data-roster-count-id]').forEach(label => {
+      const count = stats.byCourse.get(label.dataset.rosterCountId) ?? 0;
+      label.textContent = count ? count + ' conectados' : 'Nadie conectado';
+    });
+    updateLiveRosterViews();
     $('#live-monitor-status').dataset.state = 'ready';
     const clock = new Intl.DateTimeFormat('es-PA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     $('#live-updated').textContent = 'Actualizado: ' + clock.format(new Date());
     $('#live-error').hidden = true;
   } catch (error) {
-    if (generation === liveGeneration && !$('#dashboard').hidden) markPresenceUnavailable();
+    if (generation === liveGeneration && (!$('#dashboard').hidden || !$('#detail').hidden)) markPresenceUnavailable();
   } finally { liveRefreshing = false; }
 }
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && !$('#dashboard').hidden) void refreshDashboardPresence();
+  if (!document.hidden && (!$('#dashboard').hidden || !$('#detail').hidden)) void refreshDashboardPresence();
 });
 $('#new-course').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const submit = event.target.querySelector('button[type="submit"]'); submit.disabled = true;
@@ -160,6 +235,8 @@ async function openCourse(id) {
   overview.topics.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   $('#group-count').value = overview.topics.length; updateGroupPreview();
   show('detail'); $('#course-title').textContent = overview.course.name;
+  $('#detail-live-panel').hidden = !overview.course.active;
+  if (overview.course.active) updateLiveRosterViews();
   $('#course-summary').textContent = `${overview.students.length} estudiantes · ${overview.topics.length} temas`;
   renderCourseCode();
   const active = overview.course.active;
