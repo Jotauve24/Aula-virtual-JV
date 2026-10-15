@@ -25,7 +25,7 @@ class Element {
 }
 
 async function boot({ files = [], fileError = null, students = [], topics = [], extraCourses = [],
-  disabledCourses = [], overviewById = {}, studentFiles = {} } = {}) {
+  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [] } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (!nodes.has(selector)) nodes.set(selector, new Element());
@@ -41,6 +41,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     calls.push([name, body]);
     if (name === 'my_courses') return [...(course?.active ? [courseRow()] : []), ...extraCourses];
     if (name === 'teacher_disabled_courses') return [...(course && !course.active ? [courseRow()] : []), ...disabledCourses];
+    if (name === 'teacher_student_recovery_requests') return recoveryRequests;
     if (name === 'teacher_overview') return body.p_course_id === course?.id
       ? { course: { ...course }, topics, students: [...students] } : overviewById[body.p_course_id];
     if (name === 'teacher_unassigned_student_file_paths') {
@@ -215,4 +216,31 @@ test('logging out invalidates in-flight course details',async()=>{
   await request;
   assert.equal(page.get('#login').hidden,false);
   assert.equal(page.get('#detail').hidden,true);
+});
+
+test('docente no ve solicitudes de recuperación automática como pendientes de aprobación', async () => {
+  // Supabase returns [] for verified, unique and inactive accounts that recover
+  // themselves; no teacher review controls should appear.
+  const page = await boot({recoveryRequests:[]});
+  await page.get('#courses').children[0].click();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.get('#student-recovery-panel').hidden,true);
+  assert.equal(page.get('#student-recovery-requests').children.length,0);
+  const html=readFileSync(new URL('../docente.html',import.meta.url),'utf8');
+  assert.match(html,/Recuperaciones que necesitan ayuda/);
+  assert.match(html,/sin tu aprobación/);
+});
+
+test('la sección de recuperación sigue disponible para solicitudes realmente manuales',async()=>{
+  const page=await boot({
+    recoveryRequests:[{id:'pending-1',email:'contacto@ejemplo.com',
+      requested_at:'2026-10-15T14:00:00Z',status:'pending'}],
+    students:[{id:'student-1',firstName:'Ana',lastName:'Pérez',
+      email:'contacto@ejemplo.com',phone:'555',topicId:null}]
+  });
+  await page.get('#courses').children[0].click();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(page.get('#student-recovery-panel').hidden,false);
+  assert.equal(page.get('#student-recovery-count').textContent,'1 pendiente');
+  assert.equal(page.get('#student-recovery-requests').children.length,1);
 });
