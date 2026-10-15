@@ -157,23 +157,3 @@ export async function downloadTeamFile(attachment) {
   document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
-
-/* Read-only attachment access for the owner of the course.
-   Uses the teacher session, not the student's anonymous credentials. */
-export async function downloadTeacherTeamFile(attachment) {
-  if (!attachment || typeof attachment.path !== 'string' || !attachment.name) {
-    throw new Error('Archivo de equipo no válido.');
-  }
-  const token = await accessToken();
-  const response = await fetch(endpoint('/storage/v1/object/authenticated/team-attachments/' +
-    attachment.path.split('/').map(encodeURIComponent).join('/')), {
-    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token },
-    cache: 'no-store'
-  });
-  if (!response.ok) throw new Error('No tienes acceso a este archivo o ya no está disponible.');
-  const url = URL.createObjectURL(await response.blob());
-  const link = document.createElement('a');
-  link.href = url; link.download = attachment.name;
-  document.body.append(link); link.click(); link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 30000);
-}
