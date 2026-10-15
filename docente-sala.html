@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; media-src 'self' https://sonidosmp3gratis.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Sala docente · AulaVirtualJv</title>
   <link rel="icon" href="./assets/favicon.svg?v=20261014k" type="image/svg+xml">
   <link rel="stylesheet" href="./assets/styles.css?v=20261014b">
@@ -13,7 +13,8 @@
   <link rel="stylesheet" href="./assets/live-world.css?v=20261014m">
   <link rel="stylesheet" href="./assets/teacher-view.css?v=20261015a">
   <script type="module" src="./assets/teacher-view.js?v=20261015a"></script>
-</head>
+<link rel="stylesheet" href="./assets/retro-audio.css?v=20261015a">
+<script type="module" src="./assets/retro-audio.js?v=20261015a"></script></head>
 <body>
   <a class="skip-link" href="#main">Ir al contenido</a>
   <header class="site-header">
@@ -21,7 +22,7 @@
       <img class="brand-mark" src="./assets/favicon.svg?v=20261014k" width="40" height="40" alt="" aria-hidden="true">
       <span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=20261014l" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span>
     </a>
-    <div class="header-tools"><button id="expand-aula" class="button secondary" type="button">Ampliar aula</button><button id="restart-demo" class="button secondary" type="button" title="Borra únicamente la simulación de elección, privacidad y chat">Reiniciar demostración</button><a id="back-panel" class="button secondary" href="./docente.html">← Volver a la materia</a></div>
+    <div class="header-tools"><button id="retro-sound-toggle" class="retro-sound-toggle" type="button" aria-pressed="true" aria-label="Silenciar sonidos del aula" title="Silenciar música y efectos">🔉 Sonido</button><button id="expand-aula" class="button secondary" type="button">Ampliar aula</button><button id="restart-demo" class="button secondary" type="button" title="Borra únicamente la simulación de elección, privacidad y chat">Reiniciar demostración</button><a id="back-panel" class="button secondary" href="./docente.html">← Volver a la materia</a></div>
   </header>
   <main id="main" tabindex="-1">
     <p id="loading" class="teacher-view-loading" role="status">Preparando tu sala docente…</p>
