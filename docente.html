@@ -8,8 +8,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Panel docente · AulaVirtualJv</title>
   <link rel="icon" href="./assets/favicon.svg?v=20261014k" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/live.css?v=20261014k"><link rel="stylesheet" href="./assets/brand.css?v=20261014l">
-  <script type="module" src="./assets/teacher.js?v=20261014n"></script>
+  <link rel="stylesheet" href="./assets/live.css?v=20261014k"><link rel="stylesheet" href="./assets/brand.css?v=20261014l"><link rel="stylesheet" href="./assets/teacher-live.css?v=20261015b">
+  <script type="module" src="./assets/teacher.js?v=20261015b"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Ir al contenido</a>
@@ -26,7 +26,18 @@
     <section id="verify" class="notice-card" hidden><span class="eyebrow">REVISA TU CORREO</span><h1>Tu enlace está en camino.</h1><p>Abre el enlace recibido en este navegador. Después volverás al panel.</p></section>
     <section id="dashboard" hidden><div class="section-heading"><div><span class="eyebrow">PANEL DOCENTE</span><h1>Mis materias</h1><p>Configura cada sección y consulta cómo se forman sus equipos.</p></div><button id="logout" class="secondary" type="button">Cerrar sesión</button></div>
       <div class="dashboard-grid"><form id="new-course" class="panel-card"><span class="eyebrow">NUEVA MATERIA</span><h2>Prepara una sección</h2><p>Recibirás un código único para compartir con esa clase.</p><label for="course-name">Materia y sección</label><input id="course-name" name="name" required maxlength="120" placeholder="Ej.: Sistema II · Sección A"><div class="field-pair"><div><label for="initial-groups">Mesas / grupos</label><input id="initial-groups" name="groups" type="number" value="4" min="1" max="40" required></div><div><label for="initial-capacity">Cupos por grupo</label><input id="initial-capacity" name="capacity" type="number" value="5" min="1" max="100" required></div></div><p>El aula tendrá exactamente esa cantidad de mesas. Luego puedes cambiar los temas y los cupos.</p><button class="primary" type="submit">Crear materia y código</button><p id="new-code" class="code-result" role="status" hidden></p></form>
-      <div class="course-area"><div class="area-heading"><h2>Secciones activas</h2><span>Abre una para administrar sus temas y estudiantes</span></div><div id="courses" class="course-list"></div><section class="roster-export-panel" aria-label="Descarga general de estudiantes"><div><span class="eyebrow">REGISTRO GENERAL</span><h3>Estudiantes de todas las materias</h3><p>Materia, nombre, apellido, correo, teléfono y equipo en un archivo para Excel.</p></div><button id="export-all" class="secondary" type="button">↓ Descargar listado</button></section></div></div>
+      <div class="course-area">
+        <div class="area-heading teacher-activity-heading">
+          <div><span class="eyebrow">RESUMEN DE MATERIAS</span><h2>Secciones activas</h2></div>
+          <div id="live-monitor-status" class="teacher-live-indicator" data-state="pending"><span class="teacher-online-dot" aria-hidden="true"></span><div><strong>Presencia en vivo</strong><small id="live-updated">Comprobando conexiones…</small></div></div>
+        </div>
+        <section class="teacher-activity-overview" aria-label="Resumen de materias y estudiantes">
+          <div class="teacher-activity-metric"><span>Materias activas</span><strong id="summary-active-courses">0</strong><small>Secciones disponibles</small></div>
+          <div class="teacher-activity-metric"><span>Estudiantes inscritos</span><strong id="summary-enrolled">0</strong><small>En todas las materias</small></div>
+          <div class="teacher-activity-metric teacher-activity-online"><span>Conectados ahora</span><strong id="summary-online">—</strong><small>Estudiantes dentro del aula</small></div>
+        </section>
+        <div id="courses" class="course-list"></div>
+        <p id="live-error" class="teacher-live-error" role="status" hidden></p><section class="roster-export-panel" aria-label="Descarga general de estudiantes"><div><span class="eyebrow">REGISTRO GENERAL</span><h3>Estudiantes de todas las materias</h3><p>Materia, nombre, apellido, correo, teléfono y equipo en un archivo para Excel.</p></div><button id="export-all" class="secondary" type="button">↓ Descargar listado</button></section></div></div>
       <section id="disabled-area" class="disabled-area" hidden><div class="area-heading"><h2>Materias deshabilitadas</h2><span>Sus códigos no permiten ingresar. Puedes restaurarlas o eliminarlas.</span></div><div id="disabled-courses" class="course-list"></div></section>
     </section>
     <section id="detail" hidden><button id="back" class="back-button" type="button">← Mis materias</button><div class="section-heading detail-heading"><div><span class="eyebrow">ESPACIO DE TRABAJO</span><h1 id="course-title"></h1><p id="course-summary"></p></div><div class="course-header-actions"><button id="enter-room" class="primary" type="button">Entrar a la sala · Administrador →</button><button id="registration" class="secondary" type="button"></button></div></div>
