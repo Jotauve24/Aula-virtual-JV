@@ -29,7 +29,16 @@ function start(saved=null){
     pause(){this.paused=true;this.pauses++;}
   }
   class Observer{constructor(fn){controller=fn;}observe(){}}
-  class Engine{constructor(){this.state='running';}resume(){return Promise.resolve();}}
+  const tones=[];
+  class Engine{
+    constructor(){this.state='running';this.currentTime=0;}
+    resume(){return Promise.resolve();}
+    createOscillator(){
+      return {type:'square',frequency:{setValueAtTime(){}},connect(){},
+        start(){tones.push('start')},stop(){}};
+    }
+    createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){}};}
+  }
   const context=vm.createContext({
     document, window:{AudioContext:Engine,addEventListener(name,fn){events[name]=fn;}},
     Audio:Player,MutationObserver:Observer,
@@ -42,7 +51,7 @@ function start(saved=null){
     setTimeout,clearTimeout
   });
   vm.runInContext(source,context);
-  return {room,button,document,events,music:music[0],update:()=>controller()};
+  return {room,button,document,events,tones,music:music[0],update:()=>controller()};
 }
 test('music begins only after entering the room, at 3.5%, and stops outside',()=>{
   const app=start();
@@ -78,4 +87,28 @@ test('music stops when browser tab becomes hidden or teacher view is closed',()=
   assert.equal(app.music.paused,true);
   app.document.hidden=false;app.room.hidden=true;app.update();
   assert.equal(app.music.paused,true);
+});
+
+test('one received message plays a three-note sparkle and briefly lowers music',()=>{
+  const app=start();
+  app.room.dataset.stage='room'; app.update();
+  assert.equal(app.music.paused,false);
+  app.events['aulajv:chat-received']();
+  assert.equal(app.tones.length,3);
+  assert.ok(app.music.volume<0.035);
+  // When muted, neither tone generation nor ambient playback can resume.
+  app.button.listeners.click();
+  const before=app.tones.length;
+  app.events['aulajv:chat-received']();
+  assert.equal(app.tones.length,before);
+  assert.equal(app.music.volume,0.035);
+});
+test('incoming sounds do not play in a hidden tab or outside a room',()=>{
+  const app=start();
+  app.events['aulajv:chat-received']();
+  assert.equal(app.tones.length,0);
+  app.room.dataset.stage='room';app.update();
+  app.document.hidden=true;
+  app.events['aulajv:chat-received']();
+  assert.equal(app.tones.length,0);
 });
