@@ -144,7 +144,7 @@ renderQuestion();
 show('registration');
 if (!configured) { $('#room').hidden = true; $('#setup').hidden = false; }
 else {
-  const requestedResume = new URLSearchParams(location.search).get('resume_id');
+  const requestedResume = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('resume_id') : null;
   if (studentSignedIn() && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(requestedResume || '')) {
     run(async () => {
       const existing = await studentRpc('student_open_owned_course',{p_course_id:requestedResume});
