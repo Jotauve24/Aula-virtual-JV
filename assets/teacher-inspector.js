@@ -73,6 +73,7 @@ function roster(topic,online){
     title.append(participantAvatar(member.name),el('strong',member.name));
     const presence=el('span',online.has(member.id)?'En el aula ahora':'Sin conexión','member-presence');
     presence.dataset.connected=online.has(member.id)?'true':'false';
+    presence.dataset.adminStudentId=member.id;
     card.append(title,presence,el('small','Datos de contacto protegidos'));
     list.append(card);
   }
