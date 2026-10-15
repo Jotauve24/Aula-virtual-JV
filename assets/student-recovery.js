@@ -186,5 +186,7 @@ async function syncProtectButton() {
 const target=$('#room');
 const observer=new MutationObserver(()=>{ if(target.dataset.stage==='room')void syncProtectButton(); });
 observer.observe(target,{attributes:true,attributeFilter:['data-stage']});
-void onEmailReturn();
+const entryParams = new URLSearchParams(location.search);
+if(entryParams.get('login')==='1')openSignIn();
+else void onEmailReturn();
 if(target.dataset.stage==='room')void syncProtectButton();
