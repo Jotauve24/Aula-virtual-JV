@@ -8,8 +8,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Panel docente · AulaVirtualJv</title>
   <link rel="icon" href="./assets/favicon.svg?v=20261014k" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/live.css?v=20261014k"><link rel="stylesheet" href="./assets/brand.css?v=20261014l"><link rel="stylesheet" href="./assets/teacher-live.css?v=20261015c">
-  <script type="module" src="./assets/teacher.js?v=20261015c"></script>
+  <link rel="stylesheet" href="./assets/live.css?v=20261014k"><link rel="stylesheet" href="./assets/brand.css?v=20261014l"><link rel="stylesheet" href="./assets/teacher-live.css?v=20261015c"><link rel="stylesheet" href="./assets/student-account.css?v=20261015u">
+  <script type="module" src="./assets/teacher.js?v=20261015u"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Ir al contenido</a>
@@ -41,6 +41,10 @@
       <section id="disabled-area" class="disabled-area" hidden><div class="area-heading"><h2>Materias deshabilitadas</h2><span>Sus códigos no permiten ingresar. Puedes restaurarlas o eliminarlas.</span></div><div id="disabled-courses" class="course-list"></div></section>
     </section>
     <section id="detail" hidden><button id="back" class="back-button" type="button">← Mis materias</button><div class="section-heading detail-heading"><div><span class="eyebrow">ESPACIO DE TRABAJO</span><h1 id="course-title"></h1><p id="course-summary"></p></div><div class="course-header-actions"><button id="enter-room" class="primary" type="button">Entrar a la sala · Administrador →</button><button id="registration" class="secondary" type="button"></button></div></div>
+      <section id="student-recovery-panel" class="detail-live-panel teacher-recovery-panel" aria-labelledby="student-recovery-heading" hidden>
+        <div class="detail-live-heading"><div><span class="eyebrow">ACCESO A LAS CUENTAS</span><h2 id="student-recovery-heading">Solicitudes de recuperación</h2><p>Revisa la identidad con el estudiante antes de devolver el acceso a su perfil. Los equipos y chats no se modifican.</p></div><span id="student-recovery-count" class="detail-live-count">0 pendientes</span></div>
+        <div id="student-recovery-requests" class="teacher-recovery-list"><p class="teacher-online-empty">Comprobando solicitudes…</p></div>
+      </section>
       <section id="detail-live-panel" class="detail-live-panel" aria-labelledby="detail-live-title" hidden>
         <div class="detail-live-heading"><div><span class="eyebrow">ACTIVIDAD DEL AULA</span><h2 id="detail-live-title">Estudiantes conectados</h2><p>La presencia se actualiza cada 5 segundos. Solo cuenta a quienes mantienen su aula abierta.</p></div><span id="detail-live-count" class="detail-live-count">— en línea</span></div>
         <div id="detail-online-list" class="teacher-online-list"><p class="teacher-online-empty">Comprobando estudiantes conectados…</p></div>
