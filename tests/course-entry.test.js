@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { SKINS, SHIRTS, normalizeCode } from '../assets/model.js';
 import { memberSeat, createRoomLayout, isWalkable, findPath, canWalkSegment } from '../assets/world-layout.js';
+import { createIncomingMessageTracker } from '../assets/chat-notification.js';
 
 const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', import.meta.url), 'utf8')
   .split('function rect(ctx')[0].replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '')
@@ -32,6 +33,7 @@ class Element {
   constructor() {
     this.value = ''; this.textContent = ''; this.hidden = false;
     this.dataset = {}; this.style = { setProperty(name, value) { this[name] = value; } };
+    this.classList = { add() {}, remove() {} }; this.offsetWidth = 0;
     this.listeners = new Map(); this.children = []; this.isConnected = true;
   }
   addEventListener(name, handler) { this.listeners.set(name, handler); }
@@ -92,13 +94,15 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   const context = vm.createContext({
     document: { querySelector: get, querySelectorAll: selector => selector === '.dialog-step' ? steps
       : selector === '[data-room-tab]' ? tabs : selector === '[data-member-presence]' ? presenceNodes() : [], createElement: () => new Element(), hidden: false,
-      addEventListener: (name, handler) => documentListeners.set(name, handler) },
+      addEventListener: (name, handler) => documentListeners.set(name, handler), dispatchEvent() {} },
     window: { addEventListener: (name, handler) => windowListeners.set(name, handler) }, localStorage, sessionStorage, Date: PageDate,
     configured: true, SKINS, SHIRTS, normalizeCode, ATTACHMENT_ACCEPT: '.pdf',
     matchMedia: () => motionPreference,
     cancelAnimationFrame: id => pendingFrames.delete(id),
     requestAnimationFrame: handler => { pendingFrames.set(++frameId, handler); return frameId; },
-    setInterval: () => 1, clearInterval() {}, setTimeout: () => 1,
+    setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
+    CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
+    createIncomingMessageTracker,
     avatarSVG, drawWorld: (_canvas, options) => { frames.push(options); },
     createParticipantPalette: () => () => '#456789',
     applyParticipantColor() {}, participantAvatar: name => Object.assign(new Element(), { textContent: name }),
