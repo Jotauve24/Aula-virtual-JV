@@ -53,10 +53,41 @@ En Authentication > Sign In / Providers > Anonymous Sign-Ins activa el ingreso
 anónimo. Cada navegador obtiene una sesión privada de Supabase sin contraseña
 ni correo de confirmación. El estudiante escribe el código de materia, correo
 de contacto, nombres, apellidos y teléfono; luego crea su avatar y elige tema.
-El correo proporcionado no se verifica y no debe utilizarse como prueba de
-identidad. El perfil permanece en ese navegador mientras no cierre sesión ni
-borre los datos del sitio. En otro dispositivo tendría que crear un perfil
-nuevo; no existe recuperación por el correo declarado.
+El correo escrito durante la primera inscripción es inicialmente solo de contacto
+y **no prueba identidad**. Mientras el estudiante conserva su sesión anónima,
+continúa entrando de la misma manera, sin recibir correos nuevos.
+
+### Protección opcional y recuperación
+
+1. En **Authentication > Sign In / Providers > Anonymous Sign-Ins**, habilita
+   **Manual Linking**, además del ingreso anónimo. Es necesario para
+   convertir la cuenta anónima en permanente conservando el mismo usuario;
+   no puede configurarse mediante una migración SQL.
+2. En **Authentication > URL Configuration** permite estas redirecciones:
+   https://jotauve24.github.io/Aula-virtual-JV/live.html
+   y https://jotauve24.github.io/Aula-virtual-JV/live.html**
+   Conserva también la del panel docente.
+3. Revisa el proveedor SMTP de Supabase Auth, sus límites de envío y
+   las plantillas de verificación antes de anunciar la función a la clase.
+4. Un alumno que todavía entra desde su navegador habitual puede pulsar
+   **Proteger mi cuenta**, elegir un correo propio y confirmar el mensaje.
+   Se mantiene su identificador de usuario, grupo, avatar y chat.
+5. En otro navegador el alumno pulsa **¿Ya te registraste? Recupera tu cuenta**,
+   confirma su correo y abre cualquiera de sus materias. No vuelve a
+   inscribirse ni a reservar un cupo.
+6. Si perdió la sesión antigua antes de protegerla, verifica un correo nuevo
+   y solicita recuperación con el código de materia. Solo el docente
+   de esa materia puede aprobar, tras verificar personalmente la identidad
+   y seleccionar el perfil exacto. La operación conserva el ID del
+   estudiante, su tema, avatar, mensajes y archivos; únicamente reasigna
+   el usuario que tiene acceso. La sesión anónima anterior deja de tener
+   acceso a ese perfil.
+
+**Precauciones:** varios estudiantes pueden compartir un correo de contacto.
+Jamás se asigna un perfil antiguo solamente por una coincidencia de correo.
+El código de materia tampoco es una contraseña individual. No anuncies
+la función hasta haber probado el envío y la redirección con cuentas
+de prueba y haber activado Manual Linking.
 
 ## Alcance de este incremento
 
