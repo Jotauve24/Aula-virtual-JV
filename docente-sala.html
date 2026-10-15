@@ -12,9 +12,10 @@
   <link rel="stylesheet" href="./assets/brand.css?v=20261014l">
   <link rel="stylesheet" href="./assets/live-world.css?v=20261014m">
   <link rel="stylesheet" href="./assets/teacher-view.css?v=20261015a">
-  <script type="module" src="./assets/teacher-view.js?v=20261015a"></script>
+  <script type="module" src="./assets/teacher-view.js?v=20261015b"></script>
 <link rel="stylesheet" href="./assets/retro-audio.css?v=20261015a">
-<script type="module" src="./assets/retro-audio.js?v=20261015a"></script></head>
+<script type="module" src="./assets/retro-audio.js?v=20261015b"></script>  <link rel="stylesheet" href="./assets/chat-notification.css?v=20261015b">
+</head>
 <body>
   <a class="skip-link" href="#main">Ir al contenido</a>
   <header class="site-header">
@@ -22,7 +23,7 @@
       <img class="brand-mark" src="./assets/favicon.svg?v=20261014k" width="40" height="40" alt="" aria-hidden="true">
       <span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=20261014l" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span>
     </a>
-    <div class="header-tools"><button id="retro-sound-toggle" class="retro-sound-toggle" type="button" aria-pressed="true" aria-label="Silenciar sonidos del aula" title="Silenciar música y efectos">🔉 Sonido</button><button id="expand-aula" class="button secondary" type="button">Ampliar aula</button><button id="restart-demo" class="button secondary" type="button" title="Borra únicamente la simulación de elección, privacidad y chat">Reiniciar demostración</button><a id="back-panel" class="button secondary" href="./docente.html">← Volver a la materia</a></div>
+    <div class="header-tools"><button id="retro-sound-toggle" class="retro-sound-toggle" type="button" aria-pressed="true" aria-label="Silenciar sonidos del aula" title="Silenciar música y efectos">🔉 Sonido</button><button id="expand-aula" class="button secondary" type="button">Ampliar aula</button><button id="demo-message-trigger" class="button secondary" type="button" title="Genera un mensaje ficticio para mostrar cómo llega al alumno" hidden>✉ Simular mensaje</button><button id="restart-demo" class="button secondary" type="button" title="Borra únicamente la simulación de elección, privacidad y chat">Reiniciar demostración</button><a id="back-panel" class="button secondary" href="./docente.html">← Volver a la materia</a></div>
   </header>
   <main id="main" tabindex="-1">
     <p id="loading" class="teacher-view-loading" role="status">Preparando tu sala docente…</p>
@@ -35,7 +36,8 @@
         <div class="room-heading"><span class="eyebrow">VISTA DOCENTE · AulaVirtualJv</span><h1 id="course-title">Sala de la materia</h1><p id="room-intro">Vive el recorrido del estudiante: elige equipo, prueba la privacidad y conversa en un chat ficticio. Ninguna prueba modifica datos reales.</p></div>
         <div class="room-header-actions"><span class="group-badge" id="group-badge">Administrador · Sin grupo seleccionado</span><span id="online-count" class="online-count" data-state="reconnecting">Conectando…</span></div>
       </div>
-      <div class="room-tabs" role="tablist" aria-label="Secciones del aula"><button type="button" id="tab-aula" role="tab" aria-selected="true" aria-controls="panel-aula" data-admin-tab="aula">Aula y temas</button><button type="button" id="tab-equipo" role="tab" aria-selected="false" aria-controls="panel-equipo" tabindex="-1" data-admin-tab="equipo">Mi equipo</button><button type="button" id="tab-chat" role="tab" aria-selected="false" aria-controls="panel-chat" tabindex="-1" data-admin-tab="chat">Chat</button></div>
+      <div class="room-tabs" role="tablist" aria-label="Secciones del aula"><button type="button" id="tab-aula" role="tab" aria-selected="true" aria-controls="panel-aula" data-admin-tab="aula">Aula y temas</button><button type="button" id="tab-equipo" role="tab" aria-selected="false" aria-controls="panel-equipo" tabindex="-1" data-admin-tab="equipo">Mi equipo</button><button type="button" id="tab-chat" role="tab" aria-selected="false" aria-controls="panel-chat" tabindex="-1" data-admin-tab="chat">Chat <span id="demo-chat-unread" class="demo-chat-unread" hidden>1</span></button></div>
+      <div id="demo-chat-alert" class="chat-alert" role="status" aria-live="polite" hidden><span id="demo-chat-alert-text">Tienes un mensaje nuevo de tu compañero de ejemplo.</span><button id="demo-chat-alert-open" type="button">Ver mensajes →</button></div>
       <div class="room-layout" id="panel-aula" role="tabpanel" aria-labelledby="tab-aula">
         <div class="map-column">
           <div class="room-map-container">
