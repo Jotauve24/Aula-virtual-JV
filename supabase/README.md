@@ -75,16 +75,23 @@ continúa entrando de la misma manera, sin recibir correos nuevos.
 5. En otro navegador el alumno pulsa **¿Ya te registraste? Recupera tu cuenta**,
    confirma su correo y abre cualquiera de sus materias. No vuelve a
    inscribirse ni a reservar un cupo.
-6. Si perdió la sesión antigua antes de protegerla, verifica un correo nuevo
-   y solicita recuperación con el código de materia. Solo el docente
-   de esa materia puede aprobar, tras verificar personalmente la identidad
-   y seleccionar el perfil exacto. La operación conserva el ID del
-   estudiante, su tema, avatar, mensajes y archivos; únicamente reasigna
-   el usuario que tiene acceso. La sesión anónima anterior deja de tener
-   acceso a ese perfil.
+6. Si perdió la sesión antigua antes de protegerla, verifica el mismo
+   correo de contacto y escribe el código de materia. Cuando ese correo
+   identifique un **único** perfil dentro de esa materia, el propietario
+   anterior sea anónimo y no tenga presencia reciente, el sistema recupera
+   el perfil **automáticamente**, sin esperar autorización docente.
+   Conserva el ID del estudiante, su tema, avatar, mensajes y archivos;
+   únicamente reasigna el usuario autorizado. Si el alumno ya envió una
+   solicitud, **Comprobar recuperación** también ejecuta este proceso.
+7. Si varios estudiantes compartieron el correo, el correo no coincide o
+   el perfil ya tiene una identidad permanente, no se permite una
+   apropiación automática. En los casos ambiguos queda disponible la
+   solicitud de respaldo y el docente debe verificar la identidad por una
+   vía independiente. Si el perfil antiguo sigue conectado, primero debe
+   cerrarse esa sesión y esperarse a que deje de registrarse presencia.
 
 **Precauciones:** varios estudiantes pueden compartir un correo de contacto.
-Jamás se asigna un perfil antiguo solamente por una coincidencia de correo.
+La asignación automática requiere verificación del correo por Supabase, una única coincidencia en esa materia, un propietario anterior anónimo y ausencia de presencia reciente.
 El código de materia tampoco es una contraseña individual. No anuncies
 la función hasta haber probado el envío y la redirección con cuentas
 de prueba y haber activado Manual Linking.
