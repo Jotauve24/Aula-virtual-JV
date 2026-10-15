@@ -4,6 +4,7 @@ import { allCoursesXlsx } from './teacher-export.js?v=20261013c';
 import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=20261015c';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
+let courseRequestGeneration = 0;
 let dashboardCourses = [], liveTimer = 0, liveGeneration = 0, liveRefreshing = false;
 let liveRosterSnapshot = null, lastLiveFetch = 0;
 function stopDashboardPresence() {
@@ -33,7 +34,10 @@ $('#login').addEventListener('submit', event => { event.preventDefault(); run(as
   show('verify'); $('#notice').textContent = 'Revisa el correo docente y abre el enlace de ingreso en este navegador.';
 }); });
 async function loadCourses() {
+  // An older dashboard fetch must not hide a more recently opened course.
+  const requestId = ++courseRequestGeneration;
   const [courses, disabled] = await Promise.all([rpc('my_courses'), rpc('teacher_disabled_courses')]);
+  if (requestId !== courseRequestGeneration || !signedIn()) return;
   show('dashboard');
   $('#export-all').disabled = !courses.length && !disabled.length;
   const list = $('#courses');
@@ -347,7 +351,12 @@ async function refreshStudentRecoveryRequests(id) {
   }
 }
 async function openCourse(id) {
-  courseId = id; overview = await rpc('teacher_overview', { p_course_id: id });
+  // Commit only the latest response: slow connections can finish out of order.
+  const requestId = ++courseRequestGeneration;
+  const details = await rpc('teacher_overview', { p_course_id: id });
+  if (requestId !== courseRequestGeneration || !signedIn()) return;
+  courseId = id;
+  overview = details;
   overview.topics.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   $('#group-count').value = overview.topics.length; updateGroupPreview();
   show('detail'); $('#course-title').textContent = overview.course.name;
@@ -490,7 +499,11 @@ $('#enter-room').addEventListener('click', () => {
   if (overview?.course?.active) location.assign('./docente-sala.html?materia=' + encodeURIComponent(overview.course.id));
 });
 $('#back').addEventListener('click', () => run(loadCourses));
-$('#logout').addEventListener('click', () => { signOut(); show('login'); });
+$('#logout').addEventListener('click', () => {
+  ++courseRequestGeneration;
+  courseId = ''; overview = null;
+  signOut(); show('login');
+});
 
 let deleteStudentTarget = null, deletingStudent = false;
 function openDeleteStudent(student) {
