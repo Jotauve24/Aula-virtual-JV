@@ -1,7 +1,7 @@
 import './embed.js?v=20261012a';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam } from './teacher-inspector.js?v=20261014p';
-import { configured, signedIn, rpc } from './supabase-client.js?v=20261013d';
-import { drawWorld, roomTheme } from './world.js?v=20261014n';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam } from './teacher-inspector.js?v=20261014q';
+import { configured, signedIn, rpc } from './supabase-client.js?v=20261014q';
+import { drawWorld, roomTheme } from './world.js?v=20261014q';
 import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=20261014m';
 
 const $ = selector => document.querySelector(selector);
