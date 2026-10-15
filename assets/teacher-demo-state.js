@@ -49,6 +49,14 @@ export function createDemoExperience() {
       getMessages(topicId).push(entry);
       return true;
     },
+    receive(topicId,body='¿Viste el mensaje que llegó al equipo?') {
+      if(topicId!==chosenId)return false;
+      const entry={id:'demo-incoming-'+(++counter),
+        name:'Compañero de ejemplo',senderId:'sample-peer',
+        body:body.trim().slice(0,500),mine:false,createdAt:new Date().toISOString()};
+      getMessages(topicId).push(entry);
+      return true;
+    },
     file(path){return files.get(path)||null;},
     reset() {chosenId=null;sharing=false;counter=0;messages.clear();files.clear();}
   };
