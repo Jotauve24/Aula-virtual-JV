@@ -10,6 +10,18 @@ y a un volumen inicial del **3,5 %**; nunca durante el registro ni cuando la
 pestaña está oculta. El estado de silencio se recuerda en ese navegador.
 Los pasos de registro, la selección de equipo y algunos envíos reproducen
 efectos cortos originales de estilo 8 bits, sin sonidos al caminar o teclear.
+**Cuando otro compañero envía un mensaje nuevo**, el estudiante recibe un
+único tintineo suave por grupo de mensajes, acompañado por el contador y un
+breve resaltado del aviso de Chat. Los mensajes propios y los pendientes que
+ya existían al entrar no hacen sonar otra vez la notificación. Si está leyendo
+el chat, el mensaje se incorpora sin interrupción sonora. El control «Sin
+sonido» desactiva también estas notificaciones; no hay avisos del sistema ni
+sonidos con la pestaña oculta. El buzón se revisa periódicamente mientras
+el aula está abierta, sin notificaciones externas.
+
+**ZombieAdmin** incluye «✉ Simular mensaje» después de elegir un equipo:
+permite enseñar el aviso, sonido y chat pendiente con mensajes exclusivamente
+ficticios, sin leer ni escribir en chats reales.
 
 La pista de música fue facilitada por el docente a través de una dirección
 externa y **no está almacenada ni redistribuida en este repositorio**. Si
