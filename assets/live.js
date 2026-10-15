@@ -90,7 +90,7 @@ $('#teacher-image').innerHTML = avatarSVG({ skin: 1, shirt: 1, hair: 'curly' });
 $('#dialog-teacher-image').innerHTML = avatarSVG({ skin: 1, shirt: 1, hair: 'curly' });
 const questionText = {
   code: ['¿Cuál es el código de tu materia?', 'El código de tu docente te abre la puerta de esta sala.'],
-  firstName: ['¡Hola! ¿Cómo te llamas?', 'Comencemos por tus nombres.'],
+  firstName: ['¡Hola! ¿Cómo te llamas?', 'Escribe tus nombres para comenzar a crear tu perfil.'],
   lastName: ['¿Y cuál es tu apellido?', 'Así aparecerás en la lista del docente.'],
   email: ['¿Qué correo podemos usar para contactarte?', 'No tienes que abrir ningún enlace de confirmación.'],
   phone: ['Por último, ¿tu número de teléfono?', 'Tu teléfono solo lo verá el docente; no se muestra a tus compañeros.']
@@ -111,7 +111,7 @@ function renderQuestion(focus = false) {
   document.querySelectorAll('.dialog-step').forEach(step => { step.hidden = step.dataset.step !== key; });
   $('#registration h2').textContent = questionText[key][0];
   $('#dialog-description').textContent = questionText[key][1];
-  $('#dialog-progress').textContent = `PREGUNTA ${questionIndex + 1} DE ${questions.length}`;
+  $('#dialog-progress').textContent = `PASO ${questionIndex + 1} DE ${questions.length} · REGISTRO POR PRIMERA VEZ`;
   $('#previous-question').hidden = questionIndex === 0;
   $('#next-question').hidden = questionIndex === questions.length - 1;
   $('#finish-registration').hidden = questionIndex !== questions.length - 1;
