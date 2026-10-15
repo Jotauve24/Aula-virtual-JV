@@ -24,3 +24,22 @@
   #room.teacher-view .room-side { max-height:none;min-height:0;overflow:visible; }
 }
 @media(max-width:650px) { #room.teacher-view .room-header-actions {flex-wrap:wrap;} }
+
+/* Teacher's inspection mode uses the same student tabs and chat visuals. */
+#room.teacher-view .room-tabs { margin-bottom:18px; }
+#room.teacher-view .team-roster-panel { max-width:980px; margin:0 auto; padding:24px; background:#fff; border:1px solid #d4e0e8; border-radius:14px; }
+#room.teacher-view .team-chat { max-width:980px; margin:0 auto; }
+#room.teacher-view #teacher-chat-messages { min-height:240px; max-height:475px; overflow-y:auto; }
+#room.teacher-view .topic-dialog { position:fixed; inset:0; transform:none; margin:auto; width:min(560px,calc(100% - 28px)); max-height:83dvh; overflow:auto; padding:22px; }
+#room.teacher-view .topic-dialog::backdrop { background:#1a2e4166; }
+.admin-view-group { margin:3px 11px 12px; padding:9px 12px!important; min-height:38px!important; font-size:12px!important; }
+.admin-inspector-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+.admin-inspector-actions .button { flex:1 1 155px; }
+#room.teacher-view .room-header .group-badge { white-space:normal; }
+#room.teacher-view .admin-disabled-chat-form { margin-top:16px; }
+#room.teacher-view .admin-disabled-chat-form input { min-width:0; }
+@media(max-width:650px) {
+  #room.teacher-view .topic-dialog { padding:16px; }
+  #room.teacher-view .admin-disabled-chat-form { display:flex; flex-wrap:wrap; }
+  #room.teacher-view .admin-disabled-chat-form input { flex:1 1 100%; }
+}
