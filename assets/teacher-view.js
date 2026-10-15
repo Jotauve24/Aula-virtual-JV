@@ -1,5 +1,5 @@
 import './embed.js?v=20261012a';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam } from './teacher-inspector.js?v=20261014q';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam } from './teacher-inspector.js?v=20261014q';
 import { configured, signedIn, rpc } from './supabase-client.js?v=20261014q';
 import { drawWorld, roomTheme } from './world.js?v=20261014q';
 import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=20261014m';
@@ -80,12 +80,12 @@ function renderTopicButtons() {
   const host = $('#topic-buttons');
   host.replaceChildren(...topics.map((topic, index) => {
     const room = layout.rooms[index], button = document.createElement('button'), theme = roomTheme(index);
-    button.type = 'button'; button.className = 'map-action';
+    button.type = 'button'; button.className = 'map-action'+(isDemoTeam(topic.id)?' is-mine':'');
     button.style.left = room.label.x / layout.width * 100 + '%';
     button.style.top = room.label.y / layout.height * 100 + '%';
     button.style.setProperty('--table-accent',theme.accent);
     button.style.setProperty('--table-soft',theme.card);
-    const occupancy = topic.members.length + '/' + topic.capacity;
+    const occupancy = (topic.members.length + Number(isDemoTeam(topic.id))) + '/' + topic.capacity;
     button.title = `${topic.name}: ${occupancy} estudiantes. Abrir el grupo.`;
     button.setAttribute('aria-label',button.title);
     const name = document.createElement('strong'); name.textContent = topic.name;
@@ -110,7 +110,7 @@ function applyTopics(rows) {
     .sort((a,b) => String(a.id).localeCompare(String(b.id)))
     .map((member,seatIndex) => ({id:member.id,roomIndex,seatIndex,avatar:member.avatar||{}})));
   $('#room-map').style.aspectRatio = layout.width + ' / ' + layout.height;
-  if (selectedTeamId && !topics.some(topic=>topic.id===selectedTeamId)) selectedTeamId = '';
+  
   renderTopicButtons(); renderRoster(); renderSelectedTeam(); draw();
 }
 function draw(time = 0) {
@@ -244,5 +244,5 @@ async function initialize() {
     roomTimer=setInterval(refreshRoom,15000);
   } catch(error) { fail('No se pudo abrir la sala. Comprueba tu sesión docente e inténtalo nuevamente.'); }
 }
-configureTeacherInspector(()=>({ topics, layout, peers, state, courseId, walkTo, status, draw }));
+configureTeacherInspector(()=>({ topics, layout, peers, state, courseId, walkTo, status, draw, syncDemo:()=>{renderTopicButtons();renderRoster();} }));
 initialize();
