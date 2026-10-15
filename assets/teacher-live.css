@@ -133,3 +133,14 @@
   .detail-live-panel { padding:16px }
   .detail-live-heading { align-items:flex-start; flex-wrap:wrap }
 }
+
+/* Mobile: readable type beats three tiny KPI columns. */
+@media(max-width:620px) {
+  .teacher-activity-overview { grid-template-columns:repeat(2,minmax(0,1fr));gap:8px }
+  .teacher-activity-metric { padding:13px 14px;min-height:99px }
+  .teacher-activity-metric>span { font-size:12px }
+  .teacher-activity-metric>strong { font-size:29px }
+  .teacher-activity-metric>small { font-size:11px }
+  .teacher-activity-online { grid-column:1/-1; min-height:88px }
+  .teacher-live-indicator small { font-size:11px }
+}
