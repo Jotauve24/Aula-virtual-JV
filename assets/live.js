@@ -158,7 +158,7 @@ else {
       await openStudentCourse(existing);
       history.replaceState(null,'',location.pathname);
     });
-  } else if (studentSignedIn() && entryCode) {
+  } else if (studentSignedIn() && entryCode && !authLinkReturn) {
     run(async () => {
       try { await enterCourse(entryCode); }
       catch (error) {
