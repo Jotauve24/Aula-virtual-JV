@@ -233,7 +233,7 @@ async function refreshDashboardPresence(generation = liveGeneration) {
     if (generation === liveGeneration && (!$('#dashboard').hidden || !$('#detail').hidden)) markPresenceUnavailable();
   } finally { liveRefreshing = false; }
 }
-document.addEventListener('visibilitychange', () => {
+if (typeof document.addEventListener === 'function') document.addEventListener('visibilitychange', () => {
   if (!document.hidden && (!$('#dashboard').hidden || !$('#detail').hidden)) void refreshDashboardPresence();
 });
 $('#new-course').addEventListener('submit', event => { event.preventDefault(); run(async () => {
