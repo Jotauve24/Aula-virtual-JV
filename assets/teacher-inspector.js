@@ -1,10 +1,17 @@
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
+import { rpc, downloadTeacherTeamFile } from './supabase-client.js?v=20261014q';
 
-let context=()=>({}), selectedId='', tab='aula';
+let context=()=>({}), selectedId='', tab='aula', readingChat=false;
+let chatTimer=0;
 const $=selector=>document.querySelector(selector);
 function el(tag,text='',css=''){const e=document.createElement(tag);e.textContent=text;if(css)e.className=css;return e;}
 const team=()=>context().topics.find(t=>t.id===selectedId);
-export function configureTeacherInspector(getContext){context=getContext;}
+export function configureTeacherInspector(getContext){
+  context=getContext;
+  if(!chatTimer) chatTimer=setInterval(()=>{
+    if(tab==='chat' && !document.hidden) refreshTeacherChat();
+  },6000);
+}
 function closeDialog(){const d=$('#topic-dialog');if(d.open)d.close();d.hidden=true;}
 function changeTab(name){
   tab=name;
@@ -13,6 +20,7 @@ function changeTab(name){
     button.setAttribute('aria-selected',String(current));button.tabIndex=current?0:-1;
     $('#panel-'+button.dataset.adminTab).hidden=!current;
   }
+  if(name==='chat') refreshTeacherChat();
 }
 document.querySelectorAll('[data-admin-tab]').forEach(button=>{
   button.addEventListener('click',()=>changeTab(button.dataset.adminTab));
@@ -74,27 +82,53 @@ function roster(topic,online){
   panel.append(openChat);
   return panel;
 }
-function previewChat(topic){
+function realChatPanel(topic){
   const panel=el('section','','team-chat');
   const header=el('div','','team-chat-header');
   const icon=el('span','···','team-chat-icon');icon.setAttribute('aria-hidden','true');
   const heading=el('div','','team-chat-heading');
-  heading.append(el('span','CHAT DEL EQUIPO · VISTA DE PRUEBA','eyebrow'),el('h2',topic.name));
-  header.append(icon,heading,el('span','Vista de demostración','chat-private-badge'));
-  panel.append(header,el('p','Puedes comprobar el diseño y la navegación. Los mensajes reales continúan siendo privados para sus integrantes.','chat-description'));
-  const messages=el('div','','chat-messages');messages.setAttribute('role','log');messages.tabIndex=0;
-  const palette=createParticipantPalette([{name:'Participante A'},{name:'Participante B'}]);
-  const examples=[
-    {id:1,name:'Participante A',body:'¿Cómo organizamos las tareas de este equipo?',createdAt:'2026-10-14T15:30:00-05:00',mine:false},
-    {id:2,name:'Participante B',body:'Podemos dividir el trabajo y revisar los avances.',createdAt:'2026-10-14T15:32:00-05:00',mine:false}
-  ];
-  for(const item of examples)messages.append(chatMessage(item,palette(item.name),()=>{}));
-  panel.append(messages,el('p','Mensajes ilustrativos: no son conversaciones reales del grupo. Desde esta vista no se envía ni se descarga información estudiantil.','field-hint'));
+  heading.append(el('span','CHAT DEL EQUIPO','eyebrow'),el('h2',topic.name));
+  header.append(icon,heading,el('span','Supervisión docente','chat-private-badge'));
+  panel.append(header,el('p','Conversación real de este equipo. La cuenta docente puede consultar mensajes y archivos, pero no enviar ni modificar nada.','chat-description'));
+  const messages=el('div','Cargando conversación…','chat-messages');
+  messages.id='teacher-chat-messages';messages.setAttribute('role','log');messages.tabIndex=0;
+  panel.append(messages);
+  const form=el('div','','chat-form admin-disabled-chat-form');
+  const input=el('input');input.placeholder='Solo los integrantes pueden escribir aquí';input.disabled=true;
+  const attach=el('button','Adjuntar','button secondary');attach.disabled=true;attach.type='button';
+  const send=el('button','Enviar','button primary');send.disabled=true;send.type='button';
+  form.append(input,attach,send);
+  panel.append(form,el('p','Acceso de supervisión del docente autorizado. Solo los estudiantes integrantes pueden participar.','field-hint'));
   return panel;
+}
+async function refreshTeacherChat(){
+  const topic=team(),c=context(),box=$('#teacher-chat-messages');
+  if(!topic||!c.courseId||!box||!box.isConnected||readingChat)return;
+  const topicId=topic.id,courseId=c.courseId;
+  readingChat=true;
+  try{
+    const messages=await rpc('teacher_team_chat_read',{p_course_id:courseId,p_topic_id:topicId});
+    if(!Array.isArray(messages)) throw new Error('Respuesta inesperada del servidor');
+    if(team()?.id!==topicId||context().courseId!==courseId||!box.isConnected)return;
+    const sig=JSON.stringify(messages);
+    if(box.dataset.signature===sig)return;
+    const scroll=box.scrollHeight-box.scrollTop-box.clientHeight<70;
+    const palette=createParticipantPalette(topic.members);
+    box.replaceChildren(...(messages.length ? messages.map(msg=>
+      chatMessage(msg,palette(msg.senderId||msg.name),downloadTeacherTeamFile))
+      : [el('p','Todavía no hay mensajes en este grupo.','chat-empty')]));
+    box.dataset.signature=sig;
+    if(scroll)box.scrollTop=box.scrollHeight;
+  }catch(error){
+    if(team()?.id===topicId&&box.isConnected){
+      const message=el('p','No se pudo cargar el chat: '+error.message,'chat-empty');
+      if(!box.dataset.signature)box.replaceChildren(message);
+    }
+  }finally{readingChat=false;}
 }
 export function renderSelectedTeam(){
   const c=context(),picked=team(),online=new Set(c.peers.map(p=>p.id));
-  $('#group-badge').textContent=picked?'Vista de prueba: '+picked.name:'Administrador · Sin grupo seleccionado';
+  $('#group-badge').textContent=picked?'Vista docente: '+picked.name:'Administrador · Sin grupo seleccionado';
   for(const card of $('#teacher-topics').querySelectorAll('details')){
     const id=card.dataset.topicId;
     let button=card.querySelector('.admin-view-group');
@@ -106,12 +140,17 @@ export function renderSelectedTeam(){
   }
   const rosterHost=$('#team-roster-host'),chatHost=$('#team-chat-host');
   if(!picked){
+    delete chatHost.dataset.topicId;
     rosterHost.replaceChildren(el('p','Pulsa una mesa o elige un grupo para visualizar su equipo.','empty-team'));
-    chatHost.replaceChildren(el('p','Selecciona un grupo para comprobar el diseño de su chat.','empty-team'));
+    chatHost.replaceChildren(el('p','Selecciona un grupo para consultar su conversación.','empty-team'));
     return;
   }
   rosterHost.replaceChildren(roster(picked,online));
-  chatHost.replaceChildren(previewChat(picked));
+  if(chatHost.dataset.topicId!==picked.id){
+    chatHost.dataset.topicId=picked.id;
+    chatHost.replaceChildren(realChatPanel(picked));
+  }
+  if(tab==='chat')refreshTeacherChat();
 }
 export function drawZombie(canvas,player,walking,time=0){
   const ctx=canvas.getContext('2d');if(!ctx)return;
