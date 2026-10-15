@@ -5,6 +5,7 @@ import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
 import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261014q';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014m';
 import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
+import { createIncomingMessageTracker } from './chat-notification.js?v=20261015b';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -12,6 +13,8 @@ let courseId = '', profile = null, topics = [], selectedTopic = null;
 let look = { skin: 1, shirt: 0, outfit: 0, hair: 'short', presentation: 'hombre' };
 let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, onArrival = null;
 let chatTimer = 0, chatLoading = false, chatTeamId = '', unreadCount = 0;
+const incomingMessages = createIncomingMessageTracker();
+let arrivalHighlightTimer = 0;
 let participantColor = createParticipantPalette();
 let layout = createRoomLayout(0), activeTab = 'aula', roomRefresh = 0;
 let presenceTimer = 0, presenceLoading = false, peers = [], courseName = '';
@@ -589,6 +592,29 @@ function updateChatNotice(messages, topicId) {
     renderChatNotice(messages.filter(msg => !msg.mine && BigInt(msg.id) > lastSeen).length);
   }
 }
+function notifyIncomingMessages(messages, topicId) {
+  const key = courseId + ':' + profile.id + ':' + topicId;
+  const arrivals = incomingMessages.check(key, messages);
+  if (!arrivals || activeTab === 'chat' || document.hidden ||
+      $('#room').hidden || $('#room').dataset.stage !== 'room') return;
+
+  // The existing unread badge remains visible. Animate the banner only once
+  // for a new batch, not on every six-second refresh.
+  const banner = $('#chat-alert');
+  if (!banner.hidden) {
+    banner.classList.remove('chat-just-arrived');
+    void banner.offsetWidth;
+    banner.classList.add('chat-just-arrived');
+    clearTimeout(arrivalHighlightTimer);
+    arrivalHighlightTimer = setTimeout(() => {
+      banner.classList.remove('chat-just-arrived');
+      arrivalHighlightTimer = 0;
+    }, 1150);
+  }
+  document.dispatchEvent(new CustomEvent('aulajv:chat-received', {
+    detail: { count: arrivals }
+  }));
+}
 $('#chat-alert-open').addEventListener('click', () => setRoomTab('chat'));
 async function refreshChat(forceBottom = false) {
   const box = $('#team-chat-messages');
@@ -602,6 +628,7 @@ async function refreshChat(forceBottom = false) {
     const connection = $('#chat-connection-status');
     if (connection) { connection.hidden = true; connection.textContent = ''; }
     updateChatNotice(messages, topicId);
+    notifyIncomingMessages(messages, topicId);
     const signature = JSON.stringify(messages);
     if (box.dataset.signature === signature) {
       if (forceBottom) box.scrollTop = box.scrollHeight;
@@ -808,6 +835,10 @@ reducedMotion.addEventListener('change', () => {
 });
 function stopRoomPolling() {
   stopAmbientAnimation();
+  incomingMessages.reset();
+  clearTimeout(arrivalHighlightTimer);
+  arrivalHighlightTimer = 0;
+  $('#chat-alert').classList.remove('chat-just-arrived');
   clearInterval(chatTimer); clearInterval(roomRefresh); clearInterval(presenceTimer);
   chatTimer = roomRefresh = presenceTimer = 0;
   peers = [];
@@ -846,6 +877,8 @@ function setRoomTab(name) {
     $('#panel-' + tab.dataset.roomTab).hidden = !selected;
   }
   if (name === 'chat') {
+    clearTimeout(arrivalHighlightTimer);
+    $('#chat-alert').classList.remove('chat-just-arrived');
     const box = $('#team-chat-messages');
     const firstOpen = box && !box.dataset.opened;
     if (firstOpen) { box.dataset.opened = 'true'; box.scrollTop = box.scrollHeight; }
