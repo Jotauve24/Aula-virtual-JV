@@ -1,5 +1,5 @@
 import './embed.js?v=20261012a';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam } from './teacher-inspector.js?v=20261015a';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam } from './teacher-inspector.js?v=20261015b';
 import { configured, signedIn, rpc } from './supabase-client.js?v=20261014q';
 import { drawWorld, roomTheme } from './world.js?v=20261014q';
 import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=20261014m';

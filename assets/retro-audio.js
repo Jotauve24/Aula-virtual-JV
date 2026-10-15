@@ -11,7 +11,7 @@ if (room && button) {
   })();
   let enabled = soundEnabled(storedPreference);
   let context = null, musicPending = false, gestureNeeded = false;
-  let sourceFailed = false, fallbackTimer = 0;
+  let sourceFailed = false, fallbackTimer = 0, duckTimer = 0;
 
   // External link supplied by the teacher. No MP3 is redistributed with the app.
   // If the provider blocks hotlinking, a small ORIGINAL synthesized chiptune plays instead.
@@ -72,11 +72,34 @@ if (room && button) {
       step:[[523.25,0.075],[659.25,0.086]],
       finish:[[392,0.095],[523.25,0.095],[659.25,0.12]],
       join:[[440,0.1],[587.33,0.1],[698.46,0.15]],
-      send:[[659.25,0.065],[783.99,0.08]]
+      send:[[659.25,0.065],[783.99,0.08]],
+      // A cheerful, original coin-like sparkle, distinct from the send cue.
+      receive:[[783.99,0.075],[987.77,0.075],[1318.51,0.11]]
     };
     const pattern = patterns[name];
     if (pattern) notes(pattern, EFFECT_VOLUME);
   }
+  function receivedMessage() {
+    // This event is emitted only for new messages from someone else.
+    // If the student muted the room or it is hidden, stay completely silent.
+    if (!enabled || !active()) return;
+    if (context?.state === 'suspended' && !gestureNeeded) {
+      // The sound engine may require a user interaction; never force playback.
+      void context.resume().catch(() => {});
+    }
+    // Lower background music for less than a second so the alert is clear
+    // at a comfortable volume.
+    if (!music.paused) {
+      clearTimeout(duckTimer);
+      music.volume = AMBIENT_VOLUME * 0.32;
+      duckTimer = setTimeout(() => {
+        music.volume = AMBIENT_VOLUME;
+        duckTimer = 0;
+      }, 650);
+    }
+    effect('receive');
+  }
+  document.addEventListener('aulajv:chat-received', receivedMessage);
   // Quiet backup for sites that reject third-party MP3 playback.
   const melody = [261.63,329.63,392,329.63,293.66,349.23,392,349.23];
   let beat = 0;
@@ -93,6 +116,9 @@ if (room && button) {
     if (!active()) {
       music.pause();
       stopFallback();
+      clearTimeout(duckTimer);
+      duckTimer = 0;
+      music.volume = AMBIENT_VOLUME;
       return;
     }
     if (sourceFailed) {
@@ -132,7 +158,12 @@ if (room && button) {
   const observer = new MutationObserver(synchronize);
   observer.observe(room,{attributes:true,attributeFilter:['hidden','data-stage']});
   document.addEventListener('visibilitychange',synchronize);
-  window.addEventListener('pagehide', () => { music.pause();stopFallback(); });
+  window.addEventListener('pagehide', () => {
+    music.pause();
+    stopFallback();
+    clearTimeout(duckTimer);
+    music.volume = AMBIENT_VOLUME;
+  });
   window.addEventListener('pageshow', synchronize);
   paintButton();
   synchronize();
