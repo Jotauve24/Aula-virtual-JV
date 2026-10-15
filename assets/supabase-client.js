@@ -112,15 +112,32 @@ export async function signInStudentAnonymously() {
     throw new Error('El acceso estudiantil sin correo aún no está habilitado.');
   saveSession(data, studentSessionKey);
 }
+// Presence, chat and teacher dashboard can ask for a token simultaneously.
+// Share refreshes per session, never across student and teacher identities.
+const pendingRefreshes = new Map();
 async function accessToken(key = sessionKey) {
   const value = session(key);
   if (!value?.access_token) throw new Error('Inicia sesión con tu correo.');
   if (value.expires_at && value.expires_at * 1000 > Date.now() + 60000) return value.access_token;
   if (!value.refresh_token) throw new Error('La sesión venció. Inicia sesión otra vez.');
-  const renewed = await request('/auth/v1/token?grant_type=refresh_token',
-    { refresh_token: value.refresh_token });
-  saveSession(renewed, key);
-  return renewed.access_token;
+  if (pendingRefreshes.has(key)) return pendingRefreshes.get(key);
+  const refresh = (async () => {
+    const renewed = await request('/auth/v1/token?grant_type=refresh_token',
+      { refresh_token: value.refresh_token });
+    const current = session(key);
+    // A student can log out, or enter with a different account, while the
+    // network request is pending. Never restore their former credentials.
+    if (!current || current.refresh_token !== value.refresh_token ||
+        current.access_token !== value.access_token) {
+      if (!current?.access_token) throw new Error('La sesión se cerró. Inicia sesión nuevamente.');
+      return current.access_token;
+    }
+    saveSession(renewed, key);
+    return renewed.access_token;
+  })();
+  pendingRefreshes.set(key, refresh);
+  try { return await refresh; }
+  finally { if (pendingRefreshes.get(key) === refresh) pendingRefreshes.delete(key); }
 }
 export async function rpc(name, body = {}) {
   const token = await accessToken();
