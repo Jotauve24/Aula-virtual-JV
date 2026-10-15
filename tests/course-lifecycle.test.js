@@ -21,7 +21,7 @@ class Element {
   focus() { this.focused = true; }
   remove() { this.removed = true; }
   dispatch(name) { return this.listeners.get(name)?.({ target: this, preventDefault() {} }); }
-  click() { return this.dispatch('click'); }
+  click() { return this.listeners.has('click') ? this.dispatch('click') : this.children[0]?.click(); }
 }
 
 async function boot({ files = [], fileError = null, students = [], topics = [], extraCourses = [],
@@ -57,7 +57,9 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     throw new Error('RPC inesperado: ' + name);
   };
   vm.runInNewContext(source, {
-    document: { querySelector: get, body: { append() {} }, createElement: tag => {
+    document: { querySelector: get, querySelectorAll: () => [], hidden: false,
+      createTextNode: text => { const node = new Element(); node.textContent = text; return node; },
+      body: { append() {} }, createElement: tag => {
       const element = new Element();
       if (tag === 'a') element.click = () => downloads.push({ name: element.download, blob: downloadedBlob });
       return element;
@@ -66,7 +68,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     sendCode() {}, signInWithGoogle() {}, signOut() {}, confirm: () => true,
     Blob, URL: { createObjectURL(blob) { downloadedBlob = blob; return 'blob:roster'; }, revokeObjectURL() {} },
     allCoursesXlsx, TextEncoder,
-    setTimeout() {},
+    setTimeout() {}, setInterval() { return 1; }, clearInterval() {},
     deleteTeacherCourseFiles: async (id, paths) => {
       calls.push(['remove_storage_files', { id, paths }]);
       if (fileError) throw new Error(fileError);
@@ -100,7 +102,7 @@ test('docente descarga todas las materias, incluso las deshabilitadas, sin equip
   assert.equal(new DataView(bytes.buffer).getUint32(0, true), 0x04034b50);
   assert.match(page.get('#teacher-success').textContent, /5 estudiantes de 3 materias/);
   const html = readFileSync(new URL('../docente.html', import.meta.url), 'utf8');
-  assert.match(html, /<div id="courses" class="course-list"><\/div><section class="roster-export-panel"[\s\S]*id="export-all"[\s\S]*<section id="disabled-area"/);
+  assert.match(html, /<div id="courses" class="course-list"><\/div>[\s\S]*<section class="roster-export-panel"[\s\S]*id="export-all"[\s\S]*<section id="disabled-area"/);
   assert.doesNotMatch(html, /id="export-roster"/);
 });
 
