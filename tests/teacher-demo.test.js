@@ -64,3 +64,19 @@ test('files stay in the local demo and reset clears only the demonstration',()=>
   assert.equal(demo.choose(topic),true);
   assert.equal(demo.messages('g7').length,2);
 });
+
+test('ZombieAdmin can demonstrate an incoming message without touching student chat',()=>{
+  const demo=createDemoExperience();
+  const topic=group('grupo-demo');
+  assert.equal(demo.receive(topic.id),false);
+  assert.equal(demo.choose(topic),true);
+  assert.equal(demo.receive(topic.id,'¿Ya tienes lista la tarea?'),true);
+  const last=demo.messages(topic.id).at(-1);
+  assert.equal(last.name,'Compañero de ejemplo');
+  assert.equal(last.mine,false);
+  assert.equal(last.body,'¿Ya tienes lista la tarea?');
+  assert.equal(topic.members.length,0);
+  demo.reset();
+  assert.equal(demo.chosenId,null);
+  assert.equal(demo.messages(topic.id).length,2);
+});
