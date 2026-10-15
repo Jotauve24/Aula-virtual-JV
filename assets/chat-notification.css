@@ -15,3 +15,14 @@
 @media(prefers-reduced-motion:reduce){
   #room .chat-alert.chat-just-arrived{animation:none}
 }
+
+/* ZombieAdmin gets the same in-room notification, using only local demo data. */
+#demo-chat-unread {
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:22px;margin-left:6px;padding:3px 7px;
+  border-radius:999px;background:#b92343;color:white;
+  box-shadow:0 2px 6px #77143144;
+  font-size:12px;font-weight:800;
+}
+#demo-chat-unread[hidden],#demo-chat-alert[hidden],
+#demo-message-trigger[hidden]{display:none}
