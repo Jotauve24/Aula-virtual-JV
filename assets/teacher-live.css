@@ -38,3 +38,98 @@
 @media(max-width:620px){.teacher-activity-overview{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.teacher-activity-metric{padding:10px 8px;min-height:96px}.teacher-activity-metric>span{font-size:10px}.teacher-activity-metric>strong{font-size:25px}.teacher-activity-metric>small{font-size:9px}.teacher-live-indicator{white-space:normal}.teacher-course-meta .teacher-course-open{flex-basis:100%;margin-top:3px}#courses .teacher-course-live-card{padding:15px}}
 @media(prefers-reduced-motion:reduce){#courses .teacher-course-live-card{transition:none}#courses .teacher-course-live-card:hover{transform:none}}
 @media(forced-colors:active){.teacher-online-dot{outline:2px solid CanvasText}.teacher-activity-metric,.teacher-course-live-pill,#courses .teacher-course-live-card{border-color:CanvasText}}
+
+
+/* Live rosters: a quiet disclosure within each existing section card. */
+#courses .teacher-course-live-card { padding:0; overflow:hidden }
+#courses .teacher-course-open-main {
+  display:block; width:100%; padding:18px 19px 15px; margin:0;
+  text-align:left; background:transparent; border:0; border-radius:0; color:inherit;
+}
+#courses .teacher-course-open-main:focus-visible {
+  outline:2px solid #245e89; outline-offset:-3px;
+}
+#courses .teacher-course-open-main:hover .teacher-course-open {
+  text-decoration:underline; text-underline-offset:3px;
+}
+#courses .teacher-course-open-main:hover .teacher-course-heading>strong { color:#245e89 }
+#courses .teacher-course-presence {
+  margin:0 19px; border-top:1px solid #e0e8ee; background:#fff;
+}
+#courses .teacher-course-presence summary {
+  display:flex; justify-content:space-between; align-items:center;
+  gap:12px; min-height:45px; padding:11px 0; cursor:pointer;
+  font-size:12px; font-weight:700; color:#3c5e73; list-style:none;
+}
+#courses .teacher-course-presence summary::-webkit-details-marker { display:none }
+#courses .teacher-course-presence summary::before {
+  content:'+'; display:inline-grid; place-items:center; flex:none;
+  width:20px; height:20px; border:1px solid #bdd0dc; border-radius:5px;
+  font:600 15px/1 ui-sans-serif,system-ui; color:#386b87;
+}
+#courses .teacher-course-presence[open] summary::before { content:'−' }
+#courses .teacher-course-presence summary>span:first-child { flex:1 }
+#courses .teacher-course-presence summary:hover { color:#245e89 }
+#courses .teacher-course-presence summary:focus-visible { outline:2px solid #245e89; outline-offset:2px }
+.teacher-presence-summary-count { color:#758795; font-size:11px; font-weight:600; text-align:right }
+#courses .teacher-course-presence .teacher-online-list {
+  padding-bottom:14px;
+}
+.teacher-online-students {
+  display:grid; list-style:none; margin:0; padding:0;
+  border:1px solid #e0e8ee; border-radius:10px; background:#fbfcfd;
+  max-height:280px; overflow:auto;
+}
+.teacher-online-student {
+  display:grid; grid-template-columns:32px minmax(0,1fr) auto;
+  align-items:center; gap:11px; min-width:0; padding:11px 12px;
+}
+.teacher-online-student + .teacher-online-student { border-top:1px solid #e7edf1 }
+.teacher-student-initials {
+  display:grid; place-items:center; width:32px; height:32px;
+  border-radius:50%; background:#e5f1ec; border:1px solid #bedbd0;
+  color:#246851; font-size:10px; font-weight:800; letter-spacing:.02em;
+}
+.teacher-student-online-identity { display:grid; gap:2px; min-width:0 }
+.teacher-student-online-identity strong {
+  color:#213d54; font:700 12px/1.4 ui-sans-serif,system-ui,sans-serif; overflow-wrap:anywhere;
+}
+.teacher-student-online-identity small { color:#6c7f8d; font:500 11px/1.35 ui-sans-serif,system-ui,sans-serif }
+.teacher-online-student time {
+  font-size:10px; font-variant-numeric:tabular-nums; color:#5c7e70;
+  font-weight:700; white-space:nowrap;
+}
+.teacher-online-empty {
+  margin:0; padding:16px 14px; border:1px dashed #cedde4;
+  border-radius:9px; color:#667e8e; background:#f7fafb;
+  font-size:12px; line-height:1.5;
+}
+.detail-live-panel {
+  margin:0 0 24px; padding:19px 22px 20px;
+  background:#fff; border:1px solid #d6e3e8; border-radius:14px;
+  box-shadow:0 7px 20px #203b5509;
+}
+.detail-live-heading {
+  display:flex; align-items:center; justify-content:space-between; gap:12px 20px;
+  margin-bottom:14px;
+}
+.detail-live-heading .eyebrow { color:#58798b; font-size:10px }
+.detail-live-heading h2 { margin:5px 0 5px; color:#203b55; font:750 19px/1.25 ui-sans-serif,system-ui,sans-serif; letter-spacing:-.025em }
+.detail-live-heading p { margin:0; color:#647a88; font-size:12px }
+.detail-live-count {
+  display:inline-flex; align-items:center; gap:7px; flex:none;
+  background:#e9f6ef; border:1px solid #c8e2d4; border-radius:24px;
+  color:#247454; padding:9px 13px;
+  font-size:12px; font-weight:800; font-variant-numeric:tabular-nums;
+}
+.detail-live-panel .teacher-online-students { max-height:300px }
+@media(max-width:620px) {
+  #courses .teacher-course-open-main { padding:15px 15px 12px }
+  #courses .teacher-course-presence { margin:0 15px }
+  #courses .teacher-course-presence summary { flex-wrap:wrap; gap:8px }
+  .teacher-online-student { gap:7px; padding:10px 9px; grid-template-columns:29px minmax(0,1fr) auto }
+  .teacher-student-initials { width:29px; height:29px }
+  .teacher-online-student time { font-size:9px }
+  .detail-live-panel { padding:16px }
+  .detail-live-heading { align-items:flex-start; flex-wrap:wrap }
+}
