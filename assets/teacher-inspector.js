@@ -63,7 +63,7 @@ function joinTeam(topic){
   if(!demo.choose(topic))return;
   closeTopic();
   refreshDemo();
-  changeTab('equipo');
+  changeTab('aula');
   context().status('Te uniste al equipo de '+topic.name+' (solo demostración).');
 }
 function memberList(topic){
@@ -197,7 +197,7 @@ function teamRosterPanel(topic){
       }else card.append(el('small','Contacto privado · usa el chat'));
       replacement.append(card);
     }
-    roster.replaceWith(replacement);
+    roster.replaceChildren(...replacement.childNodes);
   });
   return section;
 }
