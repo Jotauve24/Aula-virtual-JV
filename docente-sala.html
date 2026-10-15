@@ -21,7 +21,7 @@
       <img class="brand-mark" src="./assets/favicon.svg?v=20261014k" width="40" height="40" alt="" aria-hidden="true">
       <span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=20261014l" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span>
     </a>
-    <div class="header-tools"><button id="expand-aula" class="button secondary" type="button">Ampliar aula</button><a id="back-panel" class="button secondary" href="./docente.html">← Volver a la materia</a></div>
+    <div class="header-tools"><button id="expand-aula" class="button secondary" type="button">Ampliar aula</button><button id="restart-demo" class="button secondary" type="button" title="Borra únicamente la simulación de elección, privacidad y chat">Reiniciar demostración</button><a id="back-panel" class="button secondary" href="./docente.html">← Volver a la materia</a></div>
   </header>
   <main id="main" tabindex="-1">
     <p id="loading" class="teacher-view-loading" role="status">Preparando tu sala docente…</p>
@@ -31,7 +31,7 @@
     </section>
     <section id="room" class="room-shell teacher-view" data-stage="room" hidden>
       <div class="room-header">
-        <div class="room-heading"><span class="eyebrow">VISTA DOCENTE · AulaVirtualJv</span><h1 id="course-title">Sala de la materia</h1><p id="room-intro">Recorre el mismo escenario de tus estudiantes y comprueba grupos, integrantes y conversaciones desde la vista de administrador.</p></div>
+        <div class="room-heading"><span class="eyebrow">VISTA DOCENTE · AulaVirtualJv</span><h1 id="course-title">Sala de la materia</h1><p id="room-intro">Vive el recorrido del estudiante: elige equipo, prueba la privacidad y conversa en un chat ficticio. Ninguna prueba modifica datos reales.</p></div>
         <div class="room-header-actions"><span class="group-badge" id="group-badge">Administrador · Sin grupo seleccionado</span><span id="online-count" class="online-count" data-state="reconnecting">Conectando…</span></div>
       </div>
       <div class="room-tabs" role="tablist" aria-label="Secciones del aula"><button type="button" id="tab-aula" role="tab" aria-selected="true" aria-controls="panel-aula" data-admin-tab="aula">Aula y temas</button><button type="button" id="tab-equipo" role="tab" aria-selected="false" aria-controls="panel-equipo" tabindex="-1" data-admin-tab="equipo">Mi equipo</button><button type="button" id="tab-chat" role="tab" aria-selected="false" aria-controls="panel-chat" tabindex="-1" data-admin-tab="chat">Chat</button></div>
@@ -55,11 +55,11 @@
           <p>Los estudiantes conectados se muestran de pie. Los demás conservan su lugar en la mesa.</p>
           <p id="roster-status" class="teacher-view-roster-status" role="status">Comprobando presencia…</p>
           <div id="teacher-topics" class="teacher-view-topics"></div>
-          <p class="side-footer">Modo de supervisión: no ocupa cupos, no envía mensajes ni modifica los equipos. Los mensajes y archivos se consultan en modo solo lectura por el docente autorizado.</p>
+          <p class="side-footer">Demostración docente: las elecciones, la casilla de privacidad y el chat son simulados; nada se envía a los grupos reales.</p>
         </aside>
       </div>
       <section id="panel-equipo" class="room-tab-panel" role="tabpanel" aria-labelledby="tab-equipo" hidden><div id="team-roster-host"><p class="empty-team">Selecciona primero un grupo en Aula y temas para revisar cómo se presenta a sus integrantes.</p></div></section>
-      <section id="panel-chat" class="room-tab-panel" role="tabpanel" aria-labelledby="tab-chat" hidden><div id="team-chat-host"><p class="empty-team">Selecciona primero un grupo en Aula y temas para consultar sus mensajes.</p></div></section>
+      <section id="panel-chat" class="room-tab-panel" role="tabpanel" aria-labelledby="tab-chat" hidden><div id="team-chat-host"><p class="empty-team">Elige un grupo en «Aula y temas» para utilizar el chat de demostración.</p></div></section>
       <dialog id="topic-dialog" class="topic-dialog" aria-labelledby="topic-title" hidden></dialog>
     </section>
   </main>
