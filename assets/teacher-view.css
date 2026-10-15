@@ -43,3 +43,13 @@
   #room.teacher-view .admin-disabled-chat-form { display:flex; flex-wrap:wrap; }
   #room.teacher-view .admin-disabled-chat-form input { flex:1 1 100%; }
 }
+
+/* Student-experience training controls preserve the exact student card styling. */
+#room.teacher-view .share-contact-card { margin:18px 0 22px; }
+#room.teacher-view .team-roster-panel .eyebrow { color:#476457; }
+#room.teacher-view .topic-dialog { background:#fffef9; }
+#room.teacher-view .team-chat .chat-form { margin-top:0; }
+#room.teacher-view .team-chat .chat-description { color:#56665d; }
+#room.teacher-view .admin-inspector-actions { display:none; }
+#room.teacher-view .admin-view-group { margin:6px 11px 12px; }
+@media(max-width:650px){.header-tools{flex-wrap:wrap;justify-content:flex-end}#restart-demo{min-height:38px;padding:7px 10px}}
