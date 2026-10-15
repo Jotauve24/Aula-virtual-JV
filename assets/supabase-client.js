@@ -30,9 +30,11 @@ if (!session()) {
 // in the URL fragment, which is removed immediately after reading it.
 const fragment = new URLSearchParams(location.hash.slice(1));
 if (fragment.has('access_token') && fragment.has('refresh_token')) {
+  const isStudentCallback = /\/live\.html$/.test(location.pathname);
   saveSession({ access_token: fragment.get('access_token'),
     refresh_token: fragment.get('refresh_token'),
-    expires_in: Number(fragment.get('expires_in')) || 3600 });
+    expires_in: Number(fragment.get('expires_in')) || 3600 },
+    isStudentCallback ? studentSessionKey : sessionKey);
   history.replaceState(null, '', location.pathname + location.search);
 }
 async function request(path, body, token) {
@@ -69,6 +71,39 @@ export async function verifyCode(email, token) {
   const data = await request('/auth/v1/verify', { email, token, type: 'email' });
   saveSession(data);
   return data;
+}
+// Student magic links are scoped to /live.html and never replace teacher sessions.
+function studentRedirect(mode) {
+  const url = new URL('live.html', location.href);
+  url.searchParams.set('student_auth', mode);
+  return url.toString();
+}
+export async function emailStudentLogin(email) {
+  return request('/auth/v1/otp?redirect_to=' + encodeURIComponent(studentRedirect('login')),
+    { email: email.trim().toLowerCase(), create_user: true });
+}
+export async function protectStudentAccount(email) {
+  const token = await accessToken(studentSessionKey);
+  const res = await fetch(endpoint('/auth/v1/user?redirect_to=' +
+    encodeURIComponent(studentRedirect('protected'))), {
+    method:'PUT', cache:'no-store',
+    headers:{ 'Content-Type':'application/json', apikey:SUPABASE_PUBLISHABLE_KEY,
+      Authorization:'Bearer '+token },
+    body:JSON.stringify({email:email.trim().toLowerCase()})
+  });
+  const body = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error(body.msg || body.message || body.error_description ||
+    'No se pudo enviar el correo de verificación. Consulta al docente.');
+  return body;
+}
+export async function studentAuthUser() {
+  const token = await accessToken(studentSessionKey);
+  const res = await fetch(endpoint('/auth/v1/user'), {
+    headers:{apikey:SUPABASE_PUBLISHABLE_KEY, Authorization:'Bearer '+token},
+    cache:'no-store'
+  });
+  if (!res.ok) throw new Error('Tu sesión no está disponible. Inicia sesión nuevamente.');
+  return res.json();
 }
 export async function signInStudentAnonymously() {
   if (session(studentSessionKey)?.access_token) return;

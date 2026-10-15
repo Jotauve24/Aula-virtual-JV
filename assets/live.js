@@ -144,7 +144,21 @@ renderQuestion();
 show('registration');
 if (!configured) { $('#room').hidden = true; $('#setup').hidden = false; }
 else {
-  if (studentSignedIn() && entryCode) {
+  // An explicit code from the teacher always wins; otherwise reopen the student's
+  // last authorized course without a new email or another registration.
+  const authLinkReturn = typeof location !== 'undefined' &&
+    new URLSearchParams(location.search).has('student_auth');
+  const requestedResume = !submittedCode && !authLinkReturn
+    ? (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('resume_id') : null) ||
+      localStorage.getItem('aula-student-resume-id')
+    : null;
+  if (studentSignedIn() && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(requestedResume || '')) {
+    run(async () => {
+      const existing = await studentRpc('student_open_owned_course',{p_course_id:requestedResume});
+      await openStudentCourse(existing);
+      history.replaceState(null,'',location.pathname);
+    });
+  } else if (studentSignedIn() && entryCode) {
     run(async () => {
       try { await enterCourse(entryCode); }
       catch (error) {
@@ -168,9 +182,17 @@ async function enterCourse(code, details = {}) {
     questionIndex = 0; show('registration'); renderQuestion(true);
     throw new Error('No encontramos una materia con ese código. Revisa el código actual que te compartió tu docente.');
   }
+  await openStudentCourse(result, code);
+}
+async function openStudentCourse(result, code = null) {
   courseId = result.course_id;
   courseName = result.course_name;
-  localStorage.setItem('aula-student-course-code', code);
+  if (code) {
+    localStorage.setItem('aula-student-course-code', code);
+    localStorage.removeItem('aula-student-resume-id');
+  } else {
+    localStorage.setItem('aula-student-resume-id', result.course_id);
+  }
   profile = await studentRpc('my_profile', { p_course_id: courseId });
   $('#avatar-course').textContent = result.course_name;
   $('#avatar-name').textContent = profile.firstName + ' ' + profile.lastName;

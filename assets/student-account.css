@@ -1,0 +1,42 @@
+/* AulaVirtualJv · Recoverability without changing existing registration styling. */
+.student-registered-link { display:block; margin:13px auto 0; background:transparent; border:0; padding:7px 10px; color:#2c5e83; font:700 12px/1.4 ui-sans-serif,system-ui,sans-serif; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.student-registered-link:hover,.student-registered-link:focus-visible { color:#123e63; }
+.student-account-dialog { position:fixed; inset:0; margin:auto; transform:none; width:min(490px,calc(100% - 30px)); max-height:90dvh; padding:0; border:1px solid #d1dfe7; border-radius:15px; box-shadow:0 25px 80px #172e4540; background:#fff; color:#203b55; overflow-y:auto; }
+.student-account-dialog::backdrop { background:#14293e9c; }
+.student-account-inner { position:relative; padding:28px; }
+.student-account-inner .eyebrow { display:block; margin-bottom:10px; color:#377d64; font-size:10px; letter-spacing:1.3px; }
+.student-account-inner h2 { margin:0 35px 7px 0; font:750 25px/1.24 ui-sans-serif,system-ui,sans-serif; letter-spacing:-.04em; }
+.student-account-inner>p { font-size:13px; color:#576e7e; line-height:1.65; margin:0 0 17px; }
+.student-account-inner form { display:grid; gap:10px; }
+.student-account-inner label { font-size:12px; font-weight:750; color:#315069; }
+.student-account-inner input { display:block; width:100%; min-height:45px; box-sizing:border-box; padding:11px 12px; background:#fff; color:#203b55; border:1px solid #b5c8d5; border-radius:8px; font:500 14px ui-sans-serif,system-ui,sans-serif; }
+.student-account-inner input:focus-visible { outline:2px solid #245e89; outline-offset:2px; }
+.student-account-inner button.button { min-height:43px; }
+.student-account-inner .student-account-hint { margin:3px 0 9px; font-size:12px; line-height:1.55; color:#5e7687; }
+.student-account-close { position:absolute; right:19px; top:16px; display:grid;place-items:center; width:34px;height:34px; border:1px solid #d1dee6; border-radius:8px; background:#f7fafb; color:#43647b; font:400 23px/1 ui-sans-serif,system-ui; cursor:pointer; }
+.student-account-success { margin:6px 0 17px; background:#eaf6ee; color:#24694c; border:1px solid #c6e0d0; border-radius:9px; padding:11px 13px; font-size:12px; overflow-wrap:anywhere; }
+.student-account-notice { margin:14px 0 0!important; padding:11px 13px; border-radius:9px; border:1px solid #b9d9c9; background:#edf8f1; color:#2b7655!important; font-size:12px!important; }
+.student-account-dialog .field-error { margin:14px 0 0; padding:11px 13px; border-radius:9px; background:#fff2ed; border:1px solid #e8c8ba; color:#914b31; font-size:12px; }
+.student-account-action { display:block; width:100%; margin:8px 0; text-align:center; }
+#protect-account { white-space:nowrap; }
+@media(max-width:620px){ .student-account-inner{padding:23px 18px}.student-account-inner h2{font-size:22px} #protect-account{white-space:normal;font-size:11px} }
+@media(prefers-reduced-motion:reduce){.student-account-dialog{scroll-behavior:auto}}
+
+/* Recovery review belongs to the existing course management workflow. */
+.teacher-recovery-panel { margin:0 0 22px; }
+.teacher-recovery-list { display:grid;gap:12px; }
+.student-recovery-request { display:grid;gap:9px;padding:17px;background:#fbfcfd;border:1px solid #d7e4ea;border-radius:11px; }
+.student-recovery-head { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:7px; }
+.student-recovery-head strong { color:#203b55;font-size:13px;overflow-wrap:anywhere; }
+.student-recovery-head small { color:#697e8d;font-size:11px; }
+.student-recovery-request>p { margin:0;color:#607486;font-size:12px;line-height:1.55; }
+.student-recovery-request label { color:#2c4c61;font-size:12px;font-weight:750; }
+.student-recovery-request .student-recovery-select,.student-recovery-request input {
+  display:block;width:100%;box-sizing:border-box;min-height:42px;padding:9px 11px;
+  color:#203b55;background:#fff;border:1px solid #c1d1db;border-radius:8px;font:500 13px ui-sans-serif,system-ui;
+}
+.student-recovery-request input:focus-visible,.student-recovery-request select:focus-visible { outline:2px solid #245e89;outline-offset:2px; }
+.student-recovery-request .student-recovery-warning { font-size:11px;color:#80623c; }
+.student-recovery-actions { display:flex;flex-wrap:wrap;gap:9px;margin-top:5px; }
+.student-recovery-actions button { flex:1 1 175px;min-height:40px; }
+.student-recovery-request .field-error { font-size:12px;color:#8b4738; }

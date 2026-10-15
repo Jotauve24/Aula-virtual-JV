@@ -247,11 +247,112 @@ $('#new-course').addEventListener('submit', event => { event.preventDefault(); r
     $('#new-code').hidden = false;
   } finally { submit.disabled = false; }
 }); });
+async function refreshStudentRecoveryRequests(id) {
+  const panel = $('#student-recovery-panel'), host = $('#student-recovery-requests');
+  if (!overview?.course?.active || overview.course.id !== id) {
+    panel.hidden = true; return;
+  }
+  panel.hidden = false;
+  try {
+    const requests = await rpc('teacher_student_recovery_requests', {p_course_id:id});
+    if (courseId !== id || $('#detail').hidden) return;
+    $('#student-recovery-count').textContent = requests.length + (requests.length === 1 ? ' pendiente' : ' pendientes');
+    if (!requests.length) {
+      panel.hidden = true; host.replaceChildren(); return;
+    }
+    host.replaceChildren(...requests.map(request => {
+      const item = document.createElement('article');
+      item.className = 'student-recovery-request';
+      const head = document.createElement('div'); head.className = 'student-recovery-head';
+      const caption = document.createElement('strong'); caption.textContent = 'Acceso solicitado por '+request.email;
+      const date = document.createElement('small');
+      date.textContent = 'Solicitud: '+new Intl.DateTimeFormat('es-PA', {dateStyle:'medium'}).format(new Date(request.requested_at));
+      head.append(caption,date);
+      const info = document.createElement('p');
+      info.textContent = 'Selecciona el perfil correcto y verifica la identidad del estudiante por una vía independiente antes de aprobar.';
+      const label = document.createElement('label'); label.textContent = 'Estudiante que recuperará su cuenta';
+      const select = document.createElement('select'); select.className = 'student-recovery-select';
+      const empty = document.createElement('option'); empty.value = ''; empty.textContent = 'Seleccionar estudiante…';
+      select.append(empty);
+      const students = [...overview.students].sort((a,b) => {
+        const ma = a.email?.trim().toLowerCase() === request.email.toLowerCase();
+        const mb = b.email?.trim().toLowerCase() === request.email.toLowerCase();
+        return Number(mb)-Number(ma) || (a.lastName+' '+a.firstName).localeCompare(b.lastName+' '+b.firstName,'es');
+      });
+      for (const student of students) {
+        const option = document.createElement('option'); option.value = student.id;
+        option.textContent = student.firstName+' '+student.lastName +
+          (student.email?.trim().toLowerCase()===request.email.toLowerCase()?' · mismo correo':' · otro correo');
+        select.append(option);
+      }
+      const caution = document.createElement('p'); caution.className = 'student-recovery-warning';
+      caution.textContent = 'No apruebes únicamente por una coincidencia de correo: puede ser compartido.';
+      const confirmLabel = document.createElement('label');
+      confirmLabel.textContent = 'Escribe el nombre completo del estudiante para confirmar';
+      const confirmation = document.createElement('input'); confirmation.type = 'text';
+      confirmation.autocomplete = 'off'; confirmation.placeholder = 'Nombre y apellido';
+      const actions = document.createElement('div'); actions.className = 'student-recovery-actions';
+      const approve = document.createElement('button'); approve.type = 'button';
+      approve.className = 'primary'; approve.textContent = 'Aprobar recuperación'; approve.disabled = true;
+      const reject = document.createElement('button'); reject.type = 'button';
+      reject.className = 'secondary'; reject.textContent = 'Rechazar';
+      const error = document.createElement('p'); error.className = 'field-error';
+      error.hidden = true; error.setAttribute('role','alert');
+      const chosen = () => students.find(student => student.id === select.value);
+      const fullName = student => (student.firstName+' '+student.lastName).trim();
+      const update = () => {
+        const student = chosen();
+        approve.disabled = !student ||
+          fullName(student).toLowerCase() !== confirmation.value.trim().toLowerCase();
+      };
+      select.addEventListener('change', update);
+      confirmation.addEventListener('input', update);
+      approve.addEventListener('click', async () => {
+        const student = chosen();
+        if (!student || approve.disabled) return;
+        if (!confirm('¿Comprobaste personalmente que '+fullName(student)+' solicitó recuperar su cuenta? Su sesión anónima anterior dejará de funcionar.'))return;
+        approve.disabled = true; reject.disabled = true; error.hidden = true;
+        try {
+          await rpc('teacher_decide_student_recovery', {
+            p_request_id:request.id,p_student_id:student.id,
+            p_expected_name:fullName(student),p_approve:true
+          });
+          teacherSuccess('Recuperación aprobada para '+fullName(student)+'. Su equipo y avatar siguen guardados.');
+          await openCourse(id);
+        }catch(err){
+          error.textContent = err.message; error.hidden = false;
+          reject.disabled = false;update();
+        }
+      });
+      reject.addEventListener('click', async () => {
+        if (!confirm('¿Rechazar esta solicitud de recuperación?'))return;
+        reject.disabled = true;approve.disabled = true;error.hidden = true;
+        try {
+          await rpc('teacher_decide_student_recovery', {
+            p_request_id:request.id,p_student_id:null,p_expected_name:'',p_approve:false
+          });
+          teacherSuccess('Solicitud rechazada. No se modificó ningún perfil.');
+          await refreshStudentRecoveryRequests(id);
+        }catch(err){error.textContent=err.message;error.hidden=false;reject.disabled=false;update();}
+      });
+      actions.append(approve,reject);
+      item.append(head,info,label,select,caution,confirmLabel,confirmation,actions,error);
+      return item;
+    }));
+  } catch(err) {
+    if(courseId!==id) return;
+    const node = document.createElement('p'); node.className='student-recovery-warning';
+    node.textContent='No se pudieron consultar las solicitudes. Intenta actualizar la materia.';
+    host.replaceChildren(node);
+  }
+}
 async function openCourse(id) {
   courseId = id; overview = await rpc('teacher_overview', { p_course_id: id });
   overview.topics.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   $('#group-count').value = overview.topics.length; updateGroupPreview();
   show('detail'); $('#course-title').textContent = overview.course.name;
+  $('#student-recovery-panel').hidden = !overview.course.active;
+  if (overview.course.active) void refreshStudentRecoveryRequests(id);
   $('#detail-live-panel').hidden = !overview.course.active;
   if (overview.course.active) updateLiveRosterViews();
   $('#course-summary').textContent = `${overview.students.length} estudiantes · ${overview.topics.length} temas`;
