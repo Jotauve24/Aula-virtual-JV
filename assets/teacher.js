@@ -147,11 +147,27 @@ function renderCourseRoster(id, host) {
   }
   const students = liveRosterSnapshot.studentsByCourse.get(id) || [];
   if (!students.length) {
+    if (host.dataset.rosterSignature === 'empty') return;
     const empty = document.createElement('p'); empty.className = 'teacher-online-empty';
     empty.textContent = 'No hay estudiantes conectados en esta materia.';
-    host.replaceChildren(empty); return;
+    host.replaceChildren(empty);
+    host.dataset.rosterSignature = 'empty';
+    return;
   }
-  host.replaceChildren(onlineStudentList(students, liveRosterSnapshot.observedAtByCourse.get(id), lastLiveFetch));
+  const observedAt = liveRosterSnapshot.observedAtByCourse.get(id);
+  const signature = JSON.stringify(students.map(student => [student.id, student.name, student.group]));
+  if (signature === host.dataset.rosterSignature) {
+    const times = host.querySelectorAll('.teacher-online-student time');
+    if (times.length === students.length) {
+      students.forEach((student, index) => {
+        times[index].dateTime = student.seen_at;
+        times[index].textContent = presenceAgeLabel(student.seen_at, observedAt, lastLiveFetch);
+      });
+      return;
+    }
+  }
+  host.replaceChildren(onlineStudentList(students, observedAt, lastLiveFetch));
+  host.dataset.rosterSignature = signature;
 }
 function updateLiveRosterViews() {
   document.querySelectorAll('[data-roster-course-id]').forEach(details => {
@@ -170,6 +186,7 @@ function updateLiveRosterViews() {
 }
 function markPresenceUnavailable() {
   liveRosterSnapshot = null;
+  document.querySelectorAll('.teacher-online-list').forEach(host => { delete host.dataset.rosterSignature; });
   $('#summary-online').textContent = '—';
   $('#live-monitor-status').dataset.state = 'error';
   $('#live-updated').textContent = 'Sin conexión · reintentando';
