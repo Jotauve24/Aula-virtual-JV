@@ -80,7 +80,7 @@ function openSignIn() {
   const input=document.createElement('input');input.id='student-login-email';input.name='email';
   input.type='email';input.autocomplete='email';input.required=true;input.maxLength=254;
   input.placeholder='nombre@correo.com';
-  const note=element('p','Si todavía no verificaste tu correo, recibirás un enlace para crear el acceso seguro. Tu equipo antiguo se recuperará con autorización docente.','student-account-hint');
+  const note=element('p','Si aún no protegiste tu cuenta, recibirás un enlace de verificación. Si el correo identifica un único perfil, recuperarás tu equipo automáticamente.','student-account-hint');
   const button=element('button','Enviarme enlace de acceso','button primary');
   button.type='submit';
   form.append(label,input,note,button);
@@ -108,7 +108,7 @@ function showOwnedCourses(courses,caption='') {
   area.append(element('p','Tu grupo, avatar y conversaciones seguirán como los dejaste.','student-account-hint'));
 }
 async function openRecoveryRequest() {
-  openDialog('Recuperar mi perfil','Si ya estabas inscrito, envía una solicitud al docente para recuperar ese mismo perfil sin duplicarlo.');
+  openDialog('Recuperar mi perfil','Introduce el código de tu materia. Si el correo verificado identifica tu inscripción, recuperarás el perfil en este momento, sin crear otro.');
   const account=await studentAuthUser().catch(()=>null);
   if(!account || account.is_anonymous || !account.email_confirmed_at){
     setNotice('Confirma primero el enlace que llegó a tu correo.','error');return;
@@ -122,7 +122,7 @@ async function openRecoveryRequest() {
   input.value=sessionStorage.getItem('aula-course-code')||
     localStorage.getItem('aula-student-course-code')||'';
   const note=element('p','Si tu correo corresponde a un único perfil de esta materia, recuperarás el acceso inmediatamente. Si está compartido, necesitaremos comprobar a quién pertenece.','student-account-hint');
-  const submit=element('button','Solicitar recuperación','button primary');submit.type='submit';
+  const submit=element('button','Recuperar mi cuenta','button primary');submit.type='submit';
   form.append(label,input,note,submit);
   form.addEventListener('submit',event=>{event.preventDefault();void runAction(submit,async()=>{
     const code=input.value.trim().toUpperCase().replace(/\s/g,'');
