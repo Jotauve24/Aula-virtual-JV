@@ -56,7 +56,7 @@ form.addEventListener('submit', event => {
 
 document.querySelector('#code-help').addEventListener('click', () => {
   document.querySelector('#dialog-title').textContent = 'Un código para cada materia.';
-  document.querySelector('#dialog-text').textContent = 'Tu docente comparte el mismo código con toda la clase. Escríbelo aquí para registrar tu perfil y entrar al aula. Usa este mismo navegador cuando vuelvas; tu correo es un dato de contacto, no una contraseña de acceso.';
+  document.querySelector('#dialog-text').textContent = 'Tu docente comparte el mismo código con toda la clase. Escríbelo aquí para registrar tu perfil y entrar al aula. Si regresas desde este navegador, tu sesión se conserva. Para entrar desde otro dispositivo, usa «Recuperar tu cuenta» y verifica tu correo. No vuelvas a inscribirte si ya tienes perfil.';
   dialog.showModal();
 });
 dialog.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
