@@ -1,9 +1,19 @@
 import './embed.js?v=20261012a';
 import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=20261013d';
 import { allCoursesXlsx } from './teacher-export.js?v=20261013c';
+import { buildTeacherPresenceStats } from './teacher-live-model.js?v=20261015b';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
-function show(id) { for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id; }
+let dashboardCourses = [], liveTimer = 0, liveGeneration = 0, liveRefreshing = false;
+function stopDashboardPresence() {
+  if (liveTimer) clearInterval(liveTimer);
+  liveTimer = 0;
+  liveGeneration++;
+}
+function show(id) {
+  for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id;
+  if (id !== 'dashboard') stopDashboardPresence();
+}
 function alertError(value) { $('#error').textContent = value; $('#error').hidden = !value; }
 async function run(task) { alertError(''); try { await task(); } catch (error) { alertError(error.message); } }
 function newCourseCode() {
@@ -31,12 +41,35 @@ async function loadCourses() {
     empty.textContent = 'Todavía no tienes materias. Crea la primera para obtener su código.';
     list.replaceChildren(empty);
   } else list.replaceChildren(...courses.sort((a, b) => a.name.localeCompare(b.name, 'es')).map(course => {
-    const button = document.createElement('button'); button.className = 'course-card'; button.type = 'button';
+    const button = document.createElement('button');
+    button.className = 'course-card teacher-course-live-card';
+    button.type = 'button';
+    button.setAttribute('aria-label', 'Abrir materia ' + course.name);
+
+    const heading = document.createElement('div'); heading.className = 'teacher-course-heading';
     const title = document.createElement('strong'); title.textContent = course.name;
-    const meta = document.createElement('small');
-    meta.textContent = `${course.student_count} estudiantes · ${course.topic_count} temas · Abrir materia →`;
-    button.append(title, meta);
-    button.addEventListener('click', () => run(() => openCourse(course.id))); return button;
+    const live = document.createElement('span');
+    live.className = 'teacher-course-live-pill'; live.dataset.online = 'pending';
+    const dot = document.createElement('span'); dot.className = 'teacher-online-dot';
+    dot.setAttribute('aria-hidden', 'true');
+    const liveLabel = document.createElement('span');
+    liveLabel.dataset.liveCourseId = course.id;
+    liveLabel.textContent = '— en línea';
+    live.append(dot, liveLabel); heading.append(title, live);
+
+    const meta = document.createElement('div'); meta.className = 'teacher-course-meta';
+    const students = document.createElement('span');
+    const studentNumber = document.createElement('b');
+    studentNumber.textContent = String(course.student_count);
+    students.append(studentNumber, document.createTextNode(' inscritos'));
+    const topics = document.createElement('span');
+    topics.textContent = course.topic_count + ' grupos';
+    const open = document.createElement('span');
+    open.className = 'teacher-course-open'; open.textContent = 'Administrar materia →';
+    meta.append(students, topics, open);
+    button.append(heading, meta);
+    button.addEventListener('click', () => run(() => openCourse(course.id)));
+    return button;
   }));
   $('#disabled-area').hidden = !disabled.length;
   $('#disabled-courses').replaceChildren(...disabled.sort((a, b) => a.name.localeCompare(b.name, 'es')).map(course => {
@@ -59,7 +92,58 @@ async function loadCourses() {
     remove.textContent = 'Eliminar'; remove.addEventListener('click', () => openDeleteCourse({ ...course, active: false }));
     actions.append(restore, remove); card.append(open, actions); return card;
   }));
+  dashboardCourses = courses;
+  $('#summary-active-courses').textContent = String(courses.length);
+  $('#summary-enrolled').textContent = String(courses.reduce((total, row) => total + Number(row.student_count), 0));
+  $('#summary-online').textContent = courses.length ? '—' : '0';
+  $('#live-monitor-status').dataset.state = courses.length ? 'pending' : 'ready';
+  $('#live-updated').textContent = courses.length ? 'Comprobando conexiones…' : 'Sin materias activas';
+  $('#live-error').hidden = true;
+  startDashboardPresence();
 }
+function startDashboardPresence() {
+  stopDashboardPresence();
+  if (!dashboardCourses.length) return;
+  const generation = liveGeneration;
+  const refresh = () => { if (generation === liveGeneration) void refreshDashboardPresence(generation); };
+  liveTimer = setInterval(refresh, 5000);
+  refresh();
+}
+function markPresenceUnavailable() {
+  $('#summary-online').textContent = '—';
+  $('#live-monitor-status').dataset.state = 'error';
+  $('#live-updated').textContent = 'Sin conexión · reintentando';
+  document.querySelectorAll('[data-live-course-id]').forEach(label => {
+    label.textContent = '— en línea';
+    label.parentElement.dataset.online = 'pending';
+  });
+  $('#live-error').textContent = 'La presencia en vivo no está disponible. Reintentaremos automáticamente sin interrumpir el panel.';
+  $('#live-error').hidden = false;
+}
+async function refreshDashboardPresence(generation = liveGeneration) {
+  if (liveRefreshing || document.hidden || $('#dashboard').hidden || !dashboardCourses.length) return;
+  liveRefreshing = true;
+  try {
+    const rows = await rpc('teacher_live_course_counts');
+    if (generation !== liveGeneration || $('#dashboard').hidden) return;
+    const stats = buildTeacherPresenceStats(dashboardCourses, rows);
+    $('#summary-online').textContent = String(stats.online);
+    document.querySelectorAll('[data-live-course-id]').forEach(label => {
+      const count = stats.byCourse.get(label.dataset.liveCourseId) ?? 0;
+      label.textContent = count + ' en línea';
+      label.parentElement.dataset.online = count > 0 ? 'true' : 'false';
+    });
+    $('#live-monitor-status').dataset.state = 'ready';
+    const clock = new Intl.DateTimeFormat('es-PA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    $('#live-updated').textContent = 'Actualizado: ' + clock.format(new Date());
+    $('#live-error').hidden = true;
+  } catch (error) {
+    if (generation === liveGeneration && !$('#dashboard').hidden) markPresenceUnavailable();
+  } finally { liveRefreshing = false; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && !$('#dashboard').hidden) void refreshDashboardPresence();
+});
 $('#new-course').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const submit = event.target.querySelector('button[type="submit"]'); submit.disabled = true;
   try {
