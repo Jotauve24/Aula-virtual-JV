@@ -256,14 +256,16 @@ async function refreshStudentRecoveryRequests(id) {
   if (!overview?.course?.active || overview.course.id !== id) {
     panel.hidden = true; return;
   }
-  panel.hidden = false;
+  // Do not expose a recovery panel until the server confirms an actionable,
+  // genuinely manual request. Avoid showing stale requests from another course
+  // or briefly flashing an empty recovery panel while the network responds.
+  panel.hidden = true;
+  host.replaceChildren();
   try {
     const requests = await rpc('teacher_student_recovery_requests', {p_course_id:id});
-    if (courseId !== id || $('#detail').hidden) return;
+    if (courseId !== id || $('#detail').hidden || overview?.course?.id !== id) return;
     $('#student-recovery-count').textContent = requests.length + (requests.length === 1 ? ' pendiente' : ' pendientes');
-    if (!requests.length) {
-      panel.hidden = true; host.replaceChildren(); return;
-    }
+    if (!requests.length) return;
     host.replaceChildren(...requests.map(request => {
       const item = document.createElement('article');
       item.className = 'student-recovery-request';
@@ -343,11 +345,13 @@ async function refreshStudentRecoveryRequests(id) {
       item.append(head,info,label,select,caution,confirmLabel,confirmation,actions,error);
       return item;
     }));
+    panel.hidden = false;
   } catch(err) {
-    if(courseId!==id) return;
-    const node = document.createElement('p'); node.className='student-recovery-warning';
-    node.textContent='No se pudieron consultar las solicitudes. Intenta actualizar la materia.';
-    host.replaceChildren(node);
+    // An error reading the inbox must never display an unverified/stale queue.
+    if (courseId !== id) return;
+    panel.hidden = true;
+    host.replaceChildren();
+    console.warn('No se pudieron consultar las solicitudes de recuperación del curso.');
   }
 }
 async function openCourse(id) {
@@ -360,7 +364,8 @@ async function openCourse(id) {
   overview.topics.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   $('#group-count').value = overview.topics.length; updateGroupPreview();
   show('detail'); $('#course-title').textContent = overview.course.name;
-  $('#student-recovery-panel').hidden = !overview.course.active;
+  $('#student-recovery-panel').hidden = true;
+  $('#student-recovery-requests').replaceChildren();
   if (overview.course.active) void refreshStudentRecoveryRequests(id);
   $('#detail-live-panel').hidden = !overview.course.active;
   if (overview.course.active) updateLiveRosterViews();
