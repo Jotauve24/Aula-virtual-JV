@@ -324,3 +324,28 @@ test('grupos llenos no se presentan como destinos disponibles',async()=>{
   assert.equal(page.get('#move-student-dialog').open,false);
   assert.equal(page.calls.some(([name]) => name==='teacher_move_student'),false);
 });
+
+test('el docente ve y puede usar tanto Eliminar como Asignar a grupo en Sin equipo', async () => {
+  const students = [{ id:'student-a', firstName:'Ana', lastName:'Pérez', topicId:null,
+    email:'ana@ejemplo.com', phone:'6000-0011' }];
+  const topics = [{id:'group-1',name:'Grupo 1',position:0,capacity:5}];
+  const page = await boot({ students, topics });
+  await page.get('#courses').children[0].click();
+  const unassigned = page.get('#student-list').children[1];
+  const actions = unassigned.children[1].children.filter(child => child.listeners.has('click'));
+  assert.deepEqual(actions.map(button => button.textContent), ['Eliminar','Asignar a grupo']);
+  await actions[0].click();
+  assert.equal(page.get('#delete-student-dialog').open,true);
+  await page.get('#cancel-delete-student').click();
+  assert.equal(page.get('#delete-student-dialog').open,false);
+  await actions[1].click();
+  assert.equal(page.get('#move-student-dialog').open,true);
+  assert.equal(students[0].topicId,null, 'solo abrir opciones no modifica asignación');
+});
+test('el diseño separa los dos botones en escritorio y móvil', () => {
+  const css = readFileSync(new URL('../assets/live.css',import.meta.url),'utf8');
+  assert.match(css,/\.teacher-student>button:first-of-type\s*\{grid-column:2;grid-row:1\/3\}/);
+  assert.match(css,/\.teacher-student>button:nth-of-type\(2\)\s*\{grid-column:3;grid-row:1\/3\}/);
+  assert.match(css,/@media\(max-width:560px\)[\s\S]*?\.teacher-student>button:first-of-type\s*\{grid-column:1;grid-row:3/);
+  assert.match(css,/@media\(max-width:560px\)[\s\S]*?\.teacher-student>button:nth-of-type\(2\)\s*\{grid-column:2;grid-row:3/);
+});
