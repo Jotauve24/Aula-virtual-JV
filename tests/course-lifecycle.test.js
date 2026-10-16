@@ -349,3 +349,21 @@ test('el diseño separa los dos botones en escritorio y móvil', () => {
   assert.match(css,/@media\(max-width:560px\)[\s\S]*?\.teacher-student>button:first-of-type\s*\{grid-column:1;grid-row:3/);
   assert.match(css,/@media\(max-width:560px\)[\s\S]*?\.teacher-student>button:nth-of-type\(2\)\s*\{grid-column:2;grid-row:3/);
 });
+
+test('resumen dentro de materia muestra inscritos, grupos y sin equipo reales, no conectados', async () => {
+  const topics=Array.from({length:7},(_,i)=>({
+    id:'g'+i,name:'Grupo '+(i+1),position:i,capacity:5
+  }));
+  const students=Array.from({length:23},(_,i)=>({
+    id:'s'+i,firstName:'Estudiante',lastName:String(i+1),
+    email:'estudiante'+i+'@ejemplo.com',phone:'6000-0000',
+    topicId:i<4?null:'g'+((i-4)%7)
+  }));
+  const page=await boot({students,topics});
+  await page.get('#courses').children[0].click();
+  assert.equal(page.get('#course-summary').textContent,'23 estudiantes · 7 temas');
+  assert.equal(page.get('#detail-student-total').textContent,'23');
+  assert.equal(page.get('#detail-group-total').textContent,'7');
+  assert.equal(page.get('#detail-unassigned-total').textContent,'4');
+  assert.equal(students.length,23,'los contadores no alteran los registros');
+});
