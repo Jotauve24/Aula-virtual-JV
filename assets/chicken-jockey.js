@@ -167,7 +167,7 @@ export function chickenJockeyFrame(layout,time=0,reducedMotion=false) {
       // restless behaviour while the chicken patiently waits.
       if(outgoing>=excursion.length){
         const wiggle=Math.min(11,excursion.length*.17);
-        walked=excursion.length-wiggle*(.5+.5*Math.cos((elapsed-departureMs-outgoing/Math.max(.001,ZOMBIE_SPEED)*1000)/380));
+        walked=excursion.length-wiggle*(.5+.5*Math.cos((elapsed-departureMs-excursion.length/ZOMBIE_SPEED*1000)/380));
         action='exploring';
       }else{walked=outgoing;action='running-away';}
     }else{
@@ -213,19 +213,36 @@ function rect(ctx,x,y,w,h,color) {
   ctx.fillStyle=color;
   ctx.fillRect(Math.round(x),Math.round(y),w,h);
 }
-export function drawChickenJockey(ctx,frame) {
+export function drawChickenJockey(ctx,frame,part='both') {
   if (!frame) return;
   const {x,y,mounted,moving,direction,fidget,step,zombieX,zombieY}=frame;
   const left=direction==='left', side=left||direction==='right';
   const back=direction==='up';
+  const zombieFace=frame.zombieDirection||direction;
+  const zombieLeft=zombieFace==='left',zombieSide=zombieLeft||zombieFace==='right';
+  const zombieBack=zombieFace==='up';
   const stride=moving?[0,1,0,-1][step]:0;
   const bounce=moving&&(step===1||step===3)?-1:0;
   const p=(cx,cy,dx,dy,w,h,color,mirror=left)=>
     rect(ctx,cx+(mirror?-dx-w:dx),cy+dy,w,h,color);
 
-  // A soft translucent floor shadow, shared by the rider and chicken.
-  rect(ctx,x-13,y+2,26,2,'#394d5525');
-  rect(ctx,x-8,y+4,16,1,'#394d551a');
+  // Each sprite is scaled around its OWN floor anchor. Therefore their real
+  // separation still reaches 80–125 world pixels, not 38% of that distance.
+  function drawTiny(cx,cy,draw) {
+    if (typeof ctx.save!=='function' || typeof ctx.scale!=='function') {
+      draw();return; // Minimal test canvas fallback.
+    }
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.scale(JOCKEY_SCALE,JOCKEY_SCALE);
+    ctx.translate(-cx,-cy);
+    draw();
+    ctx.restore();
+  }
+  if(part!=='zombie')drawTiny(x,y,()=>{
+    rect(ctx,x-13,y+2,26,2,'#394d5525');
+    rect(ctx,x-8,y+4,16,1,'#394d551a');
+  });
 
   const chicken=(cx,cy)=>{
     const white='#f2f3ee',cream='#ffffff',shade='#c8d1d0',light='#e2e6e3';
@@ -272,7 +289,7 @@ export function drawChickenJockey(ctx,frame) {
     const boot='#384454',eye='#22352c';
     const base=cy-(riding?19:0)-(riding?(frame.mountBounce||0):0);
     const fidgetHop=frame.fidget===2&&!riding?1:0;
-    const px=(dx,dy,w,h,col)=>p(cx,base,dx,dy-fidgetHop,w,h,col);
+    const px=(dx,dy,w,h,col)=>p(cx,base,dx,dy-fidgetHop,w,h,col,zombieLeft);
     // Torso and little blue sleeves.
     px(-6,-19,12,10,shirt);
     px(-6,-19,12,2,'#18b7b5');
@@ -298,10 +315,10 @@ export function drawChickenJockey(ctx,frame) {
     px(6,-31,3,10,shadow);
     px(-5,-29,6,2,highlight);
     px(2,-27,5,2,'#699f59');
-    if(side){
+    if(zombieSide){
       px(3,-25,3,3,eye);
       px(4,-24,1,1,'#c3d3a0');
-    }else if(!back){
+    }else if(!zombieBack){
       px(-6,-25,4,3,eye);
       px(2,-25,4,3,eye);
       px(-5,-26,2,1,'#9bc783');
@@ -312,8 +329,6 @@ export function drawChickenJockey(ctx,frame) {
     }
   };
 
-  chicken(x,y);
-  // One sprite pair while mounted; the tiny zombie wanders briefly beside
-  // the chicken and jumps back on. Both remain part of one ambient actor.
-  zombie(zombieX,zombieY,mounted);
+  if(part!=='zombie')drawTiny(x,y,()=>chicken(x,y));
+  if(part!=='chicken')drawTiny(zombieX,zombieY,()=>zombie(zombieX,zombieY,mounted));
 }
