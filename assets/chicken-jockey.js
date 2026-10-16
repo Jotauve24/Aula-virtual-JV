@@ -167,7 +167,14 @@ export function chickenJockeyFrame(layout,time=0,reducedMotion=false) {
       // restless behaviour while the chicken patiently waits.
       if(outgoing>=excursion.length){
         const wiggle=Math.min(11,excursion.length*.17);
-        walked=excursion.length-wiggle*(.5+.5*Math.cos((elapsed-departureMs-excursion.length/ZOMBIE_SPEED*1000)/380));
+        const arrival=departureMs+excursion.length/ZOMBIE_SPEED*1000;
+        const explorationProgress=Math.max(0,Math.min(1,
+          (elapsed-arrival)/(EXPLORE_RETURN_MS-arrival)));
+        // Envelope returns to zero at both ends: no position snap when the
+        // zombie reaches its goal or turns back toward the waiting chicken.
+        const sweep=Math.sin(Math.PI*explorationProgress)**2;
+        walked=excursion.length-wiggle*sweep*
+          (.5+.5*Math.sin((elapsed-arrival)/320));
         action='exploring';
       }else{walked=outgoing;action='running-away';}
     }else{
