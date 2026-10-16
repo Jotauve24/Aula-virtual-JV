@@ -33,6 +33,17 @@ comprueba los derechos de uso**. Para un despliegue permanente es mejor
 utilizar música retro propia o con licencia compatible y alojarla en la
 carpeta de recursos del proyecto.
 
+## Pollo con zombi bebé (ambientación)
+
+El aula incluye un **pollo y un zombi bebé** de estilo pixel art, integrados
+en el mismo escenario de estudiantes y ZombieAdmin. El pequeño zombi va montado
+aproximadamente **el 84 % del tiempo**; de vez en cuando se baja, se mueve con
+inquietud al lado del pollo y vuelve a subir. El pollo recorre los corredores
+y las entradas de las mesas utilizando el mapa de colisiones existente, sin
+atravesar paredes ni ocupar cupos. Su movimiento es decorativo y está
+sincronizado por tiempo, sin conexiones nuevas a Supabase. Ambos permanecen
+quietos si el navegador solicita movimiento reducido.
+
 ## Sitio publicado
 
 - **Recuperación voluntaria de cuentas estudiantiles:** los estudiantes existentes mantienen su sesión anónima, equipo y avatar. En el aula pueden proteger su perfil mediante correo verificado y regresar desde otro navegador. Quienes perdieron la sesión pueden recuperarla automáticamente tras verificar su correo si ese correo identifica **un solo perfil** en la materia, el perfil antiguo es anónimo y no está conectado. Las solicitudes que pueden resolverse automáticamente **no aparecen como pendientes de aprobación docente**; el estudiante termina la recuperación desde su cuenta verificada. El panel docente muestra únicamente los casos que necesitan identificar al estudiante por otra vía, como correos compartidos o no coincidentes. No se eliminan solicitudes existentes al cambiar esta vista. Esta función requiere Manual Linking y redirecciones configuradas en Supabase (ver supabase/README.md).
