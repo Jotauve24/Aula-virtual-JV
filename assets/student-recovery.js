@@ -141,6 +141,10 @@ async function openRecoveryRequest() {
       setNotice('El perfil original sigue abierto en otro dispositivo. Cierra esa aula y vuelve a comprobar en unos segundos.');
       return;
     }
+    if(result.status==='not_found' || (result.status==='pending' && result.reason==='not_found')){
+      setNotice('No encontramos una inscripción vinculada a ese correo en esta materia. Comprueba el correo que utilizaste al registrarte; si era otro, solicita ayuda al docente para verificar tu identidad. Tu perfil original se conserva.','error');
+      return;
+    }
     form.hidden=true;
     setNotice('No pudimos identificar un único perfil con ese correo. Dejamos una solicitud de respaldo para tu docente. Tu inscripción original permanece intacta.');
   });});
