@@ -56,3 +56,11 @@ test('design is isolated to teacher detail and responsive without touching stude
   assert.match(css,/@media\(max-width:385px\)/);
   assert.match(html,/live\.css\?v=20261016r/);
 });
+
+test('teacher dashboard loads the refreshed script and never labels unloaded totals as zero',()=>{
+  assert.match(html,/assets\/teacher\.js\?v=20261016s/);
+  for(const id of ['detail-student-total','detail-group-total','detail-unassigned-total']){
+    assert.match(html,new RegExp('id="'+id+'">—<\\/strong>'),
+      id+' should wait for overview data rather than imply an empty course');
+  }
+});
