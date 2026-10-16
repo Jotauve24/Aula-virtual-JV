@@ -1,6 +1,6 @@
 import { SKINS, SHIRTS } from './model.js?v=20261013g';
 import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=20261014m';
-import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=20261016a';
+import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=20261016b';
 import { canWalkSegment } from './world-layout.js?v=20261014m';
 
 export const WORLD_WIDTH = 800;
