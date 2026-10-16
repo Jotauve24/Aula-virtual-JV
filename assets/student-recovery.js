@@ -165,7 +165,11 @@ async function checkRecovered() {
       setNotice('Tu sesión anterior está abierta en otro dispositivo. Ciérrala y vuelve a comprobar en unos segundos.');
       return;
     }
-    setNotice('Todavía no se identificó un perfil único para este correo. Si enviaste una solicitud, tu docente podrá ayudarte a identificarlo.');
+    if(result.status==='not_found'){
+      setNotice('No encontramos un perfil de estudiante con ese correo verificado. Revisa el correo usado durante la inscripción; si era diferente, solicita ayuda al docente para comprobar tu identidad.','error');
+      return;
+    }
+    setNotice('Todavía no se identificó un perfil único para este correo. Si enviaste una solicitud con un perfil coincidente, tu docente podrá ayudarte a identificarlo.');
   }catch(e){setNotice(e.message||'No pudimos comprobar el acceso.','error');}
 }
 async function onEmailReturn() {
