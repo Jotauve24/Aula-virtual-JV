@@ -8,7 +8,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Panel docente · AulaVirtualJv</title>
   <link rel="icon" href="./assets/favicon.svg?v=20261014k" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/live.css?v=20261016n"><link rel="stylesheet" href="./assets/brand.css?v=20261014l"><link rel="stylesheet" href="./assets/teacher-live.css?v=20261015c"><link rel="stylesheet" href="./assets/student-account.css?v=20261015u">
+  <link rel="stylesheet" href="./assets/live.css?v=20261016r"><link rel="stylesheet" href="./assets/brand.css?v=20261014l"><link rel="stylesheet" href="./assets/teacher-live.css?v=20261015c"><link rel="stylesheet" href="./assets/student-account.css?v=20261015u">
   <script type="module" src="./assets/teacher.js?v=20261016m"></script>
 </head>
 <body>
@@ -40,25 +40,54 @@
         <p id="live-error" class="teacher-live-error" role="status" hidden></p><section class="roster-export-panel" aria-label="Descarga general de estudiantes"><div><span class="eyebrow">REGISTRO GENERAL</span><h3>Estudiantes de todas las materias</h3><p>Materia, nombre, apellido, correo, teléfono y equipo en un archivo para Excel.</p></div><button id="export-all" class="secondary" type="button">↓ Descargar listado</button></section></div></div>
       <section id="disabled-area" class="disabled-area" hidden><div class="area-heading"><h2>Materias deshabilitadas</h2><span>Sus códigos no permiten ingresar. Puedes restaurarlas o eliminarlas.</span></div><div id="disabled-courses" class="course-list"></div></section>
     </section>
-    <section id="detail" hidden><button id="back" class="back-button" type="button">← Mis materias</button><div class="section-heading detail-heading"><div><span class="eyebrow">ESPACIO DE TRABAJO</span><h1 id="course-title"></h1><p id="course-summary"></p></div><div class="course-header-actions"><button id="enter-room" class="primary" type="button">Entrar a la sala · Administrador →</button><button id="registration" class="secondary" type="button"></button></div></div>
-      <section id="student-recovery-panel" class="detail-live-panel teacher-recovery-panel" aria-labelledby="student-recovery-heading" hidden>
-        <div class="detail-live-heading"><div><span class="eyebrow">ACCESO A LAS CUENTAS</span><h2 id="student-recovery-heading">Recuperaciones que necesitan ayuda</h2><p>Las cuentas con correo verificado y un perfil único se recuperan sin tu aprobación. Aquí aparecen solamente los casos que necesitan verificar la identidad del estudiante.</p></div><span id="student-recovery-count" class="detail-live-count">0 pendientes</span></div>
-        <div id="student-recovery-requests" class="teacher-recovery-list"><p class="teacher-online-empty">Comprobando solicitudes…</p></div>
-      </section>
-      <section id="detail-live-panel" class="detail-live-panel" aria-labelledby="detail-live-title" hidden>
-        <div class="detail-live-heading"><div><span class="eyebrow">ACTIVIDAD DEL AULA</span><h2 id="detail-live-title">Estudiantes conectados</h2><p>La presencia se actualiza cada 5 segundos. Solo cuenta a quienes mantienen su aula abierta.</p></div><span id="detail-live-count" class="detail-live-count">— en línea</span></div>
-        <div id="detail-online-list" class="teacher-online-list"><p class="teacher-online-empty">Comprobando estudiantes conectados…</p></div>
-      </section>
-      <section class="course-management" aria-label="Estado y eliminación de la materia"><div><strong id="course-state-label">Materia activa</strong><p id="course-state-description">El código permite el ingreso a esta materia.</p></div><div class="course-management-actions"><button id="toggle-course" class="secondary" type="button">Deshabilitar materia</button><button id="delete-course" class="danger-outline" type="button">Eliminar definitivamente</button></div></section>
-      <section class="course-code-panel" aria-labelledby="course-code-heading">
+    <section id="detail" class="teacher-course-detail" hidden>
+      <button id="back" class="back-button" type="button">← Mis materias</button>
+      <div class="section-heading detail-heading">
+        <div class="detail-heading-copy"><span class="eyebrow">GESTIÓN DE LA MATERIA</span><h1 id="course-title"></h1>
+          <div class="detail-heading-meta"><span id="detail-status-pill" class="detail-status-pill" data-active="true">Materia activa</span><p id="course-summary"></p></div>
+        </div>
+        <div class="course-header-actions"><button id="enter-room" class="primary" type="button">Entrar a la sala · Administrador →</button><button id="registration" class="secondary" type="button"></button></div>
+      </div>
+      <div class="detail-intro-grid">
+        <section class="detail-summary-card" aria-label="Resumen de la materia">
+          <div class="detail-summary-head"><span class="eyebrow">TU MATERIA DE UN VISTAZO</span><a href="#detail-students">Ver estudiantes y equipos →</a></div>
+          <div class="detail-mini-stats">
+            <div class="detail-mini-stat"><strong id="detail-student-total">0</strong><span>Estudiantes</span></div>
+            <div class="detail-mini-stat"><strong id="detail-group-total">0</strong><span>Grupos</span></div>
+            <div class="detail-mini-stat"><strong id="detail-unassigned-total">0</strong><span>Sin equipo</span></div>
+          </div>
+        </section>
+        <section class="course-code-panel" aria-labelledby="course-code-heading">
         <div><h2 id="course-code-heading">Código de la materia</h2><p>Consúltalo aquí cuando lo necesites y compártelo con tu clase.</p></div>
         <div id="course-code-saved" class="course-code-saved" hidden><label class="sr-only" for="course-access-code">Código de acceso de esta materia</label><input id="course-access-code" type="text" readonly spellcheck="false" autocomplete="off"><button id="copy-course-code" class="secondary" type="button">Copiar código</button></div>
         <div id="course-code-missing" hidden><p>El código original de esta materia no quedó guardado para consultarlo. Si lo olvidaste, puedes generar uno nuevo.</p><button id="generate-course-code" class="secondary" type="button">Generar código nuevo</button></div>
         <p id="course-code-status" class="course-code-status" role="status"></p>
       </section>
-      <form id="group-count-form" class="panel-card group-count-panel"><div><span class="eyebrow">DISTRIBUCIÓN DEL AULA</span><h2>Mesas y grupos</h2><p>Cada grupo aparece como una mesa. Para reducir, se retiran los últimos grupos vacíos y se conserva su historial.</p></div><div class="field-pair"><div><label for="group-count">Cantidad de grupos</label><input id="group-count" name="count" type="number" min="1" max="40" required></div><div><label for="new-group-capacity">Cupos de mesas nuevas</label><input id="new-group-capacity" name="capacity" type="number" min="1" max="100" value="5" required></div></div><p id="group-count-preview" role="status"></p><button class="primary" type="submit">Aplicar cantidad de mesas</button></form><div class="detail-grid"><form id="new-topic" class="panel-card"><span class="eyebrow">EQUIPOS</span><h2>Nuevo tema</h2><p>Define qué trabajará este grupo y cuántos estudiantes pueden elegirlo.</p><label for="topic-name">Tema</label><input id="topic-name" name="name" required maxlength="80" placeholder="Nombre del tema"><label for="topic-instructions">Indicaciones</label><textarea id="topic-instructions" name="instructions" maxlength="1000" rows="4" placeholder="¿Qué harán los integrantes?"></textarea><label for="topic-capacity">Cupos</label><input id="topic-capacity" name="capacity" type="number" min="1" max="100" required value="5"><button class="primary" type="submit">Añadir tema</button></form>
-      <div class="course-area"><div class="area-heading"><h2>Temas de la materia</h2><span>Cada tema tiene su propia mesa en el aula</span></div><div id="topic-list" class="teacher-topic-list"></div></div></div>
-      <div class="roster-heading"><span class="eyebrow">SEGUIMIENTO</span><h2>Estudiantes y equipos</h2><p>Se muestran todos los estudiantes de la materia, incluidos quienes todavía no han elegido equipo. El listado general se descarga desde Mis materias.</p></div><div id="student-list" class="student-groups"></div>
+      </div>
+      <section id="detail-live-panel" class="detail-live-panel" aria-labelledby="detail-live-title" hidden>
+        <div class="detail-live-heading"><div><span class="eyebrow">ACTIVIDAD DEL AULA</span><h2 id="detail-live-title">Estudiantes conectados</h2><p>La presencia se actualiza cada 5 segundos. Solo cuenta a quienes mantienen su aula abierta.</p></div><span id="detail-live-count" class="detail-live-count">— en línea</span></div>
+        <div id="detail-online-list" class="teacher-online-list"><p class="teacher-online-empty">Comprobando estudiantes conectados…</p></div>
+      </section>
+      <section id="student-recovery-panel" class="detail-live-panel teacher-recovery-panel" aria-labelledby="student-recovery-heading" hidden>
+        <div class="detail-live-heading"><div><span class="eyebrow">ACCESO A LAS CUENTAS</span><h2 id="student-recovery-heading">Recuperaciones que necesitan ayuda</h2><p>Las cuentas con correo verificado y un perfil único se recuperan sin tu aprobación. Aquí aparecen solamente los casos que necesitan verificar la identidad del estudiante.</p></div><span id="student-recovery-count" class="detail-live-count">0 pendientes</span></div>
+        <div id="student-recovery-requests" class="teacher-recovery-list"><p class="teacher-online-empty">Comprobando solicitudes…</p></div>
+      </section>
+      <section id="detail-groups" class="detail-course-section" aria-labelledby="detail-groups-heading">
+        <div class="detail-section-heading"><div><span class="eyebrow">ORGANIZACIÓN DEL AULA</span><h2 id="detail-groups-heading">Mesas y temas</h2><p>Consulta tus grupos, edita los temas y administra los cupos desde un solo lugar.</p></div>
+          <a href="#detail-students" class="detail-section-link">Ir a los estudiantes →</a></div>
+        <div class="detail-workspace-grid">
+          <div class="detail-topics-column"><div class="detail-topics-heading"><h3>Temas de la materia</h3><span>Cada tema corresponde a una mesa del aula</span></div><div id="topic-list" class="teacher-topic-list"></div></div>
+          <div class="detail-tools-column"><form id="group-count-form" class="panel-card group-count-panel"><div><span class="eyebrow">DISTRIBUCIÓN DEL AULA</span><h2>Mesas y grupos</h2><p>Cada grupo aparece como una mesa. Para reducir, se retiran los últimos grupos vacíos y se conserva su historial.</p></div><div class="field-pair"><div><label for="group-count">Cantidad de grupos</label><input id="group-count" name="count" type="number" min="1" max="40" required></div><div><label for="new-group-capacity">Cupos de mesas nuevas</label><input id="new-group-capacity" name="capacity" type="number" min="1" max="100" value="5" required></div></div><p id="group-count-preview" role="status"></p><button class="primary" type="submit">Aplicar cantidad de mesas</button></form><form id="new-topic" class="panel-card"><span class="eyebrow">EQUIPOS</span><h2>Nuevo tema</h2><p>Define qué trabajará este grupo y cuántos estudiantes pueden elegirlo.</p><label for="topic-name">Tema</label><input id="topic-name" name="name" required maxlength="80" placeholder="Nombre del tema"><label for="topic-instructions">Indicaciones</label><textarea id="topic-instructions" name="instructions" maxlength="1000" rows="4" placeholder="¿Qué harán los integrantes?"></textarea><label for="topic-capacity">Cupos</label><input id="topic-capacity" name="capacity" type="number" min="1" max="100" required value="5"><button class="primary" type="submit">Añadir tema</button></form></div>
+        </div>
+      </section>
+      <section id="detail-students" class="detail-course-section" aria-labelledby="detail-students-heading">
+        <div class="roster-heading"><span class="eyebrow">SEGUIMIENTO</span><h2 id="detail-students-heading">Estudiantes y equipos</h2><p>Administra los integrantes de cada grupo, asígnales una mesa o cámbialos de equipo. Las personas sin equipo también aparecen aquí.</p></div>
+        <div id="student-list" class="student-groups"></div>
+      </section>
+      <details id="course-advanced" class="course-advanced">
+        <summary><span class="course-advanced-icon" aria-hidden="true">⚙</span><span><strong>Administración avanzada</strong><small>Deshabilitar, restaurar o eliminar esta materia</small></span><span class="course-advanced-chevron" aria-hidden="true">⌄</span></summary>
+        <div class="course-advanced-content"><p class="course-advanced-note">Estas acciones afectan el acceso a la materia. Se encuentran separadas de la gestión cotidiana para evitar cambios accidentales.</p><section class="course-management" aria-label="Estado y eliminación de la materia"><div><strong id="course-state-label">Materia activa</strong><p id="course-state-description">El código permite el ingreso a esta materia.</p></div><div class="course-management-actions"><button id="toggle-course" class="secondary" type="button">Deshabilitar materia</button><button id="delete-course" class="danger-outline" type="button">Eliminar definitivamente</button></div></section></div>
+      </details>
     </section>
     <dialog id="edit-topic-dialog"><form id="edit-topic-form" class="panel-card"><span class="eyebrow">EDITAR GRUPO</span><h2>Tema y cupos</h2><label for="edit-topic-name">Tema</label><input id="edit-topic-name" name="name" minlength="2" maxlength="80" required><label for="edit-topic-instructions">Indicaciones</label><textarea id="edit-topic-instructions" name="instructions" maxlength="1000" rows="4"></textarea><label for="edit-topic-capacity">Cupos</label><input id="edit-topic-capacity" name="capacity" type="number" min="1" max="100" required><p id="edit-topic-error" role="alert" hidden></p><div class="field-pair"><button class="secondary" id="cancel-topic-edit" type="button">Cancelar</button><button class="primary" type="submit">Guardar cambios</button></div></form></dialog>
     <dialog id="delete-course-dialog" aria-labelledby="delete-course-title"><form id="delete-course-form" class="panel-card"><span class="eyebrow">ELIMINACIÓN PERMANENTE</span><h2 id="delete-course-title">Eliminar materia</h2><p>Se borrarán estudiantes, equipos, mensajes y archivos de <strong id="delete-course-name"></strong>. Su código dejará de funcionar. Esta acción no se puede deshacer.</p><p id="delete-course-counts" class="delete-course-counts"></p><label for="delete-course-confirmation">Escribe el nombre exacto de la materia para confirmar</label><input id="delete-course-confirmation" type="text" autocomplete="off" required><p id="delete-course-progress" role="status"></p><p id="delete-course-error" role="alert" hidden></p><div class="delete-course-actions"><button id="cancel-course-delete" class="secondary" type="button">Cancelar</button><button id="confirm-course-delete" class="danger" type="submit" disabled>Eliminar definitivamente</button></div></form></dialog>
