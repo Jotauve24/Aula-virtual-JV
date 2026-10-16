@@ -113,3 +113,11 @@ test('historic pending requests with no email match never falsely promise a teac
   assert.match(page.get('#account-dialog-error').textContent,/No encontramos una inscripción/);
   assert.equal(page.navigations.length,0);
 });
+
+test('legacy orphan claim reports no matching profile rather than waiting for docente approval',async()=>{
+  const page=browser({pending:{status:'not_found'}});
+  await page.check();
+  assert.match(page.get('#account-dialog-error').textContent,/No encontramos un perfil/);
+  assert.doesNotMatch(page.get('#account-dialog-message').textContent,/docente podrá ayudarte/);
+  assert.equal(page.navigations.length,0);
+});
