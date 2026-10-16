@@ -365,8 +365,15 @@ async function openCourse(id) {
   $('#detail-live-panel').hidden = !overview.course.active;
   if (overview.course.active) updateLiveRosterViews();
   $('#course-summary').textContent = `${overview.students.length} estudiantes · ${overview.topics.length} temas`;
+  $('#detail-student-total').textContent = String(overview.students.length);
+  $('#detail-group-total').textContent = String(overview.topics.length);
+  $('#detail-unassigned-total').textContent = String(overview.students.filter(student => !student.topicId).length);
   renderCourseCode();
   const active = overview.course.active;
+  $('#detail-status-pill').textContent = active ? 'Materia activa' : 'Materia deshabilitada';
+  $('#detail-status-pill').dataset.active = String(active);
+  // Inactive subjects must expose Restore without hiding it in a disclosure.
+  $('#course-advanced').open = !active;
   $('.course-management').dataset.active = String(active);
   $('.course-code-panel').dataset.active = String(active);
   $('#course-state-label').textContent = active ? 'Materia activa' : 'Materia deshabilitada';
