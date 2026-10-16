@@ -278,7 +278,8 @@ test('docente asigna a estudiante sin grupo conservando su perfil', async () => 
   assert.equal(page.get('#move-student-destination').value,'g1');
   page.get('#move-student-destination').value='g2';
   await page.get('#move-student-form').dispatch('submit');
-  assert.deepEqual(page.calls.filter(([name]) => name==='teacher_move_student').map(([,body])=>body),
+  assert.deepEqual(page.calls.filter(([name]) => name==='teacher_move_student')
+    .map(([,body])=>JSON.parse(JSON.stringify(body))),
     [{p_course_id:'course-1',p_student_id:'a',p_topic_id:'g2'}]);
   assert.equal(students[0].topicId,'g2');
   assert.deepEqual(students[0].avatar,{hair:'short'});
