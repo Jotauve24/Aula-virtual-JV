@@ -38,8 +38,11 @@ carpeta de recursos del proyecto.
 El aula incluye un **pollo y un zombi bebé** de estilo pixel art, integrados
 en el mismo escenario de estudiantes y ZombieAdmin. El pequeño zombi va montado
 aproximadamente **el 76 % del tiempo**; después se baja durante unos
-**16 segundos**, se aleja por los pasillos, explora y finalmente busca al pollo
-para volver a montarse. Ambos sprites se dibujan a aproximadamente **el 38 %
+**16 segundos**. Durante ese tiempo **el pollo continúa paseando** sin
+esperarlo y el zombi recorre otra ruta de forma independiente. Tras explorar
+unos segundos, calcula un camino seguro hacia la posición que tendrá el
+**pollo en movimiento**, lo alcanza y vuelve a montarse, sin teletransportarse.
+Ambos sprites se dibujan a aproximadamente **el 38 %
 de su tamaño anterior** para no superar la altura de los otros animales. El pollo recorre los corredores
 y las entradas de las mesas utilizando el mapa de colisiones existente, sin
 atravesar paredes ni ocupar cupos. Su movimiento es decorativo y está

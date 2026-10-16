@@ -83,35 +83,55 @@ test('student and teacher renderer both include the ambient jockey',()=>{
   assert.ok(pixels.some(p=>p[4]==='#f5d66a'),'chicken feet drawn in shared world');
 });
 
-test('baby zombie runs FAR from the chicken for ~15 seconds then returns before remounting',()=>{
+test('both chicken and zombie walk independently while apart and reunite in ~16 seconds',()=>{
   for(const count of [0,1,3,10,40]){
     const layout=createRoomLayout(count);
-    let furthest=0, gotFar=false,returned=false;
-    let previous=null;
     const start=JOCKEY_MOUNTED_MS;
-    const states=new Set();
-    for(let elapsed=0;elapsed<JOCKEY_UNMOUNTED_MS;elapsed+=100){
-      const f=chickenJockeyFrame(layout,start+elapsed);
-      assert.equal(f.mounted,false);
-      states.add(f.action);
-      const separation=Math.hypot(f.x-f.zombieX,f.y-f.zombieY);
-      furthest=Math.max(furthest,separation);
-      if(separation>=65)gotFar=true;
-      if(gotFar&&elapsed>11500&&separation<4)returned=true;
-      assert.ok(isWalkable(f.zombieX,f.zombieY,layout),'baby zombie respects all obstacles');
-      if(previous) {
-        const distance=Math.hypot(f.zombieX-previous.zombieX,f.zombieY-previous.zombieY);
-        assert.ok(distance<7,'zombie returns smoothly without teleporting ('+count+' rooms at '+elapsed+'ms: '+distance+')');
-      }
-      previous=f;
+    let chickenDistance=0,zombieDistance=0,maxSeparation=0;
+    let last=chickenJockeyFrame(layout,start);
+    const actions=new Set();
+    assert.equal(last.mounted,false);
+    assert.ok(Math.hypot(last.x-last.zombieX,last.y-last.zombieY)<.01);
+    for(let elapsed=100;elapsed<JOCKEY_UNMOUNTED_MS;elapsed+=100){
+      const frame=chickenJockeyFrame(layout,start+elapsed);
+      assert.equal(frame.mounted,false);
+      actions.add(frame.action);
+      assert.ok(isWalkable(frame.x,frame.y,layout),'chicken avoids obstacles in '+count+'-room layout');
+      assert.ok(isWalkable(frame.zombieX,frame.zombieY,layout),'zombie avoids obstacles in '+count+'-room layout');
+      const walkedChicken=Math.hypot(frame.x-last.x,frame.y-last.y);
+      const walkedZombie=Math.hypot(frame.zombieX-last.zombieX,frame.zombieY-last.zombieY);
+      chickenDistance+=walkedChicken;
+      zombieDistance+=walkedZombie;
+      maxSeparation=Math.max(maxSeparation,Math.hypot(frame.x-frame.zombieX,frame.y-frame.zombieY));
+      assert.ok(walkedChicken<5,'chicken never teleports');
+      assert.ok(walkedZombie<12,'zombie never teleports');
+      last=frame;
     }
-    assert.ok(gotFar,'baby zombie explores a visible distance from chicken ('+count+' rooms: '+furthest.toFixed(1)+'px)');
-    assert.ok(returned,'baby zombie really returns to chicken before mounting again');
-    assert.ok(states.has('running-away')&&states.has('exploring')&&states.has('returning'),'away, exploring, return are separate states');
-    const back=chickenJockeyFrame(layout,JOCKEY_MOUNT_CYCLE);
-    assert.equal(back.mounted,true);
-    assert.ok(Math.hypot(back.x-previous.x,back.y-previous.y)<0.1,
-      'chicken waits and resumes without teleporting');
+    assert.ok(chickenDistance>80,'chicken MUST continue roaming when zombie is away ('+count+' rooms: '+chickenDistance.toFixed(1)+')');
+    assert.ok(zombieDistance>75,'zombie MUST keep wandering separately ('+count+' rooms: '+zombieDistance.toFixed(1)+')');
+    assert.ok(maxSeparation>55,'independent roaming creates real separation ('+count+' rooms: '+maxSeparation.toFixed(1)+')');
+    assert.deepEqual([...actions].sort(),['chasing-chicken','exploring']);
+    const before=chickenJockeyFrame(layout,JOCKEY_MOUNT_CYCLE-1);
+    const reunited=chickenJockeyFrame(layout,JOCKEY_MOUNT_CYCLE);
+    assert.equal(reunited.mounted,true,'baby zombie returns to chicken after about 16s');
+    assert.ok(Math.hypot(reunited.x-before.x,reunited.y-before.y)<.15,'chicken continues smoothly when zombie remounts');
+    assert.ok(Math.hypot(reunited.zombieX-before.zombieX,reunited.zombieY-before.zombieY)<.25,'zombie actually catches up without a jump');
+    assert.ok(Math.hypot(reunited.x-reunited.zombieX,reunited.y-reunited.zombieY)<.01);
+  }
+});
+test('chicken and zombie keep moving in later wander cycles, not only the first',()=>{
+  const layout=createRoomLayout(4);
+  for(const cycle of [0,1,2]){
+    const start=cycle*JOCKEY_MOUNT_CYCLE+JOCKEY_MOUNTED_MS;
+    const first=chickenJockeyFrame(layout,start+500);
+    const mid=chickenJockeyFrame(layout,start+4500);
+    const pursuit=chickenJockeyFrame(layout,start+12000);
+    const end=chickenJockeyFrame(layout,(cycle+1)*JOCKEY_MOUNT_CYCLE);
+    assert.notDeepEqual([first.x,first.y],[mid.x,mid.y],'chicken still walks on later cycles');
+    assert.notDeepEqual([first.zombieX,first.zombieY],[mid.zombieX,mid.zombieY],'zombie explores');
+    assert.equal(pursuit.action,'chasing-chicken');
+    assert.equal(end.mounted,true);
+    assert.ok(isWalkable(end.x,end.y,layout));
   }
 });
 test('both sprite anchors scale independently and never exceed other animals in height',()=>{
