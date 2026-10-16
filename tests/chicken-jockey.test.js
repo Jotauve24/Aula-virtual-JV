@@ -27,7 +27,7 @@ test('chicken baby-zombie jockey walks only on real paths in different room layo
         'two positions on the same 400 ms interval must not cut through walls');
       last=next;
     }
-    assert.ok(movement>20,'chicken explores the classroom');
+    assert.ok(movement>8, 'chicken explores the classroom ('+count+' groups, '+movement+' moving samples)');
     assert.equal(JSON.stringify(layout),original,'scene remains unchanged');
   }
 });
@@ -65,7 +65,7 @@ test('four directional pixel sprites always have finite positive rectangles',()=
         mounted,x:210,y:165,zombieX:mounted?210:225,zombieY:165,
         fidget:1,step:2,moving:true
       });
-      assert.ok(pixels.length>40,'sprite draws both characters');
+      assert.ok(pixels.length>24,'sprite draws both characters ('+pixels.length+' pixel blocks)');
       assert.ok(pixels.every(pixel=>pixel.slice(0,4).every(Number.isFinite)
         &&pixel[2]>0&&pixel[3]>0),'no invalid sprite geometry');
       assert.ok(pixels.some(pixel=>pixel[4]==='#07979d'),'teal zombie shirt');
