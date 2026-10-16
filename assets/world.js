@@ -1,5 +1,6 @@
 import { SKINS, SHIRTS } from './model.js?v=20261013g';
 import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=20261014m';
+import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=20261016a';
 import { canWalkSegment } from './world-layout.js?v=20261014m';
 
 export const WORLD_WIDTH = 800;
@@ -861,6 +862,8 @@ function drawRoomWorld(canvas, options) {
   if(!layout.rooms.length)sign(ctx,400,155,'BIENVENIDO','#28594c');
   const animals=animalFrames(layout,options.ambientTime ?? options.time ?? 0,options.reducedMotion);
   for(const animal of animals)add(animal.depth,()=>drawAnimal(ctx,animal));
+  const jockey=chickenJockeyFrame(layout,options.ambientTime ?? options.time ?? 0,options.reducedMotion);
+  if(jockey)add(jockey.depth,()=>drawChickenJockey(ctx,jockey));
   const occupied=options.player?[{x:options.player.x,y:options.player.y}]:[];
   for(const peer of options.peers||[]){
     let x=peer.x;
