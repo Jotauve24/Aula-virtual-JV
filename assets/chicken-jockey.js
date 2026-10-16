@@ -102,6 +102,14 @@ export function chickenJockeyFrame(layout,time=0,reducedMotion=false) {
 export function chickenJockeyCycleDuration(layout) {
   return layout?prepareRoute(layout).duration:0;
 }
+export function chickenJockeyRouteIsSafe(layout) {
+  if(!layout)return false;
+  return prepareRoute(layout).segments.every(segment =>
+    isWalkable(segment.from.x,segment.from.y,layout) &&
+    isWalkable(segment.to.x,segment.to.y,layout) &&
+    canWalkSegment(segment.from,segment.to,layout)
+  );
+}
 
 function rect(ctx,x,y,w,h,color) {
   if (w<=0||h<=0)return;
