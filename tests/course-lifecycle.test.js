@@ -44,6 +44,18 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     if (name === 'teacher_student_recovery_requests') return recoveryRequests;
     if (name === 'teacher_overview') return body.p_course_id === course?.id
       ? { course: { ...course }, topics, students: [...students] } : overviewById[body.p_course_id];
+    if (name === 'teacher_move_student') {
+      assert.equal(body.p_course_id, course.id);
+      assert.equal(course.active, true);
+      const student = students.find(row => row.id === body.p_student_id);
+      const target = topics.find(topic => topic.id === body.p_topic_id);
+      if (!student || !target) throw new Error('Estudiante o grupo no encontrado');
+      if (students.filter(row => row.topicId === target.id).length >= target.capacity)
+        throw new Error('El equipo está completo');
+      student.topicId = target.id;
+      student.sharing = false;
+      return;
+    }
     if (name === 'teacher_unassigned_student_file_paths') {
       assert.equal(students.find(student => student.id === body.p_student_id)?.topicId, null);
       return studentFiles[body.p_student_id] || [];
@@ -243,4 +255,71 @@ test('la sección de recuperación sigue disponible para solicitudes realmente m
   assert.equal(page.get('#student-recovery-panel').hidden,false);
   assert.equal(page.get('#student-recovery-count').textContent,'1 pendiente');
   assert.equal(page.get('#student-recovery-requests').children.length,1);
+});
+
+test('docente asigna a estudiante sin grupo conservando su perfil', async () => {
+  const students=[
+    { id:'a',firstName:'Rosa',lastName:'Morales',email:'rosa@ejemplo.com',phone:'555-5555',topicId:null,
+      avatar:{hair:'short'},sharing:true },
+    { id:'b',firstName:'Luis',lastName:'Pérez',email:'luis@ejemplo.com',phone:'555-1111',topicId:'g1' }
+  ];
+  const topics=[
+    {id:'g1',name:'Mesa 1',position:0,capacity:2},
+    {id:'g2',name:'Mesa 2',position:1,capacity:3}
+  ];
+  const page=await boot({students,topics});
+  await page.get('#courses').children[0].click();
+  const unassigned=page.get('#student-list').children[2];
+  const row=unassigned.children[1];
+  assert.equal(row.children[3].textContent,'Asignar a grupo');
+  await row.children[3].click();
+  assert.equal(page.get('#move-student-dialog').open,true);
+  assert.match(page.get('#move-student-current').textContent,/Sin equipo/);
+  assert.equal(page.get('#move-student-destination').value,'g1');
+  page.get('#move-student-destination').value='g2';
+  await page.get('#move-student-form').dispatch('submit');
+  assert.deepEqual(page.calls.filter(([name]) => name==='teacher_move_student').map(([,body])=>body),
+    [{p_course_id:'course-1',p_student_id:'a',p_topic_id:'g2'}]);
+  assert.equal(students[0].topicId,'g2');
+  assert.deepEqual(students[0].avatar,{hair:'short'});
+  assert.equal(students[0].email,'rosa@ejemplo.com');
+  assert.equal(students[0].sharing,false);
+  assert.equal(page.get('#move-student-dialog').open,false);
+  assert.match(page.get('#teacher-success').textContent,/perfil y avatar/);
+});
+test('docente traslada estudiantes con grupo, sin borrar registros ni conversaciones', async()=>{
+  const students=[
+    {id:'a',firstName:'María',lastName:'Cruz',email:'maria@ejemplo.com',phone:'555-1',topicId:'g1',sharing:true},
+    {id:'b',firstName:'Ana',lastName:'Ríos',email:'ana@ejemplo.com',phone:'555-2',topicId:'g2'}
+  ];
+  const topics=[{id:'g1',name:'Grupo A',position:0,capacity:5},{id:'g2',name:'Grupo B',position:1,capacity:2}];
+  const page=await boot({students,topics});
+  await page.get('#courses').children[0].click();
+  const row=page.get('#student-list').children[0].children[1];
+  assert.equal(row.children[2].textContent,'Liberar del grupo');
+  assert.equal(row.children[3].textContent,'Cambiar de grupo');
+  await row.children[3].click();
+  assert.match(page.get('#move-student-current').textContent,/Grupo A/);
+  assert.equal(page.get('#move-student-destination').value,'g2');
+  await page.get('#move-student-form').dispatch('submit');
+  assert.equal(students[0].topicId,'g2');
+  assert.equal(students[0].sharing,false);
+  assert.equal(students.length,2);
+  assert.ok(!page.calls.some(([name]) => name==='teacher_release_student'));
+});
+test('grupos llenos no se presentan como destinos disponibles',async()=>{
+  const students=[
+    {id:'a',firstName:'Carlos',lastName:'Pérez',phone:'555-1',topicId:null},
+    {id:'b',firstName:'Elena',lastName:'Mora',phone:'555-2',topicId:'g1'}
+  ];
+  const topics=[{id:'g1',name:'Grupo lleno',position:0,capacity:1}];
+  const page=await boot({students,topics});
+  await page.get('#courses').children[0].click();
+  await page.get('#student-list').children[1].children[1].children[3].click();
+  assert.equal(page.get('#move-student-destination').disabled,true);
+  assert.equal(page.get('#confirm-student-move').disabled,true);
+  assert.match(page.get('#move-student-help').textContent,/No hay otro grupo/);
+  await page.get('#cancel-student-move').click();
+  assert.equal(page.get('#move-student-dialog').open,false);
+  assert.equal(page.calls.some(([name]) => name==='teacher_move_student'),false);
 });
