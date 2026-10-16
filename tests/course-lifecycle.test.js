@@ -243,6 +243,26 @@ test('docente no ve solicitudes de recuperación automática como pendientes de 
   assert.match(html,/sin tu aprobación/);
 });
 
+test('el módulo de recuperación nunca aparece vacío mientras se carga en ninguna materia',async()=>{
+  let resolvePending;
+  const pending=new Promise(resolve=>{resolvePending=resolve;});
+  const page=await boot({recoveryRequests:pending,
+    extraCourses:[{id:'course-2',name:'Sistemas I B',student_count:0,topic_count:0}],
+    overviewById:{'course-2':{course:{id:'course-2',name:'Sistemas I B',active:true,
+      registrationOpen:true,accessCode:'MAT-AAAAA-BBBBB-CCCCC'},topics:[],students:[]}}});
+  await page.get('#courses').children[0].click();
+  assert.equal(page.get('#student-recovery-panel').hidden,true,
+    'no debe mostrarse la caja de recuperación mientras espera a Supabase');
+  await page.openCourse('course-2');
+  assert.equal(page.get('#student-recovery-panel').hidden,true,
+    'otro curso también inicia con la sección oculta');
+  resolvePending([]);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(page.get('#student-recovery-panel').hidden,true,
+    'una solicitud sin coincidencia no activa la sección en otro curso');
+  assert.equal(page.get('#student-recovery-requests').children.length,0);
+});
+
 test('la sección de recuperación sigue disponible para solicitudes realmente manuales',async()=>{
   const page=await boot({
     recoveryRequests:[{id:'pending-1',email:'contacto@ejemplo.com',

@@ -87,3 +87,37 @@ test('email callback with the stored course code attempts safe automatic matchin
   await page.settle();
   assert.equal(page.navigations.length,1);
 });
+
+test('no-match recovery gives clear guidance without promising unreviewable teacher approval',async()=>{
+  const page=browser({pending:{status:'not_found'}});
+  await vm.runInContext('openRecoveryRequest()',page.context);
+  const form=page.get('#account-dialog-content').children.find(item=>item.tagName==='form');
+  assert.ok(form,'verified student gets the recovery form');
+  const input=form.children.find(item=>item.tagName==='input');
+  input.value='MAT-AAAAA-BBBBB-CCCCC';
+  form.listeners.get('submit')({preventDefault(){}});
+  await page.settle();
+  assert.ok(page.rpcCalls.some(call=>call.name==='student_request_profile_recovery'));
+  assert.match(page.get('#account-dialog-error').textContent,/No encontramos una inscripción/);
+  assert.match(page.get('#account-dialog-error').textContent,/solicita ayuda al docente/);
+  assert.doesNotMatch(page.get('#account-dialog-message').textContent,/solicitud de respaldo/);
+  assert.equal(page.navigations.length,0);
+});
+test('historic pending requests with no email match never falsely promise a teacher inbox',async()=>{
+  const page=browser({pending:{status:'pending',reason:'not_found'}});
+  await vm.runInContext('openRecoveryRequest()',page.context);
+  const form=page.get('#account-dialog-content').children.find(item=>item.tagName==='form');
+  form.children.find(item=>item.tagName==='input').value='MAT-AAAAA-BBBBB-CCCCC';
+  form.listeners.get('submit')({preventDefault(){}});
+  await page.settle();
+  assert.match(page.get('#account-dialog-error').textContent,/No encontramos una inscripción/);
+  assert.equal(page.navigations.length,0);
+});
+
+test('legacy orphan claim reports no matching profile rather than waiting for docente approval',async()=>{
+  const page=browser({pending:{status:'not_found'}});
+  await page.check();
+  assert.match(page.get('#account-dialog-error').textContent,/No encontramos un perfil/);
+  assert.doesNotMatch(page.get('#account-dialog-message').textContent,/docente podrá ayudarte/);
+  assert.equal(page.navigations.length,0);
+});

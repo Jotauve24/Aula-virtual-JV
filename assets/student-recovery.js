@@ -141,6 +141,10 @@ async function openRecoveryRequest() {
       setNotice('El perfil original sigue abierto en otro dispositivo. Cierra esa aula y vuelve a comprobar en unos segundos.');
       return;
     }
+    if(result.status==='not_found' || (result.status==='pending' && result.reason==='not_found')){
+      setNotice('No encontramos una inscripción vinculada a ese correo en esta materia. Comprueba el correo que utilizaste al registrarte; si era otro, solicita ayuda al docente para verificar tu identidad. Tu perfil original se conserva.','error');
+      return;
+    }
     form.hidden=true;
     setNotice('No pudimos identificar un único perfil con ese correo. Dejamos una solicitud de respaldo para tu docente. Tu inscripción original permanece intacta.');
   });});
@@ -161,7 +165,11 @@ async function checkRecovered() {
       setNotice('Tu sesión anterior está abierta en otro dispositivo. Ciérrala y vuelve a comprobar en unos segundos.');
       return;
     }
-    setNotice('Todavía no se identificó un perfil único para este correo. Si enviaste una solicitud, tu docente podrá ayudarte a identificarlo.');
+    if(result.status==='not_found'){
+      setNotice('No encontramos un perfil de estudiante con ese correo verificado. Revisa el correo usado durante la inscripción; si era diferente, solicita ayuda al docente para comprobar tu identidad.','error');
+      return;
+    }
+    setNotice('Todavía no se identificó un perfil único para este correo. Si enviaste una solicitud con un perfil coincidente, tu docente podrá ayudarte a identificarlo.');
   }catch(e){setNotice(e.message||'No pudimos comprobar el acceso.','error');}
 }
 async function onEmailReturn() {
