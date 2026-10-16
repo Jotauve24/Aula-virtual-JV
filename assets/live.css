@@ -118,3 +118,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 @media(max-width:560px){#delete-student-dialog .delete-course-actions{flex-direction:column}#delete-student-dialog .delete-course-actions button{width:100%}}
 
 .teacher-header .brand-mark{display:block;background:transparent;border-radius:0}
+
+/* Teacher-only group assignments: compact, readable and keyboard-friendly. */
+#move-student-dialog{width:min(510px,calc(100% - 24px));max-height:90dvh;padding:0;border:0;border-radius:17px;box-shadow:0 28px 65px #142b2844}
+#move-student-dialog::backdrop{background:#142b286b}
+#move-student-dialog .panel-card{box-shadow:none;margin:0;border:0}
+#move-student-dialog select{width:100%;min-height:46px;font:inherit;font-size:15px;padding:10px 12px;border:1px solid #9fb49f;border-radius:9px;color:var(--ink);background:#fff}
+#move-student-dialog select:focus-visible{outline:3px solid #bf763f;outline-offset:3px}
+#move-student-current,.group-move-hint{font-size:13px;line-height:1.6;color:#526458}
+#move-student-error{font-size:13px;line-height:1.55;color:#8f2e2e;background:#fff0ea;border:1px solid #e1b7a9;border-radius:9px;padding:10px}
+#move-student-form .field-pair{margin-top:14px}
+.teacher-student .teacher-move-student{min-height:40px;padding:9px 12px;font-size:12px}
+@media(max-width:560px){#move-student-dialog .panel-card{padding:20px 16px}#move-student-form .field-pair{display:grid;grid-template-columns:1fr}#move-student-form .field-pair button{min-height:44px}}

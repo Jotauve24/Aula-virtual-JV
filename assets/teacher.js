@@ -432,6 +432,14 @@ async function openCourse(id) {
         });
         row.append(release);
       }
+      if (active) {
+        const move = document.createElement('button'); move.type = 'button';
+        move.className = 'button secondary teacher-move-student';
+        move.textContent = student.topicId ? 'Cambiar de grupo' : 'Asignar a grupo';
+        move.setAttribute('aria-label', move.textContent + ' a ' + student.firstName + ' ' + student.lastName);
+        move.addEventListener('click', () => openMoveStudent(student));
+        row.append(move);
+      }
       card.append(row);
     }
     return card;
@@ -503,6 +511,80 @@ $('#logout').addEventListener('click', () => {
   ++courseRequestGeneration;
   courseId = ''; overview = null;
   signOut(); show('login');
+});
+
+let movingStudentTarget = null, movingStudent = false;
+function openMoveStudent(student) {
+  if (!overview?.course?.active || !overview.students.some(row => row.id === student.id)) return;
+  movingStudentTarget = { courseId, id: student.id, name: student.firstName + ' ' + student.lastName };
+  $('#move-student-title').textContent = student.topicId ? 'Cambiar estudiante de grupo' : 'Asignar estudiante a un grupo';
+  $('#move-student-name').textContent = movingStudentTarget.name;
+  const previous = overview.topics.find(topic => topic.id === student.topicId);
+  $('#move-student-current').textContent = 'Grupo actual: ' + (previous?.name || 'Sin equipo');
+  const choice = $('#move-student-destination');
+  const available = overview.topics.filter(topic => topic.id !== student.topicId).map(topic => ({
+    ...topic, remaining: topic.capacity - overview.students.filter(member => member.topicId === topic.id).length
+  }));
+  const options = available.map(topic => {
+    const item = document.createElement('option');
+    item.value = topic.id;
+    item.textContent = topic.name + ' · ' + topic.remaining + ' de ' + topic.capacity + ' cupos libres';
+    item.disabled = topic.remaining <= 0;
+    return item;
+  });
+  choice.replaceChildren(...options);
+  const first = available.find(topic => topic.remaining > 0);
+  choice.value = first?.id || '';
+  choice.disabled = !first;
+  $('#move-student-help').textContent = first
+    ? 'Se conservarán el perfil y el avatar. El historial del chat anterior seguirá en su grupo de origen; el estudiante accederá al chat del equipo nuevo.'
+    : 'No hay otro grupo con cupos disponibles. Puedes crear una mesa o ampliar los cupos de una existente.';
+  $('#confirm-student-move').textContent = student.topicId ? 'Confirmar cambio de grupo' : 'Asignar estudiante';
+  $('#confirm-student-move').disabled = !first;
+  $('#move-student-error').hidden = true;
+  $('#move-student-error').textContent = '';
+  $('#move-student-dialog').showModal();
+  if(first)choice.focus();
+}
+function closeMoveStudent() {
+  if(movingStudent)return;
+  $('#move-student-dialog').close();
+  movingStudentTarget = null;
+}
+$('#cancel-student-move').addEventListener('click', closeMoveStudent);
+$('#move-student-dialog').addEventListener('cancel', event => {
+  if(movingStudent)event.preventDefault();
+  else movingStudentTarget=null;
+});
+$('#move-student-destination').addEventListener('change', () => {
+  $('#confirm-student-move').disabled = movingStudent || !$('#move-student-destination').value;
+});
+$('#move-student-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if(movingStudent || !movingStudentTarget)return;
+  const destination = $('#move-student-destination').value;
+  if(!destination)return;
+  const target = movingStudentTarget;
+  const submit = $('#confirm-student-move');
+  const cancel = $('#cancel-student-move');
+  const select = $('#move-student-destination');
+  movingStudent = true; submit.disabled = true; cancel.disabled = true; select.disabled = true;
+  $('#move-student-error').hidden = true;
+  try {
+    await rpc('teacher_move_student', {
+      p_course_id: target.courseId, p_student_id: target.id, p_topic_id: destination
+    });
+    $('#move-student-dialog').close();
+    movingStudentTarget = null;
+    await openCourse(target.courseId);
+    teacherSuccess('Equipo actualizado para ' + target.name + '. Su perfil y avatar se conservan; el cambio aparecerá en el aula automáticamente.');
+  } catch (error) {
+    $('#move-student-error').textContent = error.message || 'No se pudo cambiar el equipo. Inténtalo de nuevo.';
+    $('#move-student-error').hidden = false;
+  } finally {
+    movingStudent = false;cancel.disabled = false;select.disabled = !movingStudentTarget;
+    submit.disabled = !movingStudentTarget || !select.value;
+  }
 });
 
 let deleteStudentTarget = null, deletingStudent = false;
