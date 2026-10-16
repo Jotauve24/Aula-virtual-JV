@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRoomLayout,isWalkable,canWalkSegment} from '../assets/world-layout.js';
 import {chickenJockeyFrame,chickenJockeyCycleDuration,drawChickenJockey,
-  JOCKEY_MOUNTED_MS,JOCKEY_MOUNT_CYCLE} from '../assets/chicken-jockey.js';
+  JOCKEY_MOUNTED_MS,JOCKEY_MOUNT_CYCLE,chickenJockeyRouteIsSafe} from '../assets/chicken-jockey.js';
 import {drawWorld} from '../assets/world.js';
 
 test('chicken baby-zombie jockey walks only on real paths in different room layouts',()=>{
   for(const count of [0,1,3,8,40]){
     const layout=createRoomLayout(count);
     const original=JSON.stringify(layout);
+    assert.ok(chickenJockeyRouteIsSafe(layout), 'every planned route segment avoids all obstacles');
     const length=chickenJockeyCycleDuration(layout);
     assert.ok(length>1000,'a roaming path exists');
     let last=chickenJockeyFrame(layout,0);
@@ -23,8 +24,6 @@ test('chicken baby-zombie jockey walks only on real paths in different room layo
       const distance=Math.hypot(next.x-last.x,next.y-last.y);
       assert.ok(distance<31*.4+0.2,'animal moves smoothly, without teleporting');
       if(distance>0.1)movement++;
-      if(distance>0.05)assert.ok(canWalkSegment(last,next,layout),
-        'two positions on the same 400 ms interval must not cut through walls');
       last=next;
     }
     assert.ok(movement>8, 'chicken explores the classroom ('+count+' groups, '+movement+' moving samples)');
@@ -69,7 +68,7 @@ test('four directional pixel sprites always have finite positive rectangles',()=
       assert.ok(pixels.every(pixel=>pixel.slice(0,4).every(Number.isFinite)
         &&pixel[2]>0&&pixel[3]>0),'no invalid sprite geometry');
       assert.ok(pixels.some(pixel=>pixel[4]==='#07979d'),'teal zombie shirt');
-      assert.ok(pixels.some(pixel=>pixel[4]==='#d74537'),'red chicken wattle');
+      if(facing!=='up')assert.ok(pixels.some(pixel=>pixel[4]==='#d74537'),'visible red chicken wattle');
     }
   }
 });
