@@ -22,7 +22,7 @@ function browser({pending={status:'pending'},own=[],search='',storedCode='',conf
   const elements=new Map();
   const get=selector=>{if(!elements.has(selector))elements.set(selector,new Element());return elements.get(selector);};
   const memory=new Map(storedCode?[['aula-student-course-code',storedCode]]:[]);
-  const localStorage={getItem:key=>memory.get(key)||null};
+  const localStorage={getItem:key=>memory.get(key)||null,removeItem:key=>memory.delete(key),setItem:(key,value)=>memory.set(key,String(value))};
   const sessionStorage={getItem:()=>null};
   const events=[],rpcCalls=[],navigations=[];
   const origin='https://jotauve24.github.io';
