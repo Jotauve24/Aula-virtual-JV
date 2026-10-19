@@ -68,12 +68,28 @@ async function openProtection() {
   area.append(form);
   input.focus();
 }
-function openSignIn() {
-  openDialog('Ya tengo una cuenta','Si protegiste tu cuenta anteriormente, entra con tu correo verificado. No tendrás que registrarte otra vez.');
+async function openSignIn() {
+  openDialog('Recuperar mi cuenta','Verifica el correo asociado a tu inscripción anterior. El enlace permite recuperar tu avatar y grupo sin crear otro estudiante.');
   if(studentSignedIn()) {
-    area.append(element('p','Ya tienes una sesión iniciada en este navegador. Si es tu perfil habitual, protégelo antes de cambiar de cuenta.','student-account-hint'));
-    area.append(action('Proteger mi cuenta',openProtection,'primary'));
-    return;
+    // A new registration can hold a fresh anonymous session with NO owned
+    // profiles. Such an empty session must not block verified-email recovery.
+    // An anonymous session that owns ANY group (even inactive courses) must
+    // remain protected to avoid losing an existing student's credentials.
+    try {
+      if(await studentRpc('student_has_any_enrollment')) {
+        area.append(element('p','Este navegador ya tiene un perfil registrado. Para no perderlo, protégelo con tu correo antes de cambiar de cuenta.','student-account-hint'));
+        area.append(action('Proteger mi cuenta',openProtection,'primary'));
+        return;
+      }
+      const user=await studentAuthUser();
+      if(user && !user.is_anonymous && user.email_confirmed_at) {
+        await openRecoveryRequest();
+        return;
+      }
+    }catch {
+      setNotice('No pudimos comprobar si este navegador conserva otra inscripción. Inténtalo nuevamente para no perder tu perfil.','error');
+      return;
+    }
   }
   const form=document.createElement('form');
   const label=element('label','Correo con el que protegiste tu cuenta');label.htmlFor='student-login-email';
@@ -94,6 +110,7 @@ function openSignIn() {
 }
 function openOwnedCourse(id) {
   if(!validCourseId(id))return;
+  localStorage.removeItem('aula-student-recovery-code');
   const url=new URL('live.html',location.href);
   url.searchParams.set('resume_id',id);
   location.assign(url.toString());
@@ -119,7 +136,8 @@ async function openRecoveryRequest() {
   const input=document.createElement('input');input.type='text';input.id='recover-course-code';input.name='code';
   input.placeholder='MAT-XXXXX-XXXXX-XXXXX';input.required=true;input.maxLength=48;
   input.autocapitalize='characters';
-  input.value=sessionStorage.getItem('aula-course-code')||
+  input.value=localStorage.getItem('aula-student-recovery-code')||
+    sessionStorage.getItem('aula-course-code')||
     localStorage.getItem('aula-student-course-code')||'';
   const note=element('p','Si tu correo corresponde a un único perfil de esta materia, recuperarás el acceso inmediatamente. Si está compartido, necesitaremos comprobar a quién pertenece.','student-account-hint');
   const submit=element('button','Recuperar mi cuenta','button primary');submit.type='submit';
@@ -199,7 +217,8 @@ async function onEmailReturn() {
       openOwnedCourse(pending.course_id);return;
     }
   }catch { /* The manual request screen remains available. */ }
-  const rememberedCode=sessionStorage.getItem('aula-course-code')||
+  const rememberedCode=localStorage.getItem('aula-student-recovery-code')||
+    sessionStorage.getItem('aula-course-code')||
     localStorage.getItem('aula-student-course-code');
   if(rememberedCode){
     try {
