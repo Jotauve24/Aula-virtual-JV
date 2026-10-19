@@ -109,6 +109,31 @@ let questions = registrationForm.elements.namedItem('code').value.trim()
   ? ['firstName', 'lastName', 'email', 'phone']
   : ['code', 'firstName', 'lastName', 'email', 'phone'];
 let questionIndex = 0;
+// This notice is conditional. No old student's profile is exposed or attached
+// merely from a guessed email; recovery still requires verified ownership.
+const duplicateNotice = $('#email-duplicate-notice');
+const registrationEmail = registrationForm.elements.namedItem('email');
+function hideDuplicateEmail() {
+  duplicateNotice.hidden = true;
+  $('#next-question').disabled = false;
+}
+function showDuplicateEmail() {
+  questionIndex = questions.indexOf('email');
+  if(questionIndex < 0) return;
+  renderQuestion(true);
+  duplicateNotice.hidden = false;
+  $('#next-question').disabled = true;
+}
+registrationEmail.addEventListener('input',hideDuplicateEmail);
+$('#email-duplicate-recover').addEventListener('click',()=>{
+  // Preserve the intended subject across an email magic-link callback even
+  // when the link opens a different tab on the same device.
+  const code=normalizeCode(registrationForm.elements.namedItem('code').value);
+  if (/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(code))
+    localStorage.setItem('aula-student-recovery-code',code);
+  // Use the existing verified-email recovery, never copy student data.
+  $('#student-sign-in').click();
+});
 function renderQuestion(focus = false) {
   const key = questions[questionIndex];
   document.querySelectorAll('.dialog-step').forEach(step => { step.hidden = step.dataset.step !== key; });
@@ -120,18 +145,47 @@ function renderQuestion(focus = false) {
   $('#finish-registration').hidden = questionIndex !== questions.length - 1;
   $('#dialog-privacy').hidden = questionIndex !== questions.length - 1;
   $('#change-code').hidden = questions.includes('code');
+  if(key !== 'email') hideDuplicateEmail();
   if (focus) registrationForm.elements.namedItem(key).focus();
 }
-$('#next-question').addEventListener('click', () => {
+$('#next-question').addEventListener('click', async () => {
   const field = registrationForm.elements.namedItem(questions[questionIndex]);
   if (!field.reportValidity()) return;
-  if (questions[questionIndex] === 'code' &&
+  const key=questions[questionIndex];
+  if (key === 'code' &&
       !/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(normalizeCode(field.value))) {
     message('Revisa el código de tu materia. Tiene el formato MAT-XXXXX-XXXXX-XXXXX.');
     field.focus(); return;
   }
   message('');
-  if (questions[questionIndex] === 'code') field.value = normalizeCode(field.value);
+  if (key === 'email') {
+    const submit=$('#next-question');
+    const email=field.value.trim().toLowerCase();
+    const firstName=registrationForm.elements.namedItem('firstName').value.trim();
+    const lastName=registrationForm.elements.namedItem('lastName').value.trim();
+    const code=normalizeCode(registrationForm.elements.namedItem('code').value);
+    submit.disabled=true;
+    try {
+      await signInStudentAnonymously();
+      const exists=await studentRpc('student_registration_email_hint',{
+        p_code:code,p_email:email,p_first_name:firstName,p_last_name:lastName
+      });
+      if (email!==field.value.trim().toLowerCase() || questions[questionIndex]!=='email')
+        return;
+      if (exists) {
+        showDuplicateEmail();
+        return;
+      }
+    } catch {
+      // The hint is best-effort; the server independently BLOCKS duplicates
+      // when the student eventually submits the full registration form.
+    } finally {
+      if (duplicateNotice.hidden) submit.disabled=false;
+    }
+    if (email!==field.value.trim().toLowerCase() || questions[questionIndex]!=='email')
+      return;
+  }
+  if (key === 'code') field.value = normalizeCode(field.value);
   questionIndex++; renderQuestion(true);
 });
 $('#previous-question').addEventListener('click', () => { questionIndex--; renderQuestion(true); });
@@ -222,6 +276,10 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
     await signInStudentAnonymously();
     try { await enterCourse(code, details); }
     catch (error) {
+      if (error.message?.includes('Este correo ya tiene una inscripción')) {
+        showDuplicateEmail();
+        return; // Nothing was created; keep their original name and email.
+      }
       // A previously deleted anonymous account can leave a stale browser session.
       if (!error.message.includes('students_auth_user_id_fkey')) throw error;
       studentSignOut(); await signInStudentAnonymously(); await enterCourse(code, details);
