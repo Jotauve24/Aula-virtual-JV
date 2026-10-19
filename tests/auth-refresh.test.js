@@ -21,11 +21,15 @@ function browser({student=true,teacher=false}={}){
   if(student)initial['aula-student-session']=JSON.stringify(initialSession('student'));
   if(teacher)initial['aula-supabase-session']=JSON.stringify(initialSession('teacher'));
   const localStorage=storage(initial),sessionStorage=storage();
-  let releases=[],refreshCount=0,rpcCount=0,failNext=false;
+  let releases=[],refreshCount=0,rpcCount=0,signupCount=0,failNext=false;
   const fetch=async(uri,options={})=>{
     if(uri.includes('/auth/v1/token')){
       refreshCount++;
-      if(failNext){failNext=false;return {ok:false,status:503,json:async()=>({message:'Temporalmente indisponible'})};}
+      if(failNext){
+        const failure=failNext;failNext=false;
+        if(failure.delayed)await new Promise(resolve=>releases.push(resolve));
+        return {ok:false,status:failure.status||503,json:async()=>({message:'Temporalmente indisponible',code:failure.code})};
+      }
       await new Promise(resolve=>releases.push(resolve));
       const body=JSON.parse(options.body);
       return {ok:true,json:async()=>({
@@ -33,6 +37,11 @@ function browser({student=true,teacher=false}={}){
         refresh_token:'next-'+body.refresh_token,
         expires_in:3600
       })};
+    }
+    if(uri.includes('/auth/v1/signup')) {
+      signupCount++;
+      await new Promise(resolve=>releases.push(resolve));
+      return {ok:true,json:async()=>({...initialSession('new-student',false),user:{is_anonymous:true}})};
     }
     if(uri.includes('/rest/v1/rpc/')) {
       rpcCount++;
@@ -45,13 +54,14 @@ function browser({student=true,teacher=false}={}){
     location:{hash:'',pathname:'/Aula-virtual-JV/live.html',search:'',origin:'https://aula.example',href:'https://aula.example/live.html'},
     history:{replaceState(){}},localStorage,sessionStorage,fetch,Date,URL,URLSearchParams
   });
-  const api=vm.runInContext(code+'\n({studentRpc,rpc,studentSignOut,signOut,studentSignedIn,signedIn})',context);
+  const api=vm.runInContext(code+'\n({studentRpc,rpc,studentSignOut,signOut,studentSignedIn,signedIn,signInStudentAnonymously})',context);
   return {
     api, localStorage,
     get refreshCount(){return refreshCount;},
     get rpcCount(){return rpcCount;},
+    get signupCount(){return signupCount;},
     resolveNext(){const fn=releases.shift();assert.ok(fn,'expected refresh request');fn();},
-    failOnce(){failNext=true;}
+    failOnce(options={}){failNext=options;}
   };
 }
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
@@ -103,4 +113,51 @@ test('a failed token refresh can be retried after network recovery',async()=>{
   await settle();
   app.resolveNext();await retry;
   assert.equal(app.refreshCount,2);
+});
+test('a revoked student credential is cleared without touching the teacher login',async()=>{
+  const app=browser({teacher:true});
+  app.failOnce({status:400,code:'refresh_token_not_found'});
+  await assert.rejects(app.api.studentRpc('my_profile'),/Recupera el acceso/);
+  assert.equal(app.api.studentSignedIn(),false);
+  assert.equal(app.api.signedIn(),true);
+  assert.equal(app.rpcCount,0);
+});
+test('rate limits preserve the original credential for a later retry',async()=>{
+  const app=browser();
+  app.failOnce({status:429});
+  await assert.rejects(app.api.studentRpc('my_profile'));
+  assert.equal(app.api.studentSignedIn(),true);
+  assert.equal(JSON.parse(app.localStorage.getItem('aula-student-session')).refresh_token,'student-refresh');
+});
+test('a late rejection of the old refresh token cannot clear a newer email login',async()=>{
+  const app=browser();
+  app.failOnce({status:400,code:'refresh_token_already_used',delayed:true});
+  const request=app.api.studentRpc('my_profile');
+  await settle();
+  const verified=initialSession('verified-student',false);
+  app.localStorage.setItem('aula-student-session',JSON.stringify(verified));
+  app.resolveNext();await request;
+  assert.equal(JSON.parse(app.localStorage.getItem('aula-student-session')).access_token,verified.access_token);
+});
+test('an incomplete expired credential allows the student to start recovery again',async()=>{
+  const app=browser();
+  app.localStorage.setItem('aula-student-session',JSON.stringify({access_token:'expired',expires_at:1}));
+  await assert.rejects(app.api.studentRpc('my_profile'),/Recupera el acceso/);
+  assert.equal(app.api.studentSignedIn(),false);
+});
+test('simultaneous registration requests share a single anonymous signup',async()=>{
+  const app=browser({student:false});
+  const attempts=[app.api.signInStudentAnonymously(),app.api.signInStudentAnonymously(),app.api.signInStudentAnonymously()];
+  await settle();assert.equal(app.signupCount,1);
+  app.resolveNext();await Promise.all(attempts);
+  assert.equal(app.api.studentSignedIn(),true);
+});
+test('a pending anonymous signup cannot overwrite a verified session',async()=>{
+  const app=browser({student:false});
+  const attempt=app.api.signInStudentAnonymously();
+  await settle();
+  const verified=initialSession('verified-student',false);
+  app.localStorage.setItem('aula-student-session',JSON.stringify(verified));
+  app.resolveNext();await attempt;
+  assert.equal(JSON.parse(app.localStorage.getItem('aula-student-session')).access_token,verified.access_token);
 });

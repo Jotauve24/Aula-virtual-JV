@@ -1,3 +1,5 @@
+> Registro histórico del 15 de octubre. Para el estado vigente, consulta [el alcance actual](alcance.md).
+
 # Auditoría técnica de AulaVirtualJv — 15 de octubre de 2026
 
 ## Alcance

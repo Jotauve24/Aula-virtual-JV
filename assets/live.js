@@ -1,11 +1,11 @@
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js';
-import './embed.js?v=20261012a';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=20261012a';
-import { SKINS, SHIRTS, normalizeCode } from './model.js?v=20261013g';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=20261016c';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=20261014m';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=20261011b';
-import { createIncomingMessageTracker } from './chat-notification.js?v=20261015b';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.5.0';
+import './embed.js?v=0.5.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.5.0';
+import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.5.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.5.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.5.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.5.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.5.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -204,7 +204,8 @@ else {
   // An explicit code from the teacher always wins; otherwise reopen the student's
   // last authorized course without a new email or another registration.
   const authLinkReturn = typeof location !== 'undefined' &&
-    new URLSearchParams(location.search).has('student_auth');
+    (new URLSearchParams(location.search).has('student_auth') ||
+     new URLSearchParams(location.search).get('login') === '1');
   const requestedResume = !submittedCode && !authLinkReturn
     ? (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('resume_id') : null) ||
       localStorage.getItem('aula-student-resume-id')
@@ -909,6 +910,8 @@ function stopRoomPolling() {
 $('#logout').addEventListener('click', () => {
   if (!confirm('Al salir perderás el acceso a este perfil desde este dispositivo. ¿Deseas continuar?')) return;
   studentSignOut(); localStorage.removeItem('aula-student-course-code');
+  localStorage.removeItem('aula-student-resume-id');
+  localStorage.removeItem('aula-student-recovery-code');
   stopRoomPolling(); chatTeamId = '';
   $('#team-chat-host').hidden = true;
   $('#team-chat-host').replaceChildren();
@@ -974,6 +977,8 @@ async function refreshRoom() {
       stopRoomPolling();
       courseId = ''; courseName = ''; profile = null; topics = [];
       localStorage.removeItem('aula-student-course-code');
+      localStorage.removeItem('aula-student-resume-id');
+      localStorage.removeItem('aula-student-recovery-code');
       questions = ['code', 'firstName', 'lastName', 'email', 'phone']; questionIndex = 0;
       registrationForm.elements.namedItem('code').value = '';
       show('registration'); renderQuestion();

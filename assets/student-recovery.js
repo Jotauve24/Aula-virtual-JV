@@ -1,6 +1,6 @@
 import {
   studentSignedIn, studentRpc, studentAuthUser, protectStudentAccount, emailStudentLogin
-} from './supabase-client.js?v=20261015u';
+} from './supabase-client.js?v=0.5.0';
 
 const $ = selector => document.querySelector(selector);
 const dialog = $('#student-account-dialog'), area = $('#account-dialog-content');
@@ -76,19 +76,35 @@ async function openSignIn() {
     // An anonymous session that owns ANY group (even inactive courses) must
     // remain protected to avoid losing an existing student's credentials.
     try {
-      if(await studentRpc('student_has_any_enrollment')) {
+      const user=await studentAuthUser();
+      const verified=user && !user.is_anonymous && user.email_confirmed_at;
+      if(verified && localStorage.getItem('aula-student-recovery-code')) {
+        await openRecoveryRequest();
+        return;
+      }
+      const courses=await studentRpc('student_owned_courses');
+      if(Array.isArray(courses) && courses.length) {
+        showOwnedCourses(courses);
+        area.append(action(verified?'Recuperar otra materia':'Proteger mi cuenta',
+          verified?openRecoveryRequest:openProtection,'primary'));
+        return;
+      }
+      if(!verified && await studentRpc('student_has_any_enrollment')) {
         area.append(element('p','Este navegador ya tiene un perfil registrado. Para no perderlo, protégelo con tu correo antes de cambiar de cuenta.','student-account-hint'));
         area.append(action('Proteger mi cuenta',openProtection,'primary'));
         return;
       }
-      const user=await studentAuthUser();
-      if(user && !user.is_anonymous && user.email_confirmed_at) {
+      if(verified) {
         await openRecoveryRequest();
         return;
       }
     }catch {
-      setNotice('No pudimos comprobar si este navegador conserva otra inscripción. Inténtalo nuevamente para no perder tu perfil.','error');
-      return;
+      if(studentSignedIn()) {
+        setNotice('No pudimos comprobar si este navegador conserva otra inscripción. Inténtalo nuevamente para no perder tu perfil.','error');
+        return;
+      }
+      // An expired/revoked credential was cleared by the Auth client. Let the
+      // student request a verified link instead of leaving recovery blocked.
     }
   }
   const form=document.createElement('form');
@@ -203,6 +219,19 @@ async function onEmailReturn() {
     openDialog('No se pudo comprobar la cuenta','Intenta abrir el enlace de nuevo.');
     return;
   }
+  // An explicit duplicate-registration recovery belongs to the selected
+  // subject, even if this verified account already owns another subject.
+  const selectedCode=localStorage.getItem('aula-student-recovery-code');
+  if(selectedCode) {
+    try {
+      const result=await studentRpc('student_request_profile_recovery',{p_code:selectedCode});
+      if(result.status==='recovered' || result.status==='active') {
+        openOwnedCourse(result.course_id);return;
+      }
+    }catch { /* Keep the selected code available for correction or retry. */ }
+    await openRecoveryRequest();
+    return;
+  }
   if(own.length===1){
     // This is safe even when opened in a fresh browser: ownership is server-verified.
     if($('#room').dataset.stage!=='room')openOwnedCourse(own[0].course_id);
@@ -248,6 +277,8 @@ const target=$('#room');
 const observer=new MutationObserver(()=>{ if(target.dataset.stage==='room')void syncProtectButton(); });
 observer.observe(target,{attributes:true,attributeFilter:['data-stage']});
 const entryParams = new URLSearchParams(location.search);
-if(entryParams.get('login')==='1')openSignIn();
-else void onEmailReturn();
+if(entryParams.get('login')==='1')void openSignIn();
+else void onEmailReturn().catch(()=>{
+  openDialog('No se pudo comprobar la cuenta','Tu perfil sigue guardado. Vuelve a intentar recuperar el acceso.');
+});
 if(target.dataset.stage==='room')void syncProtectButton();

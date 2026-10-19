@@ -59,7 +59,7 @@ class Element {
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
-  motionReduced = true, realLayout = false, emailHint = false } = {}) {
+  motionReduced = true, realLayout = false, emailHint = false, search = '' } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -74,6 +74,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   const fields = Object.fromEntries(['code', 'firstName', 'lastName', 'email', 'phone']
     .map(key => [key, new Element()]));
   get('#registration-form').elements = { namedItem: key => fields[key] };
+  get('#registration-form').reset = () => Object.values(fields).forEach(field=>{field.value='';});
   const steps = Object.keys(fields).map(key => Object.assign(new Element(), { dataset: { step: key } }));
   const tabs = ['aula', 'equipo', 'chat'].map(key => Object.assign(new Element(), { dataset: { roomTab: key } }));
   const localStorage = storage({ ...(remembered ? { [LAST_CODE]: remembered } : {}),
@@ -96,6 +97,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       : selector === '[data-room-tab]' ? tabs : selector === '[data-member-presence]' ? presenceNodes() : [], createElement: () => new Element(), hidden: false,
       addEventListener: (name, handler) => documentListeners.set(name, handler), dispatchEvent() {} },
     window: { addEventListener: (name, handler) => windowListeners.set(name, handler) }, localStorage, sessionStorage, Date: PageDate,
+    location:{search,pathname:'/Aula-virtual-JV/live.html'},history:{replaceState(){}},confirm:()=>true,URLSearchParams,
     configured: true, SKINS, SHIRTS, normalizeCode, ATTACHMENT_ACCEPT: '.pdf',
     matchMedia: () => motionPreference,
     cancelAnimationFrame: id => pendingFrames.delete(id),
@@ -177,6 +179,20 @@ test('reload resumes the recognized code with the existing student session', asy
   assert.equal(page.calls[0].body.p_code, NEW);
   assert.equal(page.get('#room').dataset.stage, 'avatar');
   assert.equal(page.signOutCount(), 0);
+});
+test('the explicit recovery entry does not start a classroom in parallel',async()=>{
+  const page=await boot({remembered:NEW,search:'?login=1'});
+  assert.equal(page.calls.length,0);
+  assert.equal(page.get('#room').dataset.stage,'registration');
+});
+test('student logout clears obsolete resume and recovery shortcuts along with the session',async()=>{
+  const page=await boot({remembered:NEW});
+  page.localStorage.setItem('aula-student-resume-id','11111111-1111-4111-8111-111111111111');
+  page.localStorage.setItem('aula-student-recovery-code',OLD);
+  await page.get('#logout').click();
+  assert.equal(page.localStorage.getItem('aula-student-resume-id'),null);
+  assert.equal(page.localStorage.getItem('aula-student-recovery-code'),null);
+  assert.equal(page.localStorage.getItem(SESSION),null);
 });
 
 test('an obsolete remembered code exposes the code field and preserves the student identity', async () => {

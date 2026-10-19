@@ -9,7 +9,7 @@ function store(values={}){
   const map=new Map(Object.entries(values));
   return {getItem:key=>map.get(key)||null,setItem:(k,v)=>map.set(k,String(v)),removeItem:k=>map.delete(k)};
 }
-function start({pathname='/live.html',hash='',initial={},responseUser={id:'student-1',is_anonymous:true},fetchError=false}={}){
+function start({pathname='/live.html',hash='',initial={},responseUser={id:'student-1',is_anonymous:true},fetchError=false,userFailure=null}={}){
   const localStorage=store(initial),sessionStorage=store();
   const called=[], historyCalls=[];
   const origin='https://jotauve24.github.io',base=origin+'/Aula-virtual-JV';
@@ -19,6 +19,8 @@ function start({pathname='/live.html',hash='',initial={},responseUser={id:'stude
   };
   const fetch=async(uri,options={})=>{
     called.push({uri,options});
+    if(uri.includes('/auth/v1/user') && options.method!=='PUT' && userFailure)
+      return {ok:false,status:userFailure.status,json:async()=>({code:userFailure.code})};
     if(fetchError)return {ok:false,status:400,json:async()=>({message:'Verificación pendiente'})};
     if(uri.includes('/auth/v1/user')&&options.method!=='PUT')
       return {ok:true,json:async()=>responseUser};
@@ -82,5 +84,17 @@ test('signing out on the student side never signs out the teacher',()=>{
 test('failed protection preserves the original student session',async()=>{
   const x=start({initial:{'aula-student-session':JSON.stringify(session)},fetchError:true});
   await assert.rejects(async()=>x.api.protectStudentAccount('ana@ejemplo.com'),/Verificación pendiente/);
+  assert.equal(x.api.studentSignedIn(),true);
+});
+test('a definitively rejected user credential can be recovered before its local expiry',async()=>{
+  const x=start({initial:{'aula-student-session':JSON.stringify(session),'aula-supabase-session':JSON.stringify(teacherSession)},
+    userFailure:{status:401,code:'user_not_found'}});
+  await assert.rejects(x.api.studentAuthUser(),/Recupera el acceso/);
+  assert.equal(x.api.studentSignedIn(),false);
+  assert.equal(x.api.signedIn(),true);
+});
+test('an unavailable user endpoint never clears a valid saved session',async()=>{
+  const x=start({initial:{'aula-student-session':JSON.stringify(session)},userFailure:{status:503}});
+  await assert.rejects(x.api.studentAuthUser());
   assert.equal(x.api.studentSignedIn(),true);
 });

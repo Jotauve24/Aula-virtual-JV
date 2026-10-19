@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.5.0';
 
 const sessionKey = 'aula-supabase-session';
 const studentSessionKey = 'aula-student-session';
@@ -46,9 +46,18 @@ async function request(path, body, token) {
     cache: 'no-store'
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.message || data.msg || data.error_description ||
-    (response.status === 429 ? 'Demasiados intentos. Prueba más tarde.' : 'No se pudo completar la solicitud.'));
+  if (!response.ok) {
+    const error = new Error(data.message || data.msg || data.error_description ||
+      (response.status === 429 ? 'Demasiados intentos. Prueba más tarde.' : 'No se pudo completar la solicitud.'));
+    error.status = response.status;
+    error.code = data.code || data.error_code || data.error;
+    throw error;
+  }
   return data;
+}
+function invalidAuthSession(status, code) {
+  return [400, 401, 403].includes(status) &&
+    /^(refresh_token_(not_found|already_used)|session_not_found|user_not_found|user_banned|invalid_grant|bad_jwt)$/.test(code || '');
 }
 export async function sendCode(email) {
   const redirect = location.origin + location.pathname;
@@ -66,11 +75,6 @@ export async function googleAvailable() {
 export function signInWithGoogle() {
   const redirect = location.origin + location.pathname;
   location.assign(endpoint(`/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirect)}`));
-}
-export async function verifyCode(email, token) {
-  const data = await request('/auth/v1/verify', { email, token, type: 'email' });
-  saveSession(data);
-  return data;
 }
 // Student magic links are scoped to /live.html and never replace teacher sessions.
 function studentRedirect(mode) {
@@ -102,15 +106,27 @@ export async function studentAuthUser() {
     headers:{apikey:SUPABASE_PUBLISHABLE_KEY, Authorization:'Bearer '+token},
     cache:'no-store'
   });
-  if (!res.ok) throw new Error('Tu sesión no está disponible. Inicia sesión nuevamente.');
+  if (!res.ok) {
+    const body = await res.json().catch(()=>({}));
+    if (invalidAuthSession(res.status, body.code || body.error_code) &&
+        session(studentSessionKey)?.access_token === token) saveSession(null, studentSessionKey);
+    throw new Error('Tu sesión no está disponible. Recupera el acceso con tu correo.');
+  }
   return res.json();
 }
+let anonymousSignIn = null;
 export async function signInStudentAnonymously() {
   if (session(studentSessionKey)?.access_token) return;
-  const data = await request('/auth/v1/signup', { data: {} });
-  if (!data.access_token || !data.refresh_token || data.user?.is_anonymous !== true)
-    throw new Error('El acceso estudiantil sin correo aún no está habilitado.');
-  saveSession(data, studentSessionKey);
+  if (!anonymousSignIn) anonymousSignIn = (async () => {
+    const data = await request('/auth/v1/signup', { data: {} });
+    if (!data.access_token || !data.refresh_token || data.user?.is_anonymous !== true)
+      throw new Error('El acceso estudiantil sin correo aún no está habilitado.');
+    // A verified email callback may have completed while signup was pending.
+    if (!session(studentSessionKey)?.access_token) saveSession(data, studentSessionKey);
+  })();
+  const pending = anonymousSignIn;
+  try { await pending; }
+  finally { if (anonymousSignIn === pending) anonymousSignIn = null; }
 }
 // Presence, chat and teacher dashboard can ask for a token simultaneously.
 // Share refreshes per session, never across student and teacher identities.
@@ -119,11 +135,29 @@ async function accessToken(key = sessionKey) {
   const value = session(key);
   if (!value?.access_token) throw new Error('Inicia sesión con tu correo.');
   if (value.expires_at && value.expires_at * 1000 > Date.now() + 60000) return value.access_token;
-  if (!value.refresh_token) throw new Error('La sesión venció. Inicia sesión otra vez.');
+  if (!value.refresh_token) {
+    saveSession(null, key);
+    throw new Error('Tu sesión venció. Recupera el acceso con tu correo.');
+  }
   if (pendingRefreshes.has(key)) return pendingRefreshes.get(key);
   const refresh = (async () => {
-    const renewed = await request('/auth/v1/token?grant_type=refresh_token',
-      { refresh_token: value.refresh_token });
+    let renewed;
+    try {
+      renewed = await request('/auth/v1/token?grant_type=refresh_token',
+        { refresh_token: value.refresh_token });
+    } catch (error) {
+      const current = session(key);
+      if (current?.access_token && (current.refresh_token !== value.refresh_token ||
+          current.access_token !== value.access_token)) return current.access_token;
+      // Only a definitive Auth rejection expires this saved credential.
+      // Network failures and rate limits must preserve the original session.
+      if (invalidAuthSession(error.status, error.code)) {
+        if (current?.refresh_token === value.refresh_token && current.access_token === value.access_token)
+          saveSession(null, key);
+        throw new Error('Tu sesión venció. Recupera el acceso con tu correo.');
+      }
+      throw error;
+    }
     const current = session(key);
     // A student can log out, or enter with a different account, while the
     // network request is pending. Never restore their former credentials.

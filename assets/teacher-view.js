@@ -1,8 +1,8 @@
-import './embed.js?v=20261012a';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam } from './teacher-inspector.js?v=20261015b';
-import { configured, signedIn, rpc } from './supabase-client.js?v=20261014q';
-import { drawWorld, roomTheme } from './world.js?v=20261016c';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=20261014m';
+import './embed.js?v=0.5.0';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam } from './teacher-inspector.js?v=0.5.0';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.5.0';
+import { drawWorld, roomTheme } from './world.js?v=0.5.0';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.5.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');

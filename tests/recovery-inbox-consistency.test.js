@@ -30,8 +30,8 @@ test('new no-email-match recovery attempts cannot create invisible orphan reques
 });
 test('teacher and student both share the corrected logic and browser cache revisions',()=>{
   const docente=read('docente.html'),live=read('live.html');
-  assert.match(docente,/assets\/teacher\.js\?v=20261016t/);
-  assert.match(live,/assets\/student-recovery\.js\?v=20261019d/);
+  assert.match(docente,/assets\/teacher\.js\?v=[\w.-]+/);
+  assert.match(live,/assets\/student-recovery\.js\?v=[\w.-]+/);
   assert.match(teacher,/panel\.hidden = true;\s*host\.replaceChildren\(\);/);
   assert.match(teacher,/panel\.hidden = false;\s*\}\s*catch/);
   assert.match(student,/result\.status==='not_found'/);

@@ -13,6 +13,38 @@ const walk=directory=>readdirSync(directory).flatMap(name=>{
 });
 const files=walk(assetRoot).filter(path=>extname(path)==='.js');
 const stripQuery=path=>path.split(/[?#]/)[0];
+const version=JSON.parse(readFileSync(join(root,'package.json'),'utf8')).version;
+const moduleImports=source=>[...source.matchAll(/(?:^|\n)\s*(?:import\s+(?:[^'";]*?\s+from\s+)?|export\s+\{[^}]*\}\s+from\s+)['"]([^'"]+)['"];?/g)].map(match=>match[1]);
+test('one release loads one version of each shared module, including re-exports',()=>{
+  const references=[];
+  for(const file of files) for(const reference of moduleImports(readFileSync(file,'utf8')))
+    if(reference.startsWith('.'))references.push([file,reference]);
+  for(const html of htmlPages) {
+    const file=join(root,html);
+    for(const match of readFileSync(file,'utf8').matchAll(/(?:src|href)="(\.[^"]+\.(?:js|css)(?:\?[^" ]*)?)"/g))
+      references.push([file,match[1]]);
+  }
+  const versions=new Map();
+  for(const [file,reference] of references) {
+    const url=new URL(reference,'file://'+file);
+    assert.equal(url.searchParams.get('v'),version,file+' has a stale module '+reference);
+    const variants=versions.get(url.pathname)||new Set();
+    variants.add(url.search);versions.set(url.pathname,variants);
+  }
+  for(const [file,variants] of versions)assert.equal(variants.size,1,'Multiple module instances: '+file);
+});
+test('every production JavaScript module is reachable from a published page',()=>{
+  const visited=new Set();
+  const visit=file=>{
+    if(visited.has(file))return;
+    visited.add(file);
+    for(const reference of moduleImports(readFileSync(file,'utf8')))
+      if(reference.startsWith('.'))visit(resolve(dirname(file),stripQuery(reference)));
+  };
+  for(const html of htmlPages) for(const match of readFileSync(join(root,html),'utf8').matchAll(/<script\b[^>]*src="([^"]+)"/g))
+    if(match[1].startsWith('.'))visit(resolve(root,stripQuery(match[1])));
+  assert.deepEqual(files.filter(file=>!visited.has(file)),[],'Unreferenced production modules');
+});
 test('all relative imports in production modules resolve to existing assets',()=>{
   let checked=0;
   for(const file of files){
