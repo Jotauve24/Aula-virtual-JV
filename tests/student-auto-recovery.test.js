@@ -18,7 +18,7 @@ class Element {
   showModal(){this.open=true;}
   close(){this.open=false;}
 }
-function browser({pending={status:'pending'},own=[],search='',storedCode='',confirmed=true}={}){
+function browser({pending={status:'pending'},own=[],search='',storedCode='',confirmed=true,anonymous=false,hasEnrollment=false}={}){
   const elements=new Map();
   const get=selector=>{if(!elements.has(selector))elements.set(selector,new Element());return elements.get(selector);};
   const memory=new Map(storedCode?[['aula-student-course-code',storedCode]]:[]);
@@ -33,6 +33,7 @@ function browser({pending={status:'pending'},own=[],search='',storedCode='',conf
   };
   const studentRpc=async(name,args)=>{
     rpcCalls.push({name,args});
+    if(name==='student_has_any_enrollment')return hasEnrollment;
     if(name==='student_owned_courses')return own;
     if(name==='student_complete_profile_recovery')return pending;
     if(name==='student_request_profile_recovery')return pending;
@@ -41,7 +42,7 @@ function browser({pending={status:'pending'},own=[],search='',storedCode='',conf
   const context=vm.createContext({
     document:{querySelector:get,createElement:tag=>new Element(tag)},
     studentSignedIn:()=>true,studentRpc,
-    studentAuthUser:async()=>({id:'verified',email:'alumno@ejemplo.com',is_anonymous:false,email_confirmed_at:confirmed?'2026-10-15':null}),
+    studentAuthUser:async()=>({id:'verified',email:'alumno@ejemplo.com',is_anonymous:anonymous,email_confirmed_at:confirmed&&!anonymous?'2026-10-15':null}),
     protectStudentAccount:async()=>{},
     emailStudentLogin:async()=>{},
     localStorage,sessionStorage,location,URL,URLSearchParams,
@@ -120,4 +121,21 @@ test('legacy orphan claim reports no matching profile rather than waiting for do
   assert.match(page.get('#account-dialog-error').textContent,/No encontramos un perfil/);
   assert.doesNotMatch(page.get('#account-dialog-message').textContent,/docente podrá ayudarte/);
   assert.equal(page.navigations.length,0);
+});
+
+test('sesión anónima SIN inscripción puede abrir el formulario para recuperar la anterior',async()=>{
+  const page=browser({anonymous:true,hasEnrollment:false});
+  await page.get('#student-sign-in').listeners.get('click')();
+  assert.equal(page.get('#student-account-dialog').open,true);
+  assert.match(page.get('#account-dialog-title').textContent,/Recuperar mi cuenta/);
+  assert.ok(page.get('#account-dialog-content').children.some(child=>child.tagName==='form'));
+  assert.deepEqual(page.rpcCalls.map(x=>x.name),['student_has_any_enrollment']);
+});
+test('sesión anónima CON inscripción no se sustituye al intentar recuperar otra cuenta',async()=>{
+  const page=browser({anonymous:true,hasEnrollment:true});
+  await page.get('#student-sign-in').listeners.get('click')();
+  assert.equal(page.get('#student-account-dialog').open,true);
+  assert.ok(page.get('#account-dialog-content').children.some(child=>
+    child.textContent==='Proteger mi cuenta'));
+  assert.equal(page.get('#account-dialog-content').children.some(child=>child.tagName==='form'),false);
 });
