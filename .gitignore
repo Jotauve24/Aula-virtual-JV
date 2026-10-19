@@ -5,6 +5,7 @@ node_modules/
 coverage/
 test-results/
 playwright-report/
+supabase/.temp/
 *.log
 .DS_Store
 .local-data/

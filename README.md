@@ -64,30 +64,25 @@ Al abrir una materia, el docente encuentra su código en **Código de la materia
 
 El código de materia no verifica la identidad individual. En la primera inscripción el correo es de contacto, sin verificar. La sesión del navegador permite volver normalmente; antes de cerrar sesión o borrar datos, el alumno puede proteger su cuenta con correo verificado. Si pierde la sesión sin protegerla, la recuperación automática solo funciona cuando el correo verificado coincide con un único perfil anónimo y no conectado; los casos ambiguos requieren revisión. Para cambiar de equipo, el estudiante debe pedir al docente que libere su lugar. La presencia de estudiantes y docentes se consulta periódicamente y muestra sus últimas posiciones, con una caducidad breve para usuarios desconectados.
 
-## Incrustar en E-ducativa
+## Compartir en E-ducativa
 
-En el editor HTML de la plataforma, usa una altura de aula en lugar de una proporción de video 16:9:
+Comparte el enlace del aula y el código de la materia, sin incrustar la página:
 
 ```html
-<iframe
-  src="https://jotauve24.github.io/Aula-virtual-JV/"
-  title="AulaVirtualJv"
-  width="100%"
-  height="820"
-  style="display:block;width:100%;height:85vh;min-height:680px;border:1px solid #d5dfd3;border-radius:12px;"
-  allow="fullscreen"
-  allowfullscreen>
-</iframe>
-<p><a href="https://jotauve24.github.io/Aula-virtual-JV/" target="_blank" rel="noopener">Abrir el aula en otra pestaña</a></p>
+<p><a href="https://jotauve24.github.io/Aula-virtual-JV/" target="_blank" rel="noopener">Entrar a AulaVirtualJv</a></p>
+<p>Código de la materia: [código compartido por el docente]</p>
 ```
 
-El aula adapta su distribución al ancho disponible. **Ampliar aula** permite trabajar a pantalla completa cuando la plataforma lo admite; el enlace abre la misma aula fuera del iframe si hace falta. Para cambiar de navegador, utiliza «Recuperar tu cuenta» con un correo verificado.
+El estudiante nuevo sigue el registro paso a paso. Si ya tiene perfil, vuelve
+normalmente desde su navegador habitual o utiliza **Recupera tu cuenta** al
+cambiar de navegador. El aula no crea una segunda inscripción con el mismo
+correo en la misma materia. El mismo correo puede utilizarse en materias diferentes.
 
 ## Configuración y desarrollo
 
 Consulta [la guía de Supabase](supabase/README.md) para preparar el proyecto y autorizar la cuenta docente. Nunca incluyas claves secretas, códigos privados de materia ni datos personales en el repositorio público.
 
-El servicio `server/` con Node.js y SQLite se conserva como prototipo local independiente. No comparte estudiantes, equipos ni mensajes con el sitio publicado. Para ejecutarlo en desarrollo se requiere Node.js 24, `npm ci`, `ADMIN_USERNAME` y `ADMIN_PASSWORD` en el entorno, y `npm run start:admin`.
+El proyecto publicado utiliza HTML, CSS y JavaScript con Supabase. El prototipo local Node/SQLite fue retirado en la versión 0.5.0 porque no formaba parte del aula publicada. Para las comprobaciones se requiere Node.js 24; el proyecto no necesita dependencias de npm.
 
 ```sh
 npm ci
@@ -99,8 +94,13 @@ Un flujo de GitHub Actions valida automáticamente la sintaxis y ejecuta las pru
 
 Para comprobar la presencia en vivo, entra como estudiante en otro navegador, mantén el aula visible y abre **Ver estudiantes conectados** en el panel docente. Al dejar de transmitir señales, el alumno desaparece de la lista después del margen de 15 segundos. Una pestaña en segundo plano puede dejar de enviar señales; por eso el indicador significa **presencia reciente en el aula**, no necesariamente actividad en el chat o atención frente a la pantalla.
 
-Las pruebas de modelo y adjuntos se pueden ejecutar sin dependencias: `node tests/model.test.js` y `node tests/attachments.test.js`. Cubren el número de mesas, rutas sin atravesar paredes, objetivos bloqueados, formatos y límites de archivos. `tests/database.integration.sql` verifica grupos, permisos, privacidad de adjuntos e idempotencia dentro de una transacción que termina en `ROLLBACK`; requiere un entorno de Supabase de prueba con las migraciones aplicadas. No sube binarios a Storage. `npm test` también incluye el prototipo Node/SQLite y requiere sus dependencias.
+Las pruebas de modelo y adjuntos se pueden ejecutar sin dependencias: `node tests/model.test.js` y `node tests/attachments.test.js`. Cubren el número de mesas, rutas sin atravesar paredes, objetivos bloqueados, formatos y límites de archivos. `tests/database.integration.sql` verifica grupos, permisos, privacidad de adjuntos e idempotencia dentro de una transacción que termina en `ROLLBACK`; requiere un entorno de Supabase de prueba con las migraciones aplicadas. No sube binarios a Storage. `npm test` ejecuta las pruebas del código publicado sin instalar bibliotecas externas.
 
 Para revisar la interfaz publicada, comprueba ingreso, elección de equipo, subida y descarga de un archivo, y operaciones docentes con datos ficticios.
 
 
+
+La versión de los recursos JavaScript y CSS coincide con `package.json`. Al publicar
+una nueva versión, actualiza todas sus referencias para evitar mezclar módulos
+antiguos y nuevos. `npm run check` revisa todos los módulos y las pruebas comprueban
+las referencias, los recursos alcanzables y la coherencia de las versiones.

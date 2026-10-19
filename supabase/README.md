@@ -90,7 +90,7 @@ continúa entrando de la misma manera, sin recibir correos nuevos.
    vía independiente. Si el perfil antiguo sigue conectado, primero debe
    cerrarse esa sesión y esperarse a que deje de registrarse presencia.
 
-**Precauciones:** varios estudiantes pueden compartir un correo de contacto.
+**Inscripciones y correos:** las nuevas inscripciones impiden repetir el correo dentro de una misma materia. Los duplicados históricos se conservan y requieren identificar el perfil correcto antes de recuperar el acceso.
 La asignación automática requiere verificación del correo por Supabase, una única coincidencia en esa materia, un propietario anterior anónimo y ausencia de presencia reciente.
 El código de materia tampoco es una contraseña individual. No anuncies
 la función hasta haber probado el envío y la redirección con cuentas
@@ -112,10 +112,10 @@ de prueba y haber activado Manual Linking.
   Están disponibles la edición de temas y cupos y la configuración de 1 a 40
   mesas. Al reducir, se archivan grupos vacíos sin borrar su historial. No se
   reduce la capacidad de un grupo por debajo de sus integrantes actuales.
-  Faltan la exportación avanzada del panel Supabase, la presencia y el
-  movimiento compartido.
-  El servidor Node/SQLite anterior permanece en `server/` como prototipo local,
-  pero **no** comparte datos con Supabase.
+  El panel exporta estudiantes a Excel, muestra presencia reciente y permite
+  asignar o trasladar estudiantes entre grupos con comprobación de cupos.
+  El aula muestra posiciones compartidas y ZombieAdmin conserva una experiencia
+  de demostración independiente, con chat ficticio.
 
 ## Adjuntos privados del chat
 
@@ -146,3 +146,11 @@ exportaciones ni capturas con datos reales. `docente.html` es una página públi
 con funciones protegidas por la base de datos; ocultar su URL no es seguridad.
 
 
+
+## API histórica retirada
+
+Las funciones `request_course`, `teacher_approve_claim` y `save_my_profile`
+pertenecían al ingreso anterior con perfiles precargados. La versión 0.5.0
+retira su permiso de ejecución para los roles públicos. Los datos y el historial
+de migraciones se conservan; el ingreso actual utiliza `enroll_student`,
+`save_student_avatar` y la recuperación con correo verificado.

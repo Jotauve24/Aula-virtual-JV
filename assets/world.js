@@ -1,7 +1,7 @@
-import { SKINS, SHIRTS } from './model.js?v=20261013g';
-import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=20261014m';
-import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=20261016c';
-import { canWalkSegment } from './world-layout.js?v=20261014m';
+import { SKINS, SHIRTS } from './model.js?v=0.5.0';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.5.0';
+import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.5.0';
+import { canWalkSegment } from './world-layout.js?v=0.5.0';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -492,7 +492,6 @@ export function drawWorld(canvas, options = {}) {
   if(options.decorative){avatar(ctx,407,276,{skin:1,shirt:0,hair:'curly'},Math.sin(t/180)*1.2);nameTag(ctx,407,286,'Tú');nameTag(ctx,320,307+shift,'¡Hola!');}
   if(options.player){avatar(ctx,options.player.x,options.player.y,options.player,options.walking?Math.sin(t/85)*2:0);nameTag(ctx,options.player.x,options.player.y+8,'Tú', '#28594c');}
 }
-export { isWalkable, findPath } from './world-layout.js?v=20261014m';
 
 function roomArtwork(ctx, x, y, theme) {
   const dark = theme.accent, light = '#f7f5e9';

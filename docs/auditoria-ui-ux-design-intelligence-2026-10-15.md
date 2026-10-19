@@ -1,3 +1,5 @@
+> Registro histórico del 15 de octubre. Para el estado vigente, consulta [el alcance actual](alcance.md).
+
 # Auditoría UI/UX – AulaVirtualJv + Design Intelligence
 
 **Fecha de revisión:** 15 de octubre de 2026  

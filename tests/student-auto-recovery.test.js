@@ -18,10 +18,11 @@ class Element {
   showModal(){this.open=true;}
   close(){this.open=false;}
 }
-function browser({pending={status:'pending'},own=[],search='',storedCode='',confirmed=true,anonymous=false,hasEnrollment=false}={}){
+function browser({pending={status:'pending'},own=[],search='',storedCode='',recoveryCode='',confirmed=true,anonymous=false,hasEnrollment=false,authFailure='',expireSession=false}={}){
   const elements=new Map();
   const get=selector=>{if(!elements.has(selector))elements.set(selector,new Element());return elements.get(selector);};
   const memory=new Map(storedCode?[['aula-student-course-code',storedCode]]:[]);
+  if(recoveryCode)memory.set('aula-student-recovery-code',recoveryCode);
   const localStorage={getItem:key=>memory.get(key)||null,removeItem:key=>memory.delete(key),setItem:(key,value)=>memory.set(key,String(value))};
   const sessionStorage={getItem:()=>null};
   const events=[],rpcCalls=[],navigations=[];
@@ -39,10 +40,14 @@ function browser({pending={status:'pending'},own=[],search='',storedCode='',conf
     if(name==='student_request_profile_recovery')return pending;
     throw Error('Unexpected RPC: '+name);
   };
+  let signedIn=true;
   const context=vm.createContext({
     document:{querySelector:get,createElement:tag=>new Element(tag)},
-    studentSignedIn:()=>true,studentRpc,
-    studentAuthUser:async()=>({id:'verified',email:'alumno@ejemplo.com',is_anonymous:anonymous,email_confirmed_at:confirmed&&!anonymous?'2026-10-15':null}),
+    studentSignedIn:()=>signedIn,studentRpc,
+    studentAuthUser:async()=>{
+      if(authFailure){if(expireSession)signedIn=false;throw Error(authFailure);}
+      return {id:'verified',email:'alumno@ejemplo.com',is_anonymous:anonymous,email_confirmed_at:confirmed&&!anonymous?'2026-10-15':null};
+    },
     protectStudentAccount:async()=>{},
     emailStudentLogin:async()=>{},
     localStorage,sessionStorage,location,URL,URLSearchParams,
@@ -129,7 +134,7 @@ test('sesión anónima SIN inscripción puede abrir el formulario para recuperar
   assert.equal(page.get('#student-account-dialog').open,true);
   assert.match(page.get('#account-dialog-title').textContent,/Recuperar mi cuenta/);
   assert.ok(page.get('#account-dialog-content').children.some(child=>child.tagName==='form'));
-  assert.deepEqual(page.rpcCalls.map(x=>x.name),['student_has_any_enrollment']);
+  assert.deepEqual(page.rpcCalls.map(x=>x.name),['student_owned_courses','student_has_any_enrollment']);
 });
 test('sesión anónima CON inscripción no se sustituye al intentar recuperar otra cuenta',async()=>{
   const page=browser({anonymous:true,hasEnrollment:true});
@@ -138,4 +143,56 @@ test('sesión anónima CON inscripción no se sustituye al intentar recuperar ot
   assert.ok(page.get('#account-dialog-content').children.some(child=>
     child.textContent==='Proteger mi cuenta'));
   assert.equal(page.get('#account-dialog-content').children.some(child=>child.tagName==='form'),false);
+});
+test('a protected account already signed in can choose its own classrooms',async()=>{
+  const page=browser({own:[{course_id:ownedCourse,course_name:'Mi materia'}],hasEnrollment:true,search:'?login=1'});
+  await page.settle();
+  assert.equal(page.get('#account-dialog-title').textContent,'Tu espacio está guardado');
+  const labels=page.get('#account-dialog-content').children.map(node=>node.textContent);
+  assert.ok(labels.includes('Mi materia →'));
+  assert.ok(labels.includes('Recuperar otra materia'));
+  assert.equal(page.rpcCalls.some(call=>call.name==='student_has_any_enrollment'),false);
+});
+test('an anonymous student can reopen an owned classroom without replacing their session',async()=>{
+  const page=browser({anonymous:true,own:[{course_id:ownedCourse,course_name:'Mi materia'}],hasEnrollment:true});
+  await page.get('#student-sign-in').listeners.get('click')();
+  const labels=page.get('#account-dialog-content').children.map(node=>node.textContent);
+  assert.ok(labels.includes('Mi materia →'));
+  assert.ok(labels.includes('Proteger mi cuenta'));
+  assert.equal(page.navigations.length,0);
+});
+test('recovery of the selected subject takes precedence over another already-owned subject',async()=>{
+  const requested='22222222-2222-4222-8222-222222222222';
+  const page=browser({search:'?student_auth=login',recoveryCode:'MAT-AAAAA-BBBBB-CCCCC',
+    own:[{course_id:ownedCourse,course_name:'Otra materia'}],pending:{status:'recovered',course_id:requested}});
+  await page.settle();
+  assert.equal(page.navigations.length,1);
+  assert.match(page.navigations[0],new RegExp('resume_id='+requested));
+  assert.ok(page.rpcCalls.some(call=>call.name==='student_request_profile_recovery'));
+});
+test('a failed selected-subject match never silently opens a different classroom',async()=>{
+  const page=browser({search:'?student_auth=login',recoveryCode:'MAT-AAAAA-BBBBB-CCCCC',
+    own:[{course_id:ownedCourse,course_name:'Otra materia'}],pending:{status:'not_found'}});
+  await page.settle();
+  assert.equal(page.navigations.length,0);
+  assert.equal(page.get('#account-dialog-title').textContent,'Recuperar mi perfil');
+});
+test('an already verified student can recover another subject without protecting their account again',async()=>{
+  const page=browser({recoveryCode:'MAT-AAAAA-BBBBB-CCCCC',hasEnrollment:true});
+  await page.get('#student-sign-in').listeners.get('click')();
+  assert.equal(page.get('#account-dialog-title').textContent,'Recuperar mi perfil');
+  const form=page.get('#account-dialog-content').children.find(node=>node.tagName==='form');
+  assert.equal(form.children.find(node=>node.tagName==='input').value,'MAT-AAAAA-BBBBB-CCCCC');
+});
+test('a revoked cached credential no longer blocks requesting a verified login link',async()=>{
+  const page=browser({authFailure:'Tu sesión venció',expireSession:true});
+  await page.get('#student-sign-in').listeners.get('click')();
+  assert.ok(page.get('#account-dialog-content').children.some(node=>node.tagName==='form'));
+  assert.equal(page.get('#account-dialog-error').hidden,true);
+});
+test('a temporary account check failure preserves the session instead of offering to replace it',async()=>{
+  const page=browser({authFailure:'Conexión temporalmente no disponible'});
+  await page.get('#student-sign-in').listeners.get('click')();
+  assert.equal(page.get('#account-dialog-content').children.some(node=>node.tagName==='form'),false);
+  assert.match(page.get('#account-dialog-error').textContent,/no perder tu perfil/);
 });
