@@ -126,7 +126,12 @@ function showDuplicateEmail() {
 }
 registrationEmail.addEventListener('input',hideDuplicateEmail);
 $('#email-duplicate-recover').addEventListener('click',()=>{
-  // Use the existing recovery workflow; never copy another student's data.
+  // Preserve the intended subject across an email magic-link callback even
+  // when the link opens a different tab on the same device.
+  const code=normalizeCode(registrationForm.elements.namedItem('code').value);
+  if (/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(code))
+    localStorage.setItem('aula-student-recovery-code',code);
+  // Use the existing verified-email recovery, never copy student data.
   $('#student-sign-in').click();
 });
 function renderQuestion(focus = false) {
