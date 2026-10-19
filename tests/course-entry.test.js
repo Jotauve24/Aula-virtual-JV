@@ -59,7 +59,7 @@ class Element {
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
-  motionReduced = true, realLayout = false } = {}) {
+  motionReduced = true, realLayout = false, emailHint = false } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -120,6 +120,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     signInStudentAnonymously: async () => { localStorage.setItem(SESSION, 'existing-private-session'); },
     studentRpc: async (name, body) => {
       calls.push({ name, body: JSON.parse(JSON.stringify(body)) });
+      if (name === 'student_registration_email_hint') return emailHint;
       if (name === 'enroll_student') {
         if (enroll) await enroll(body);
         return { course_id: 'course-fixture', course_name: 'Materia de prueba' };
@@ -591,4 +592,51 @@ test('new students see first-time steps and returning students have a separate r
   assert.match(html, /¿Ya habías ingresado antes a esta materia\?/);
   assert.match(html, /id="student-sign-in"[^>]*>Recuperar mi perfil anterior<\/button>/);
   assert.match(html, /id="next-question"[^>]*>Continuar →<\/button>/);
+});
+
+test('si el correo ya está inscrito con los mismos nombres aparece recuperar antes del teléfono',async()=>{
+  const page=await boot({submitted:NEW,signedIn:false,emailHint:true});
+  page.fields.firstName.value='Ana';page.fields.lastName.value='Pérez';
+  page.fields.email.value='ana@ejemplo.com';page.fields.code.value=NEW;
+  await page.get('#next-question').click(); // nombre
+  await page.get('#next-question').click(); // apellido
+  assert.equal(page.state("questions[questionIndex]"),'email');
+  await page.get('#next-question').click();
+  assert.equal(page.state("questions[questionIndex]"),'email','el flujo NO continúa al teléfono');
+  assert.equal(page.get('#email-duplicate-notice').hidden,false);
+  assert.equal(page.get('#next-question').disabled,true);
+  assert.ok(page.calls.some(x=>x.name==='student_registration_email_hint'));
+  assert.equal(page.calls.some(x=>x.name==='enroll_student'),false);
+  await page.get('#email-duplicate-recover').click();
+  assert.equal(page.localStorage.getItem('aula-student-recovery-code'),NEW);
+  assert.equal(page.signOutCount(),0,'nunca cerrar la sesión sin permiso');
+  page.fields.email.value='otro@ejemplo.com';
+  page.fields.email.dispatch('input');
+  assert.equal(page.get('#email-duplicate-notice').hidden,true);
+  assert.equal(page.get('#next-question').disabled,false);
+});
+test('un correo nuevo no muestra el aviso y permite completar el registro',async()=>{
+  const page=await boot({submitted:NEW,signedIn:false,emailHint:false});
+  page.fields.firstName.value='Nuevo';page.fields.lastName.value='Alumno';
+  page.fields.email.value='nuevo@ejemplo.com';page.fields.code.value=NEW;
+  await page.get('#next-question').click();
+  await page.get('#next-question').click();
+  await page.get('#next-question').click();
+  assert.equal(page.state("questions[questionIndex]"),'phone');
+  assert.equal(page.get('#email-duplicate-notice').hidden,true);
+  assert.equal(page.get('#next-question').disabled,false);
+});
+test('aunque el aviso preliminar no encuentre coincidencia, Supabase bloquea el correo duplicado al final',async()=>{
+  const page=await boot({submitted:NEW,signedIn:false,emailHint:false,
+    enroll:()=>{throw new Error('Este correo ya tiene una inscripción en esta materia. Recupera tu cuenta anterior.');}});
+  page.fields.firstName.value='Nombre';page.fields.lastName.value='Distinto';
+  page.fields.email.value='repetido@ejemplo.com';page.fields.phone.value='61234567';
+  page.fields.code.value=NEW;
+  await page.get('#registration-form').dispatch('submit');
+  await page.settle();
+  assert.equal(page.get('#email-duplicate-notice').hidden,false);
+  assert.equal(page.state("questions[questionIndex]"),'email');
+  assert.equal(page.get('#next-question').disabled,true);
+  assert.equal(page.get('#room').dataset.stage,'registration');
+  assert.equal(page.signOutCount(),0);
 });
