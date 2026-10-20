@@ -34,7 +34,7 @@ test('conditional duplicate prompt uses common student registration for all pres
   assert.match(html,/id="email-duplicate-notice"[^>]+hidden/);
   assert.match(html,/id="email-duplicate-recover"/);
   assert.match(js,/student_registration_email_hint/);
-  assert.match(js,/showDuplicateEmail/);
+  assert.match(js,/showDuplicateContact/);
   assert.match(js,/aula-student-recovery-code/);
   assert.match(recovery,/student_has_any_enrollment/);
   assert.match(html,/live\.js\?v=[\w.-]+/);

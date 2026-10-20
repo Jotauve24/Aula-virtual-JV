@@ -1,7 +1,7 @@
-import { SKINS, SHIRTS } from './model.js?v=0.5.0';
-import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.5.0';
-import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.5.0';
-import { canWalkSegment } from './world-layout.js?v=0.5.0';
+import { SKINS, SHIRTS } from './model.js?v=0.5.1';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.5.1';
+import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.5.1';
+import { canWalkSegment } from './world-layout.js?v=0.5.1';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
