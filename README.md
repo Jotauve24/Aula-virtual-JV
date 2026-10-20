@@ -76,7 +76,7 @@ Comparte el enlace del aula y el código de la materia, sin incrustar la página
 El estudiante nuevo sigue el registro paso a paso. Si ya tiene perfil, vuelve
 normalmente desde su navegador habitual o utiliza **Recupera tu cuenta** al
 cambiar de navegador. El aula no crea una segunda inscripción con el mismo
-correo en la misma materia. El mismo correo puede utilizarse en materias diferentes.
+correo o teléfono en la misma materia. El mismo correo puede utilizarse en materias diferentes.
 
 ## Configuración y desarrollo
 
@@ -104,3 +104,8 @@ La versión de los recursos JavaScript y CSS coincide con `package.json`. Al pub
 una nueva versión, actualiza todas sus referencias para evitar mezclar módulos
 antiguos y nuevos. `npm run check` revisa todos los módulos y las pruebas comprueban
 las referencias, los recursos alcanzables y la coherencia de las versiones.
+
+Desde la versión 0.5.1, cambiar el correo no permite crear otro perfil si el
+teléfono ya está inscrito en esa materia. La comparación reconoce espacios,
+guiones y los prefijos de Panamá +507 y 00507. Recuperar el perfil exige verificar
+el correo original; una coincidencia de teléfono no concede acceso por sí sola.

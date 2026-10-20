@@ -90,7 +90,7 @@ continúa entrando de la misma manera, sin recibir correos nuevos.
    vía independiente. Si el perfil antiguo sigue conectado, primero debe
    cerrarse esa sesión y esperarse a que deje de registrarse presencia.
 
-**Inscripciones y correos:** las nuevas inscripciones impiden repetir el correo dentro de una misma materia. Los duplicados históricos se conservan y requieren identificar el perfil correcto antes de recuperar el acceso.
+**Inscripciones y correos:** las nuevas inscripciones impiden repetir el correo o el teléfono dentro de una misma materia. Los duplicados históricos se conservan y requieren identificar el perfil correcto antes de recuperar el acceso.
 La asignación automática requiere verificación del correo por Supabase, una única coincidencia en esa materia, un propietario anterior anónimo y ausencia de presencia reciente.
 El código de materia tampoco es una contraseña individual. No anuncies
 la función hasta haber probado el envío y la redirección con cuentas
@@ -154,3 +154,11 @@ pertenecían al ingreso anterior con perfiles precargados. La versión 0.5.0
 retira su permiso de ejecución para los roles públicos. Los datos y el historial
 de migraciones se conservan; el ingreso actual utiliza `enroll_student`,
 `save_student_avatar` y la recuperación con correo verificado.
+
+La función `enroll_student` comprueba también el teléfono mediante
+`private.registration_phone_key`, bajo el mismo bloqueo de materia que protege
+los cupos y los correos. El aviso de teléfono es preliminar y requiere coincidencia
+de nombres; el guardado bloquea el duplicado aunque cambien los nombres o falle
+el aviso. `tests/student-contact-guard.integration.sql` prueba los formatos,
+la conservación del perfil y el uso de los mismos contactos en otra materia
+con datos temporales y `ROLLBACK`.

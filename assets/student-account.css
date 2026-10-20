@@ -44,8 +44,7 @@
 .student-recovery-actions button { flex:1 1 175px;min-height:40px; }
 .student-recovery-request .field-error { font-size:12px;color:#8b4738; }
 
-/* Show duplicate-account recovery only after a verified same-course name+email
-   match (or a server-rejected duplicate on final registration). */
+/* Shared recovery notice for a same-course repeated email or phone. */
 #room[data-stage="registration"] .email-duplicate-notice{margin:14px 0 4px;border:1px solid #b9d9c9;border-left:4px solid #397e60;border-radius:10px;background:#f1faf3;padding:14px 15px;color:#265746;line-height:1.5}
 #room[data-stage="registration"] .email-duplicate-notice strong{font-size:14px;font-weight:750;display:block}
 #room[data-stage="registration"] .email-duplicate-notice p{margin:6px 0 8px;font-size:12px;line-height:1.6;color:#426857}

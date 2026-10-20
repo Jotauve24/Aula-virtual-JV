@@ -1,11 +1,11 @@
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.5.0';
-import './embed.js?v=0.5.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.5.0';
-import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.5.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.5.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.5.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.5.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.5.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.5.1';
+import './embed.js?v=0.5.1';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.5.1';
+import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.5.1';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.5.1';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.5.1';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.5.1';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.5.1';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -109,22 +109,32 @@ let questions = registrationForm.elements.namedItem('code').value.trim()
   ? ['firstName', 'lastName', 'email', 'phone']
   : ['code', 'firstName', 'lastName', 'email', 'phone'];
 let questionIndex = 0;
+let registrationPending = false;
 // This notice is conditional. No old student's profile is exposed or attached
 // merely from a guessed email; recovery still requires verified ownership.
 const duplicateNotice = $('#email-duplicate-notice');
 const registrationEmail = registrationForm.elements.namedItem('email');
-function hideDuplicateEmail() {
+const registrationPhone = registrationForm.elements.namedItem('phone');
+function hideDuplicateContact() {
   duplicateNotice.hidden = true;
-  $('#next-question').disabled = false;
+  duplicateNotice.dataset.field = '';
+  $('#next-question').disabled = registrationPending;
+  $('#finish-registration').disabled = registrationPending;
 }
-function showDuplicateEmail() {
-  questionIndex = questions.indexOf('email');
+function showDuplicateContact(field = 'email') {
+  questionIndex = questions.indexOf(field);
   if(questionIndex < 0) return;
   renderQuestion(true);
+  duplicateNotice.dataset.field = field;
+  $('#registration-duplicate-title').textContent = field === 'phone'
+    ? 'Este teléfono ya tiene una inscripción en esta materia.'
+    : 'Este correo ya tiene una inscripción en esta materia.';
   duplicateNotice.hidden = false;
-  $('#next-question').disabled = true;
+  $('#next-question').disabled = field === 'email';
+  $('#finish-registration').disabled = field === 'phone';
 }
-registrationEmail.addEventListener('input',hideDuplicateEmail);
+registrationEmail.addEventListener('input',hideDuplicateContact);
+registrationPhone.addEventListener('input',hideDuplicateContact);
 $('#email-duplicate-recover').addEventListener('click',()=>{
   // Preserve the intended subject across an email magic-link callback even
   // when the link opens a different tab on the same device.
@@ -145,7 +155,7 @@ function renderQuestion(focus = false) {
   $('#finish-registration').hidden = questionIndex !== questions.length - 1;
   $('#dialog-privacy').hidden = questionIndex !== questions.length - 1;
   $('#change-code').hidden = questions.includes('code');
-  if(key !== 'email') hideDuplicateEmail();
+  if(key !== duplicateNotice.dataset.field) hideDuplicateContact();
   if (focus) registrationForm.elements.namedItem(key).focus();
 }
 $('#next-question').addEventListener('click', async () => {
@@ -173,7 +183,7 @@ $('#next-question').addEventListener('click', async () => {
       if (email!==field.value.trim().toLowerCase() || questions[questionIndex]!=='email')
         return;
       if (exists) {
-        showDuplicateEmail();
+        showDuplicateContact('email');
         return;
       }
     } catch {
@@ -262,6 +272,7 @@ async function openStudentCourse(result, code = null) {
   else show('avatar');
 }
 $('#registration-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
+  if (registrationPending) return;
   const f = event.target.elements;
   const code = normalizeCode(f.namedItem('code').value);
   if (!/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(code))
@@ -272,13 +283,32 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
   const details = { p_email: f.namedItem('email').value.trim().toLowerCase(),
     p_first_name: f.namedItem('firstName').value.trim(), p_last_name: f.namedItem('lastName').value.trim(), p_phone: phone };
   const submit = $('#finish-registration');
+  registrationPending = true;
   submit.disabled = true; submit.textContent = 'Guardando tu perfil…';
   try {
     await signInStudentAnonymously();
+    // Only a convenience hint; enroll_student enforces the phone check even
+    // if this request fails or a second browser submits at the same time.
+    let repeatedPhone = false;
+    try {
+      repeatedPhone = await studentRpc('student_registration_phone_hint', {
+        p_code:code,p_phone:phone,p_first_name:details.p_first_name,p_last_name:details.p_last_name
+      });
+    } catch { /* The database validates the final registration independently. */ }
+    if (phone !== f.namedItem('phone').value.trim() ||
+        details.p_email !== f.namedItem('email').value.trim().toLowerCase() ||
+        details.p_first_name !== f.namedItem('firstName').value.trim() ||
+        details.p_last_name !== f.namedItem('lastName').value.trim() ||
+        code !== normalizeCode(f.namedItem('code').value)) return;
+    if (repeatedPhone) { showDuplicateContact('phone'); return; }
     try { await enterCourse(code, details); }
     catch (error) {
       if (error.message?.includes('Este correo ya tiene una inscripción')) {
-        showDuplicateEmail();
+        showDuplicateContact('email');
+        return;
+      }
+      if (error.message?.includes('Este teléfono ya tiene una inscripción')) {
+        showDuplicateContact('phone');
         return; // Nothing was created; keep their original name and email.
       }
       // A previously deleted anonymous account can leave a stale browser session.
@@ -286,7 +316,10 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
       studentSignOut(); await signInStudentAnonymously(); await enterCourse(code, details);
     }
   } finally {
-    submit.disabled = false; submit.textContent = 'Crear mi personaje →';
+    registrationPending = false;
+    $('#next-question').disabled = !duplicateNotice.hidden && duplicateNotice.dataset.field === 'email';
+    submit.disabled = !duplicateNotice.hidden && duplicateNotice.dataset.field === 'phone';
+    submit.textContent = 'Crear mi personaje →';
   }
 }); });
 

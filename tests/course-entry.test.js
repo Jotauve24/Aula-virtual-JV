@@ -59,7 +59,7 @@ class Element {
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
-  motionReduced = true, realLayout = false, emailHint = false, search = '' } = {}) {
+  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, search = '' } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -123,6 +123,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     studentRpc: async (name, body) => {
       calls.push({ name, body: JSON.parse(JSON.stringify(body)) });
       if (name === 'student_registration_email_hint') return emailHint;
+      if (name === 'student_registration_phone_hint') { if(phoneHintError) throw Error('Servicio no disponible'); return typeof phoneHint==='function'?phoneHint(body):phoneHint; }
       if (name === 'enroll_student') {
         if (enroll) await enroll(body);
         return { course_id: 'course-fixture', course_name: 'Materia de prueba' };
@@ -655,4 +656,78 @@ test('aunque el aviso preliminar no encuentre coincidencia, Supabase bloquea el 
   assert.equal(page.get('#next-question').disabled,true);
   assert.equal(page.get('#room').dataset.stage,'registration');
   assert.equal(page.signOutCount(),0);
+});
+test('a repeated phone with a new email stops before enrollment and offers recovery',async()=>{
+  const page=await boot({submitted:NEW,signedIn:false,phoneHint:true});
+  page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';
+  page.fields.email.value='otro@ejemplo.invalid';page.fields.phone.value='+507 6000-0001';
+  await page.get('#registration-form').dispatch('submit');await page.settle();
+  assert.equal(page.state('questions[questionIndex]'),'phone');
+  assert.equal(page.get('#email-duplicate-notice').hidden,false);
+  assert.match(page.get('#registration-duplicate-title').textContent,/teléfono/);
+  assert.equal(page.get('#finish-registration').disabled,true);
+  assert.equal(page.calls.some(call=>call.name==='enroll_student'),false);
+  await page.get('#email-duplicate-recover').click();
+  assert.equal(page.localStorage.getItem('aula-student-recovery-code'),NEW);
+  assert.equal(page.signOutCount(),0);
+});
+test('the server phone rejection blocks a changed name even when the preliminary hint misses',async()=>{
+  const page=await boot({submitted:NEW,signedIn:false,phoneHint:false,enroll:()=>{
+    throw Error('Este teléfono ya tiene una inscripción en esta materia. Recupera tu cuenta con el correo de tu registro anterior.');
+  }});
+  page.fields.firstName.value='Otro';page.fields.lastName.value='Nombre';
+  page.fields.email.value='nuevo@ejemplo.invalid';page.fields.phone.value='6000-0001';
+  await page.get('#registration-form').dispatch('submit');await page.settle();
+  assert.equal(page.state('questions[questionIndex]'),'phone');
+  assert.equal(page.get('#finish-registration').disabled,true);
+  assert.equal(page.get('#room').dataset.stage,'registration');
+});
+test('a failed preliminary phone check still reaches the authoritative server guard',async()=>{
+  const page=await boot({submitted:NEW,signedIn:false,phoneHintError:true,enroll:()=>{
+    throw Error('Este teléfono ya tiene una inscripción en esta materia. Recupera tu cuenta con el correo de tu registro anterior.');
+  }});
+  page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';
+  page.fields.email.value='nuevo@ejemplo.invalid';page.fields.phone.value='6000-0001';
+  await page.get('#registration-form').dispatch('submit');await page.settle();
+  assert.ok(page.calls.some(call=>call.name==='enroll_student'));
+  assert.equal(page.get('#finish-registration').disabled,true);
+});
+test('correcting a repeated phone clears its warning and permits another attempt',async()=>{
+  const page=await boot({submitted:NEW,signedIn:false,phoneHint:true});
+  page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';
+  page.fields.email.value='nuevo@ejemplo.invalid';page.fields.phone.value='6000-0001';
+  await page.get('#registration-form').dispatch('submit');await page.settle();
+  page.fields.phone.value='6000-0002';page.fields.phone.dispatch('input');
+  assert.equal(page.get('#email-duplicate-notice').hidden,true);
+  assert.equal(page.get('#finish-registration').disabled,false);
+});
+test('the shared contact notice is outside the email-only step so a phone conflict is visible',()=>{
+  const html=readFileSync(new URL('../live.html',import.meta.url),'utf8');
+  const emailStep=html.slice(html.indexOf('data-step="email"'),html.indexOf('data-step="phone"'));
+  assert.doesNotMatch(emailStep,/id="email-duplicate-notice"/);
+  assert.match(html,/id="registration-duplicate-title"/);
+});
+test('editing a phone while its check is pending discards the stale result',async()=>{
+  let release;
+  const page=await boot({submitted:NEW,signedIn:false,phoneHint:()=>new Promise(resolve=>{release=resolve;})});
+  page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';
+  page.fields.email.value='nuevo@ejemplo.invalid';page.fields.phone.value='6000-0001';
+  await page.get('#registration-form').dispatch('submit');await page.settle();
+  page.fields.phone.value='6000-0002';page.fields.phone.dispatch('input');
+  assert.equal(page.get('#finish-registration').disabled,true);
+  release(true);await page.settle();
+  assert.equal(page.calls.some(call=>call.name==='enroll_student'),false);
+  assert.equal(page.get('#email-duplicate-notice').hidden,true);
+  assert.equal(page.get('#finish-registration').disabled,false);
+});
+test('a second submit cannot create another pending registration request',async()=>{
+  let release;
+  const page=await boot({submitted:NEW,signedIn:false,phoneHint:()=>new Promise(resolve=>{release=resolve;})});
+  page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';
+  page.fields.email.value='nuevo@ejemplo.invalid';page.fields.phone.value='6000-0001';
+  await page.get('#registration-form').dispatch('submit');await page.settle();
+  await page.get('#registration-form').dispatch('submit');await page.settle();
+  assert.equal(page.calls.filter(call=>call.name==='student_registration_phone_hint').length,1);
+  release(false);await page.settle();
+  assert.equal(page.calls.filter(call=>call.name==='enroll_student').length,1);
 });

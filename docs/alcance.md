@@ -1,6 +1,6 @@
 # AulaVirtualJv · Alcance vigente
 
-Estado: versión 0.5.0, 19 de octubre de 2026.
+Estado: versión 0.5.1, 20 de octubre de 2026.
 
 El aula se publica en GitHub Pages y utiliza Supabase para sesiones, materias,
 perfiles, equipos, presencia y chat. Todas las materias comparten las mismas
@@ -11,7 +11,7 @@ páginas, módulos y funciones; no existen copias independientes por materia.
 | Primer ingreso | Código de materia, nombres, apellidos, correo y teléfono; avatar y elección de equipo. El correo inicial es de contacto y no se confirma. |
 | Regreso habitual | La sesión guardada permite continuar con el mismo perfil, avatar y equipo. |
 | Otro navegador | Acceso mediante enlace de correo verificado. Se abren las materias propias o se recupera una inscripción anterior con coincidencia única y sin presencia reciente. |
-| Correos repetidos | No se crean dos inscripciones con el mismo correo en una materia. Se puede usar el mismo correo en materias distintas. Los duplicados históricos requieren identificación. |
+| Contactos repetidos | No se crean dos inscripciones con el mismo correo o teléfono en una materia. Se pueden usar los mismos contactos en materias distintas. Los teléfonos se comparan sin espacios ni guiones y reconociendo +507 y 00507. Los duplicados históricos requieren identificación. |
 | Docente | Crear, configurar, deshabilitar, restaurar y eliminar materias; administrar grupos y estudiantes; asignar o mover inscritos y exportar a Excel. |
 | Presencia | Conteos y posiciones recientes. Inscripción, pertenencia a equipo y conexión son estados independientes. |
 | Chat | Conversación y adjuntos privados por equipo; consentimiento para compartir datos de contacto. |
