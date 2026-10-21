@@ -1,11 +1,11 @@
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.5.1';
-import './embed.js?v=0.5.1';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.5.1';
-import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.5.1';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.5.1';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.5.1';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.5.1';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.5.1';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.5.2';
+import './embed.js?v=0.5.2';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.5.2';
+import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.5.2';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.5.2';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.5.2';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.5.2';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.5.2';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
