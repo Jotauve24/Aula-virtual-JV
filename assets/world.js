@@ -1,7 +1,8 @@
-import { SKINS, SHIRTS } from './model.js?v=0.5.1';
-import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.5.1';
-import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.5.1';
-import { canWalkSegment } from './world-layout.js?v=0.5.1';
+import { avatarXFrame, drawAvatarX } from './avatar-x.js?v=0.5.2';
+import { SKINS, SHIRTS } from './model.js?v=0.5.2';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.5.2';
+import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.5.2';
+import { canWalkSegment } from './world-layout.js?v=0.5.2';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -867,6 +868,8 @@ function drawRoomWorld(canvas, options) {
     add(jockey.y,()=>drawChickenJockey(ctx,jockey,'chicken'));
     add(jockey.zombieY+.01,()=>drawChickenJockey(ctx,jockey,'zombie'));
   }
+  const guest=avatarXFrame(layout,options.ambientTime ?? options.time ?? 0,options.reducedMotion);
+  if(guest)add(guest.y,()=>drawAvatarX(ctx,guest));
   const occupied=options.player?[{x:options.player.x,y:options.player.y}]:[];
   for(const peer of options.peers||[]){
     let x=peer.x;
