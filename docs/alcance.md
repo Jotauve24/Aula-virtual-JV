@@ -1,6 +1,6 @@
 # AulaVirtualJv · Alcance vigente
 
-Estado: versión 0.6.1, 23 de octubre de 2026.
+Estado: versión 0.6.2, 23 de octubre de 2026.
 
 El aula se publica en GitHub Pages y utiliza Supabase para sesiones, materias,
 perfiles, equipos, presencia y chat. Todas las materias comparten las mismas
@@ -16,7 +16,7 @@ páginas, módulos y funciones; no existen copias independientes por materia.
 | Contactos repetidos | No se crean dos inscripciones con el mismo correo o teléfono en una materia. Se pueden usar los mismos contactos en materias distintas. Los teléfonos se comparan sin espacios ni guiones y reconociendo +507 y 00507. Los duplicados históricos requieren identificación. |
 | Docente | Crear, configurar, deshabilitar, restaurar y eliminar materias; administrar grupos y estudiantes; asignar o mover inscritos y exportar a Excel. |
 | Presencia | Conteos y posiciones recientes. Inscripción, pertenencia a equipo y conexión son estados independientes. |
-| Chat | Conversación y adjuntos privados por equipo; consentimiento para compartir datos de contacto. |
+| Chat | Conversación y adjuntos privados por equipo. Correo visible para el propio equipo; teléfono voluntario. Envíos simultáneos bloqueados. |
 | ZombieAdmin | Simulación docente con datos y chat ficticios; no ocupa plazas ni modifica conversaciones reales. |
 
 La recuperación automática exige correo verificado, una única coincidencia en
@@ -39,3 +39,8 @@ materia, sin incrustar el aula en un iframe.
 Comprobaciones: `npm run check` y `npm test` con Node.js 24.
 
 El equipo elegido se distingue con la marca «✓ Tu equipo» y un borde destacado en el mapa y la lista. La ventana del tema incluye «Ver mi equipo». Los correos son visibles dentro del propio equipo; únicamente el teléfono depende de la preferencia voluntaria. Otros equipos no reciben esos contactos.
+
+Las operaciones pendientes descartan respuestas de una sesión o materia anterior.
+Cerrar sesión detiene la apertura tardía del aula y las exportaciones docentes;
+un adjunto pendiente no se publica en un contexto distinto. El API de precarga
+de estudiantes queda retirado, junto con los accesos históricos ya deshabilitados.

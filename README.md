@@ -138,3 +138,15 @@ El API antiguo solo permite reabrir inscripciones existentes; no admite registro
 nuevos sin documento. Las pruebas SQL usan datos sintéticos y ROLLBACK.
 
 Desde 0.6.1, el equipo guardado tiene borde destacado y marca «✓ Tu equipo» en el mapa y la lista; «Ver mi equipo» abre la pestaña de compañeros. El correo se muestra a los integrantes del propio equipo. Solo el teléfono depende de la casilla de privacidad. Otros equipos y estudiantes sin asignación no reciben los contactos.
+
+### Mantenimiento 0.6.2
+
+Las respuestas pendientes del registro, avatar, equipos y panel docente respetan
+el cierre de sesión y la materia actual. El chat bloquea envíos simultáneos y
+cancela un adjunto aún no publicado si cambia su contexto. Las exportaciones
+pendientes no descargan datos tras cerrar la sesión docente. Se retira el acceso
+al API antiguo de precarga de estudiantes y se añaden índices de consulta.
+
+La [auditoría del 23 de octubre](docs/auditoria-tecnica-2026-10-23.md) describe
+los hallazgos, las 192 pruebas automatizadas, las siete comprobaciones SQL y
+los límites de la revisión con navegador.

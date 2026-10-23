@@ -1,10 +1,11 @@
-import './embed.js?v=0.6.1';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.6.1';
-import { allCoursesXlsx } from './teacher-export.js?v=0.6.1';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.6.1';
+import './embed.js?v=0.6.2';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.6.2';
+import { allCoursesXlsx } from './teacher-export.js?v=0.6.2';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.6.2';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
-let courseRequestGeneration = 0;
+let courseRequestGeneration = 0, accountGeneration = 0;
+const courseIsCurrent = (id,generation) => id === courseId && generation === courseRequestGeneration && signedIn();
 let dashboardCourses = [], liveTimer = 0, liveGeneration = 0, liveRefreshing = false;
 let liveRosterSnapshot = null, lastLiveFetch = 0;
 function stopDashboardPresence() {
@@ -30,7 +31,9 @@ else if (signedIn()) run(async () => { await loadCourses(); const target = new U
 if (configured) googleAvailable().then(available => { $('#google-login').hidden = !available; }).catch(() => {});
 $('#google-login').addEventListener('click', signInWithGoogle);
 $('#login').addEventListener('submit', event => { event.preventDefault(); run(async () => {
+  const generation = accountGeneration;
   email = event.target.elements.email.value.trim().toLowerCase(); await sendCode(email);
+  if(generation !== accountGeneration)return;
   show('verify'); $('#notice').textContent = 'Revisa el correo docente y abre el enlace de ingreso en este navegador.';
 }); });
 async function loadCourses() {
@@ -99,7 +102,9 @@ async function loadCourses() {
     restore.textContent = 'Restaurar';
     restore.addEventListener('click', () => run(async () => {
       restore.disabled = true;
+      const generation = courseRequestGeneration;
       try { await rpc('teacher_set_course_active', { p_course_id: course.id, p_active: true });
+        if(generation !== courseRequestGeneration || !signedIn())return;
         await loadCourses(); teacherSuccess('Materia restaurada. Su código vuelve a funcionar.'); }
       finally { restore.disabled = false; }
     }));
@@ -242,16 +247,19 @@ if (typeof document.addEventListener === 'function') document.addEventListener('
 });
 $('#new-course').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const submit = event.target.querySelector('button[type="submit"]'); submit.disabled = true;
+  const generation = accountGeneration, navigation = courseRequestGeneration;
   try {
     const code = newCourseCode();
     await rpc('create_course_with_groups', { p_name: event.target.elements.namedItem('name').value.trim(), p_code: code,
       p_count: Number(event.target.elements.namedItem('groups').value), p_capacity: Number(event.target.elements.namedItem('capacity').value) });
+    if(generation !== accountGeneration || navigation !== courseRequestGeneration || !signedIn())return;
     event.target.reset(); await loadCourses();
     $('#new-code').textContent = `Código de la materia: ${code}. Puedes volver a consultarlo al abrir la materia.`;
     $('#new-code').hidden = false;
   } finally { submit.disabled = false; }
 }); });
 async function refreshStudentRecoveryRequests(id) {
+  const generation = courseRequestGeneration;
   const panel = $('#student-recovery-panel'), host = $('#student-recovery-requests');
   if (!overview?.course?.active || overview.course.id !== id) {
     panel.hidden = true; return;
@@ -263,7 +271,7 @@ async function refreshStudentRecoveryRequests(id) {
   host.replaceChildren();
   try {
     const requests = await rpc('teacher_student_recovery_requests', {p_course_id:id});
-    if (courseId !== id || $('#detail').hidden || overview?.course?.id !== id) return;
+    if (!courseIsCurrent(id,generation) || $('#detail').hidden || overview?.course?.id !== id) return;
     $('#student-recovery-count').textContent = requests.length + (requests.length === 1 ? ' pendiente' : ' pendientes');
     if (!requests.length) return;
     host.replaceChildren(...requests.map(request => {
@@ -317,12 +325,14 @@ async function refreshStudentRecoveryRequests(id) {
         const student = chosen();
         if (!student || approve.disabled) return;
         if (!confirm('¿Comprobaste personalmente que '+fullName(student)+' solicitó recuperar su cuenta? Su sesión anónima anterior dejará de funcionar.'))return;
+        const generation = courseRequestGeneration;
         approve.disabled = true; reject.disabled = true; error.hidden = true;
         try {
           await rpc('teacher_decide_student_recovery', {
             p_request_id:request.id,p_student_id:student.id,
             p_expected_name:fullName(student),p_approve:true
           });
+          if(!courseIsCurrent(id,generation))return;
           teacherSuccess('Recuperación aprobada para '+fullName(student)+'. Su equipo y avatar siguen guardados.');
           await openCourse(id);
         }catch(err){
@@ -332,11 +342,13 @@ async function refreshStudentRecoveryRequests(id) {
       });
       reject.addEventListener('click', async () => {
         if (!confirm('¿Rechazar esta solicitud de recuperación?'))return;
+        const generation = courseRequestGeneration;
         reject.disabled = true;approve.disabled = true;error.hidden = true;
         try {
           await rpc('teacher_decide_student_recovery', {
             p_request_id:request.id,p_student_id:null,p_expected_name:'',p_approve:false
           });
+          if(!courseIsCurrent(id,generation))return;
           teacherSuccess('Solicitud rechazada. No se modificó ningún perfil.');
           await refreshStudentRecoveryRequests(id);
         }catch(err){error.textContent=err.message;error.hidden=false;reject.disabled=false;update();}
@@ -348,7 +360,7 @@ async function refreshStudentRecoveryRequests(id) {
     panel.hidden = false;
   } catch(err) {
     // An error reading the inbox must never display an unverified/stale queue.
-    if (courseId !== id) return;
+    if (!courseIsCurrent(id,generation)) return;
     panel.hidden = true;
     host.replaceChildren();
     console.warn('No se pudieron consultar las solicitudes de recuperación del curso.');
@@ -438,7 +450,9 @@ async function openCourse(id) {
         release.addEventListener('click', () => {
           if (!confirm(`¿Liberar a ${student.firstName} ${student.lastName} de ${group.name}? Podrá elegir otro equipo.`)) return;
           run(async () => { release.disabled = true;
-            try { await rpc('teacher_release_student', { p_course_id: courseId, p_student_id: student.id }); await openCourse(courseId); }
+            try { const generation = courseRequestGeneration;
+              await rpc('teacher_release_student', { p_course_id: id, p_student_id: student.id });
+              if(courseIsCurrent(id,generation))await openCourse(id); }
             finally { release.disabled = false; }
           });
         });
@@ -460,23 +474,27 @@ async function openCourse(id) {
   $('#registration').setAttribute('aria-label', (overview.course.registrationOpen ? 'Inscripciones abiertas. Cerrar' : 'Inscripciones cerradas. Abrir') + ' para ' + overview.course.name);
 }
 $('#export-all').addEventListener('click', () => run(async () => {
-  const button = $('#export-all');
+  const button = $('#export-all'), generation = accountGeneration;
+  const currentExport = () => generation === accountGeneration && signedIn();
   button.disabled = true; button.textContent = 'Preparando todas las materias…';
   try {
     // Refresh both lists so newly created, disabled or restored courses are included.
     const [active, disabled] = await Promise.all([rpc('my_courses'), rpc('teacher_disabled_courses')]);
+    if(!currentExport())return;
     const courses = [...new Map([...active, ...disabled].map(course => [course.id, course])).values()];
     if (!courses.length) { teacherSuccess('Todavía no hay materias para descargar.'); return; }
     const overviews = [];
     for (let start = 0; start < courses.length; start += 4) {
       const batch = await Promise.all(courses.slice(start, start + 4).map(course =>
         rpc('teacher_overview', { p_course_id: course.id })));
+      if(!currentExport())return;
       if (batch.some(item => !item?.course || !Array.isArray(item.students) || !Array.isArray(item.topics)))
         throw new Error('No se pudo preparar el listado completo. Inténtalo de nuevo.');
       overviews.push(...batch);
     }
     const total = overviews.reduce((count, item) => count + item.students.length, 0);
     if (!total) { teacherSuccess('Tus materias todavía no tienen estudiantes registrados.'); return; }
+    if(!currentExport())return;
     const blob = new Blob([allCoursesXlsx(overviews)], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
@@ -490,24 +508,28 @@ $('#export-all').addEventListener('click', () => run(async () => {
 }));
 $('#new-topic').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const submit = event.target.querySelector('button[type="submit"]'); submit.disabled = true;
+  const id = courseId, generation = courseRequestGeneration;
   try {
     const f = event.target.elements;
-    await rpc('teacher_add_topic', { p_course_id: courseId, p_name: f.namedItem('name').value.trim(),
+    await rpc('teacher_add_topic', { p_course_id: id, p_name: f.namedItem('name').value.trim(),
       p_instructions: f.namedItem('instructions').value.trim(), p_capacity: Number(f.namedItem('capacity').value) });
-    event.target.reset(); await openCourse(courseId);
+    if(!courseIsCurrent(id,generation))return;
+    event.target.reset(); await openCourse(id);
   } finally { submit.disabled = false; }
 }); });
 $('#registration').addEventListener('click', () => run(async () => {
-  const button = $('#registration'); button.disabled = true;
-  try { await rpc('teacher_set_registration', { p_course_id: courseId, p_open: !overview.course.registrationOpen }); await openCourse(courseId); }
+  const button = $('#registration'), id = courseId, generation = courseRequestGeneration; button.disabled = true;
+  try { await rpc('teacher_set_registration', { p_course_id: id, p_open: !overview.course.registrationOpen });
+    if(courseIsCurrent(id,generation))await openCourse(id); }
   finally { button.disabled = false; }
 }));
 $('#toggle-course').addEventListener('click', () => run(async () => {
   const active = overview.course.active;
   if (active && !confirm('¿Deshabilitar esta materia? Desaparecerá de las materias activas y sus estudiantes no podrán entrar con el código ni usar el aula. Puedes restaurarla después.')) return;
-  const button = $('#toggle-course'); button.disabled = true;
+  const button = $('#toggle-course'), id = courseId, generation = courseRequestGeneration; button.disabled = true;
   try {
-    await rpc('teacher_set_course_active', { p_course_id: courseId, p_active: !active });
+    await rpc('teacher_set_course_active', { p_course_id: id, p_active: !active });
+    if(!courseIsCurrent(id,generation))return;
     await loadCourses();
     teacherSuccess(active ? 'Materia deshabilitada. El código ya no permite ingresar.'
       : 'Materia restaurada. Su código vuelve a funcionar.');
@@ -520,7 +542,8 @@ $('#enter-room').addEventListener('click', () => {
 });
 $('#back').addEventListener('click', () => run(loadCourses));
 $('#logout').addEventListener('click', () => {
-  ++courseRequestGeneration;
+  ++courseRequestGeneration; ++accountGeneration;
+  for(const id of ['#edit-topic-dialog','#move-student-dialog','#delete-student-dialog','#delete-course-dialog']) { if($(id).open)$(id).close(); }
   courseId = ''; overview = null;
   signOut(); show('login');
 });
@@ -576,7 +599,7 @@ $('#move-student-form').addEventListener('submit', async event => {
   if(movingStudent || !movingStudentTarget)return;
   const destination = $('#move-student-destination').value;
   if(!destination)return;
-  const target = movingStudentTarget;
+  const target = movingStudentTarget, generation = courseRequestGeneration;
   const submit = $('#confirm-student-move');
   const cancel = $('#cancel-student-move');
   const select = $('#move-student-destination');
@@ -586,6 +609,7 @@ $('#move-student-form').addEventListener('submit', async event => {
     await rpc('teacher_move_student', {
       p_course_id: target.courseId, p_student_id: target.id, p_topic_id: destination
     });
+    if(!courseIsCurrent(target.courseId,generation))return;
     $('#move-student-dialog').close();
     movingStudentTarget = null;
     await openCourse(target.courseId);
@@ -615,7 +639,7 @@ $('#cancel-delete-student').addEventListener('click', () => {
   $('#delete-student-dialog').close(); deleteStudentTarget = null;
 });
 $('#confirm-delete-student').addEventListener('click', async () => {
-  const target = deleteStudentTarget;
+  const target = deleteStudentTarget, generation = courseRequestGeneration;
   if (!target || deletingStudent) return;
   deletingStudent = true;
   const submit = $('#confirm-delete-student'); submit.disabled = true;
@@ -630,6 +654,7 @@ $('#confirm-delete-student').addEventListener('click', async () => {
     await deleteTeacherCourseFiles(target.courseId, paths);
     progress.textContent = 'Eliminando su registro…';
     await rpc('teacher_delete_unassigned_student', args);
+    if(!courseIsCurrent(target.courseId,generation))return;
     $('#delete-student-dialog').close(); deleteStudentTarget = null;
     try {
       await openCourse(target.courseId);
@@ -667,7 +692,7 @@ $('#cancel-course-delete').addEventListener('click', () => {
 });
 $('#delete-course-form').addEventListener('submit', async event => {
   event.preventDefault();
-  const course = deleteTarget;
+  const course = deleteTarget, generation = courseRequestGeneration;
   if (!course || deletingCourse || $('#delete-course-confirmation').value.trim() !== course.name) return;
   deletingCourse = true;
   const submit = $('#confirm-course-delete'); submit.disabled = true;
@@ -687,6 +712,7 @@ $('#delete-course-form').addEventListener('submit', async event => {
     await deleteTeacherCourseFiles(course.id, paths);
     progress.textContent = 'Eliminando materia y estudiantes…';
     await rpc('teacher_delete_course', { p_course_id: course.id });
+    if(generation !== courseRequestGeneration || !signedIn())return;
     $('#delete-course-dialog').close(); deleteTarget = null;
     try { await loadCourses(); teacherSuccess('Materia eliminada. Su código dejó de funcionar.'); }
     catch { alertError('La materia fue eliminada, pero no se pudo actualizar la lista. Recarga el panel.'); }
@@ -723,11 +749,11 @@ $('#copy-course-code').addEventListener('click', async () => {
 $('#generate-course-code').addEventListener('click', () => {
   if (!confirm('¿Generar un código nuevo para esta materia? El código anterior dejará de servir. Comparte el nuevo con tus estudiantes; sus perfiles y equipos se conservarán.')) return;
   run(async () => {
-    const button = $('#generate-course-code'), id = courseId;
+    const button = $('#generate-course-code'), id = courseId, generation = courseRequestGeneration;
     button.disabled = true;
     try {
       const code = await rpc('teacher_generate_course_code', { p_course_id:id, p_code:newCourseCode() });
-      if (courseId !== id) return;
+      if (!courseIsCurrent(id,generation)) return;
       overview.course.accessCode = code; renderCourseCode();
       $('#course-code-status').textContent = 'Código guardado. Lo encontrarás aquí cada vez que abras la materia.';
     } finally { button.disabled = false; }
@@ -746,15 +772,16 @@ function updateGroupPreview() {
 }
 $('#group-count').addEventListener('input', updateGroupPreview);
 $('#group-count-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
-  const button = event.target.querySelector('button'); button.disabled = true;
-  try { await rpc('teacher_set_group_count', { p_course_id: courseId,
+  const button = event.target.querySelector('button'), id = courseId, generation = courseRequestGeneration; button.disabled = true;
+  try { await rpc('teacher_set_group_count', { p_course_id: id,
     p_count: Number($('#group-count').value), p_capacity: Number($('#new-group-capacity').value) });
-    await openCourse(courseId); teacherSuccess('La cantidad de mesas quedó guardada.');
+    if(!courseIsCurrent(id,generation))return;
+    await openCourse(id); teacherSuccess('La cantidad de mesas quedó guardada.');
   } finally { button.disabled = false; }
 }); });
-let editingTopicId = '';
+let editingTopicId = '', editingTopicCourseId = '';
 function editTopic(topic) {
-  editingTopicId = topic.id;
+  editingTopicId = topic.id; editingTopicCourseId = courseId;
   const form = $('#edit-topic-form');
   form.elements.namedItem('name').value = topic.name;
   form.elements.namedItem('instructions').value = topic.instructions;
@@ -764,11 +791,14 @@ function editTopic(topic) {
 $('#cancel-topic-edit').addEventListener('click', () => $('#edit-topic-dialog').close());
 $('#edit-topic-form').addEventListener('submit', async event => {
   event.preventDefault(); const f = event.target.elements, button = event.target.querySelector('[type="submit"]');
+  const id = editingTopicCourseId, generation = courseRequestGeneration;
+  if(!courseIsCurrent(id,generation))return;
   button.disabled = true; $('#edit-topic-error').hidden = true;
-  try { await rpc('teacher_edit_topic', { p_course_id: courseId, p_topic_id: editingTopicId,
+  try { await rpc('teacher_edit_topic', { p_course_id: id, p_topic_id: editingTopicId,
     p_name: f.namedItem('name').value.trim(), p_instructions: f.namedItem('instructions').value.trim(),
     p_capacity: Number(f.namedItem('capacity').value) });
-    $('#edit-topic-dialog').close(); await openCourse(courseId); teacherSuccess('Tema y cupos actualizados.');
+    if(!courseIsCurrent(id,generation))return;
+    $('#edit-topic-dialog').close(); await openCourse(id); teacherSuccess('Tema y cupos actualizados.');
   } catch(error) { $('#edit-topic-error').textContent = error.message; $('#edit-topic-error').hidden = false; }
   finally { button.disabled = false; }
 });

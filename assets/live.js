@@ -1,16 +1,18 @@
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.6.1';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.6.1';
-import './embed.js?v=0.6.1';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.6.1';
-import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.6.1';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.6.1';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.6.1';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.6.1';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.6.1';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.6.2';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.6.2';
+import './embed.js?v=0.6.2';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.6.2';
+import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.6.2';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.6.2';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.6.2';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.6.2';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.6.2';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let courseId = '', profile = null, topics = [], selectedTopic = null;
+let courseEntryGeneration = 0;
+const entryCurrent = generation => generation === courseEntryGeneration && studentSignedIn();
 let look = { skin: 1, shirt: 0, outfit: 0, hair: 'short', presentation: 'hombre' };
 let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, onArrival = null;
 let chatTimer = 0, chatLoading = false, chatTeamId = '', unreadCount = 0;
@@ -269,8 +271,11 @@ else {
     : null;
   if (studentSignedIn() && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(requestedResume || '')) {
     run(async () => {
+      const generation = ++courseEntryGeneration;
       const existing = await studentRpc('student_open_owned_course',{p_course_id:requestedResume});
-      await openStudentCourse(existing);
+      if (!entryCurrent(generation)) return;
+      await openStudentCourse(existing, null, generation);
+      if (!entryCurrent(generation)) return;
       history.replaceState(null,'',location.pathname);
     });
   } else if (studentSignedIn() && entryCode && !authLinkReturn) {
@@ -285,10 +290,12 @@ else {
   }
 }
 async function enterCourse(code, details = {}) {
+  const generation = ++courseEntryGeneration;
   code = normalizeCode(code);
   let result;
   try { result = await studentRpc('enroll_student_document', { p_code: code, ...details }); }
   catch (error) {
+    if (generation !== courseEntryGeneration) return;
     if (error.message !== 'Materia no encontrada') throw error;
     // Forget only the rejected shortcut. The anonymous session owns the profile and team.
     if (normalizeCode(localStorage.getItem('aula-student-course-code') || '') === code)
@@ -297,20 +304,24 @@ async function enterCourse(code, details = {}) {
     questionIndex = 0; show('registration'); renderQuestion(true);
     throw new Error('No encontramos una materia con ese código. Revisa el código actual que te compartió tu docente.');
   }
-  await openStudentCourse(result, code);
+  if (!entryCurrent(generation)) return;
+  await openStudentCourse(result, code, generation);
 }
-async function openStudentCourse(result, code = null) {
+async function openStudentCourse(result, code = null, generation = ++courseEntryGeneration) {
+  const id = result.course_id;
+  const nextProfile = await studentRpc('my_profile', { p_course_id: id });
+  if (!entryCurrent(generation)) return;
+  const documentStatus = await studentRpc('student_document_status',{p_course_id:id});
+  if (!entryCurrent(generation)) return;
+  stopRoomPolling();
   completingDocument = false;
-  courseId = result.course_id;
-  courseName = result.course_name;
+  courseId = id; courseName = result.course_name; profile = nextProfile;
   if (code) {
     localStorage.setItem('aula-student-course-code', code);
     localStorage.removeItem('aula-student-resume-id');
   } else {
     localStorage.setItem('aula-student-resume-id', result.course_id);
   }
-  profile = await studentRpc('my_profile', { p_course_id: courseId });
-  const documentStatus = await studentRpc('student_document_status',{p_course_id:courseId});
   if (documentStatus.required) {
     completingDocument = true;
     questions = ['documentNumber']; questionIndex = 0;
@@ -334,10 +345,12 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
   const f = event.target.elements;
   if (completingDocument) {
     const details = documentDetails();
+    const generation = courseEntryGeneration, id = courseId;
     registrationPending = true; $('#finish-registration').disabled = true;
     try {
-      await studentRpc('student_set_document',{p_course_id:courseId,...details});
-      await openStudentCourse({course_id:courseId,course_name:courseName});
+      await studentRpc('student_set_document',{p_course_id:id,...details});
+      if (!entryCurrent(generation) || courseId !== id) return;
+      await openStudentCourse({course_id:id,course_name:courseName}, null, generation);
     } catch(error) {
       if (error.message?.startsWith('Este documento ya tiene')) showDuplicateContact('documentNumber');
       else throw error;
@@ -364,8 +377,10 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
   const submit = $('#finish-registration');
   registrationPending = true;
   submit.disabled = true; submit.textContent = 'Guardando tu perfil…';
+  const generation = courseEntryGeneration;
   try {
     await signInStudentAnonymously();
+    if (!entryCurrent(generation)) return;
     // Only a convenience hint; enroll_student enforces the phone check even
     // if this request fails or a second browser submits at the same time.
     let repeatedPhone = false;
@@ -374,6 +389,7 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
         p_code:code,p_phone:phone,p_first_name:details.p_first_name,p_last_name:details.p_last_name
       });
     } catch { /* The database validates the final registration independently. */ }
+    if (!entryCurrent(generation)) return;
     if (JSON.stringify(documentInfo) !== JSON.stringify(documentDetails()) ||
         phone !== f.namedItem('phone').value.trim() ||
         details.p_email !== f.namedItem('email').value.trim().toLowerCase() ||
@@ -454,9 +470,13 @@ function renderAvatarOptions() {
 $('#avatar-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   const submit = $('#avatar-form button[type="submit"]');
   submit.disabled = true; $('#cancel-avatar').disabled = true;
+  const generation = courseEntryGeneration, id = courseId;
   try {
-    await studentRpc('save_student_avatar', { p_course_id: courseId, p_avatar: look });
-    profile = await studentRpc('my_profile', { p_course_id: courseId });
+    await studentRpc('save_student_avatar', { p_course_id: id, p_avatar: look });
+    if (!entryCurrent(generation) || courseId !== id) return;
+    const nextProfile = await studentRpc('my_profile', { p_course_id: id });
+    if (!entryCurrent(generation) || courseId !== id) return;
+    profile = nextProfile;
     await enterRoom();
   } finally { submit.disabled = false; $('#cancel-avatar').disabled = false; }
 }); });
@@ -476,7 +496,10 @@ function returnFromAvatar() {
 $('#cancel-avatar').addEventListener('click', returnFromAvatar);
 
 async function enterRoom() {
-  topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
+  const generation = courseEntryGeneration, id = courseId, studentId = profile?.id;
+  const rows = await studentRpc('course_room', { p_course_id: id });
+  if (!entryCurrent(generation) || courseId !== id || profile?.id !== studentId) return;
+  topics = sortTopics(rows);
   const newLayout = createRoomLayout(topics.length);
   const idHash = [...String(profile.id || '')].reduce((hash, char) => ((hash * 31 + char.charCodeAt(0)) >>> 0), 0);
   const myTeamIndex = topics.findIndex(topic => topic.id === profile.topicId);
@@ -667,8 +690,12 @@ function teamRosterPanel(team) {
   toggle.addEventListener('change', () => run(async () => {
     toggle.disabled = true;
     sharingStatus.textContent = 'Guardando tu preferencia…';
-    try { await studentRpc('team_contact_setting', { p_course_id: courseId, p_share: toggle.checked });
-      topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId })); renderTopics(); }
+    const generation = courseEntryGeneration, id = courseId;
+    try { await studentRpc('team_contact_setting', { p_course_id: id, p_share: toggle.checked });
+      if (!entryCurrent(generation) || courseId !== id || profile?.topicId !== team.id) return;
+      const rows = await studentRpc('course_room', { p_course_id: id });
+      if (!entryCurrent(generation) || courseId !== id || profile?.topicId !== team.id) return;
+      topics = sortTopics(rows); renderTopics(); }
     catch (error) { toggle.checked = !toggle.checked;
       sharingStatus.textContent = toggle.checked ? 'Teléfono visible para mi equipo' : 'Teléfono privado';
       throw error; }
@@ -710,7 +737,9 @@ function teamChatPanel(team) {
   const send = element('button', 'Enviar', 'button primary'); send.type = 'submit';
   const chatError = element('p', '', 'field-error'); chatError.hidden = true;
   chatError.setAttribute('role', 'alert');
-  let selectedFile = null, uploadedPath = '', fileInfo = null;
+  let selectedFile = null, uploadedPath = '', fileInfo = null, sending = false;
+  const panelCourseId = courseId, panelGeneration = courseEntryGeneration;
+  const currentPanel = () => entryCurrent(panelGeneration) && courseId === panelCourseId && profile?.topicId === team.id && form.isConnected;
   const picker = document.createElement('input'); picker.type = 'file'; picker.accept = ATTACHMENT_ACCEPT; picker.hidden = true;
   picker.id = 'team-chat-file'; picker.setAttribute('aria-label','Seleccionar un archivo para el equipo');
   const attach = element('button', 'Adjuntar', 'button secondary chat-attach'); attach.type = 'button';
@@ -737,20 +766,24 @@ function teamChatPanel(team) {
   });
   form.append(label, input, attach, send, picker, preview, help, uploadStatus, chatError);
   form.addEventListener('submit', async event => { event.preventDefault();
+    if (sending || !currentPanel()) return;
     const body = input.value.trim();
     if (!body && !selectedFile) { chatError.textContent = 'Escribe un mensaje o adjunta un archivo.'; chatError.hidden = false; return; }
+    sending = true;
     send.disabled = true; attach.disabled = true; remove.disabled = true; input.disabled = true; chatError.hidden = true;
     try {
       if (selectedFile) {
         uploadStatus.hidden = false; uploadStatus.textContent = uploadedPath ? 'Enviando archivo al equipo…' : 'Subiendo archivo…';
-        if (!uploadedPath) uploadedPath = await uploadTeamFile(courseId, team.id, selectedFile, fileInfo);
+        if (!uploadedPath) uploadedPath = await uploadTeamFile(panelCourseId, team.id, selectedFile, fileInfo);
+        if (!currentPanel()) { await clearFile(); return; }
         uploadStatus.textContent = 'Enviando archivo al equipo…';
-        await studentRpc('team_chat_send_file', { p_course_id:courseId,p_topic_id:team.id,p_body:body,p_path:uploadedPath,p_name:fileInfo.name });
+        await studentRpc('team_chat_send_file', { p_course_id:panelCourseId,p_topic_id:team.id,p_body:body,p_path:uploadedPath,p_name:fileInfo.name });
         uploadedPath = ''; await clearFile();
-      } else await studentRpc('team_chat_send', { p_course_id: courseId, p_topic_id: team.id, p_body: body });
+      } else await studentRpc('team_chat_send', { p_course_id: panelCourseId, p_topic_id: team.id, p_body: body });
+      if (!currentPanel()) return;
       input.value = ''; await refreshChat(true);
     } catch (error) { chatError.textContent = (error.name === 'TimeoutError' ? 'La subida tardó demasiado. Puedes volver a intentarlo.' : error.message); chatError.hidden = false; }
-    finally { send.disabled = false; attach.disabled = false; remove.disabled = false; input.disabled = false; uploadStatus.hidden = true; input.focus(); }
+    finally { sending = false; send.disabled = false; attach.disabled = false; remove.disabled = false; input.disabled = false; uploadStatus.hidden = true; if (currentPanel()) input.focus(); }
   });
   section.append(messages, form,
     element('p', 'Solo quienes integran este equipo pueden leer y escribir aquí.', 'field-hint'));
@@ -768,7 +801,8 @@ function renderChatNotice(count) {
 }
 function updateChatNotice(messages, topicId) {
   const key = `aula-chat-seen:${courseId}:${profile.id}:${topicId}`;
-  const lastSeen = BigInt(localStorage.getItem(key) || '0');
+  const saved = localStorage.getItem(key) || '0';
+  const lastSeen = /^[0-9]+$/.test(saved) ? BigInt(saved) : 0n;
   const newest = messages.length ? BigInt(messages.at(-1).id) : 0n;
   if (activeTab === 'chat' && !document.hidden && $('#room').dataset.stage === 'room') {
     if (newest > lastSeen) localStorage.setItem(key, String(newest));
@@ -872,9 +906,15 @@ function topicPanel(topic, confirmJoin = false) {
     join.addEventListener('click', () => run(async () => {
       join.disabled = true; join.textContent = 'Guardando tu lugar…';
       try {
-        await studentRpc('choose_topic', { p_course_id: courseId, p_topic_id: topic.id });
-        profile = await studentRpc('my_profile', { p_course_id: courseId });
-        topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
+        const generation = courseEntryGeneration, id = courseId;
+        await studentRpc('choose_topic', { p_course_id: id, p_topic_id: topic.id });
+        if (!entryCurrent(generation) || courseId !== id) return;
+        const [nextProfile, rows] = await Promise.all([
+          studentRpc('my_profile', { p_course_id: id }),
+          studentRpc('course_room', { p_course_id: id })
+        ]);
+        if (!entryCurrent(generation) || courseId !== id) return;
+        profile = nextProfile; topics = sortTopics(rows);
         renderTopics(); $('#view-my-team')?.focus(); status('Te uniste al equipo de ' + topic.name + '.');
       } finally { join.disabled = false; join.textContent = 'Sí, unirme al equipo'; }
     }));
@@ -1026,6 +1066,9 @@ reducedMotion.addEventListener('change', () => {
 });
 function stopRoomPolling() {
   stopAmbientAnimation();
+  chatTeamId = '';
+  $('#team-chat-host').hidden = true;
+  $('#team-chat-host').replaceChildren();
   incomingMessages.reset();
   clearTimeout(arrivalHighlightTimer);
   arrivalHighlightTimer = 0;
@@ -1041,13 +1084,12 @@ function stopRoomPolling() {
 }
 $('#logout').addEventListener('click', () => {
   if (!confirm('Al salir perderás el acceso a este perfil desde este dispositivo. ¿Deseas continuar?')) return;
+  ++courseEntryGeneration;
   studentSignOut(); localStorage.removeItem('aula-student-course-code');
   localStorage.removeItem('aula-student-resume-id');
   localStorage.removeItem('aula-student-recovery-code');
   localStorage.removeItem('aula-student-document-recovery');
-  stopRoomPolling(); chatTeamId = '';
-  $('#team-chat-host').hidden = true;
-  $('#team-chat-host').replaceChildren();
+  stopRoomPolling();
   courseId = ''; courseName = ''; profile = null; topics = []; selectedTopic = null;
   completingDocument = false;
   registrationForm.reset(); documentType.value='cedula'; updateDocumentInput(true); questions = ['code', 'firstName', 'lastName', 'documentNumber', 'email', 'phone'];
@@ -1108,6 +1150,7 @@ async function refreshRoom() {
   } catch (error) {
     if (!stillCurrent()) return;
     if (error.message === 'Materia deshabilitada') {
+      ++courseEntryGeneration; completingDocument = false;
       stopRoomPolling();
       courseId = ''; courseName = ''; profile = null; topics = [];
       localStorage.removeItem('aula-student-course-code');

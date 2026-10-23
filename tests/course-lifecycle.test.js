@@ -25,7 +25,7 @@ class Element {
 }
 
 async function boot({ files = [], fileError = null, students = [], topics = [], extraCourses = [],
-  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [] } = {}) {
+  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {} } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (!nodes.has(selector)) nodes.set(selector, new Element());
@@ -39,11 +39,19 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
   const courseRow = () => ({ ...course, student_count: 0, topic_count: 1 });
   const rpc = async (name, body = {}) => {
     calls.push([name, body]);
+    if(delays[name]) await delays[name](body);
     if (name === 'my_courses') return [...(course?.active ? [courseRow()] : []), ...extraCourses];
     if (name === 'teacher_disabled_courses') return [...(course && !course.active ? [courseRow()] : []), ...disabledCourses];
     if (name === 'teacher_student_recovery_requests') return recoveryRequests;
+    if (name === 'teacher_decide_student_recovery') {
+      const index = recoveryRequests.findIndex(request => request.id === body.p_request_id);
+      assert.notEqual(index, -1);
+      recoveryRequests.splice(index, 1);
+      return;
+    }
     if (name === 'teacher_overview') return body.p_course_id === course?.id
       ? { course: { ...course }, topics, students: [...students] } : overviewById[body.p_course_id];
+    if (name === 'teacher_release_student') {students.find(s=>s.id===body.p_student_id).topicId=null;return;}
     if (name === 'teacher_move_student') {
       assert.equal(body.p_course_id, course.id);
       assert.equal(course.active, true);
@@ -277,6 +285,26 @@ test('la sección de recuperación sigue disponible para solicitudes realmente m
   assert.equal(page.get('#student-recovery-requests').children.length,1);
 });
 
+test('docente rechaza una recuperación manual y actualiza las solicitudes sin alterar el perfil', async () => {
+  const students = [{id:'student-1',firstName:'Ana',lastName:'Pérez',
+    email:'contacto@ejemplo.com',phone:'555',topicId:null}];
+  const page = await boot({ students, recoveryRequests:[{id:'pending-1',
+    email:'contacto@ejemplo.com',requested_at:'2026-10-15T14:00:00Z',status:'pending'}] });
+  await page.get('#courses').children[0].click();
+  await new Promise(resolve => setImmediate(resolve));
+  const request = page.get('#student-recovery-requests').children[0];
+  await request.children[7].children[1].click();
+  assert.equal(request.children[8].hidden, true);
+  assert.equal(page.get('#student-recovery-panel').hidden, true);
+  assert.equal(page.get('#student-recovery-requests').children.length, 0);
+  assert.match(page.get('#teacher-success').textContent, /Solicitud rechazada/);
+  assert.equal(students.length, 1);
+  assert.equal(students[0].id, 'student-1');
+  const decision = page.calls.find(([name]) => name === 'teacher_decide_student_recovery')[1];
+  assert.equal(decision.p_approve, false);
+  assert.equal(decision.p_student_id, null);
+});
+
 test('docente asigna a estudiante sin grupo conservando su perfil', async () => {
   const students=[
     { id:'a',firstName:'Rosa',lastName:'Morales',email:'rosa@ejemplo.com',phone:'555-5555',topicId:null,
@@ -386,4 +414,27 @@ test('resumen dentro de materia muestra inscritos, grupos y sin equipo reales, n
   assert.equal(page.get('#detail-group-total').textContent,'7');
   assert.equal(page.get('#detail-unassigned-total').textContent,'4');
   assert.equal(students.length,23,'los contadores no alteran los registros');
+});
+
+
+test('logging out during an export prevents a late private spreadsheet download',async()=>{
+ let release;const pending=new Promise(resolve=>release=resolve);
+ const page=await boot({extraCourses:[{id:'course-2',name:'Otra',student_count:1,topic_count:0}],overviewById:{'course-2':pending},
+ students:[{id:'s1',firstName:'Ana',lastName:'Prueba',topicId:null,email:'qa@example.invalid'}]});
+ const exporting=page.get('#export-all').click();
+ await new Promise(setImmediate);page.get('#logout').click();
+ release({course:{id:'course-2',name:'Otra',active:true},students:[],topics:[]});await exporting;
+ assert.equal(page.downloads.length,0);
+ assert.equal(page.get('#login').hidden,false);
+});
+test('a delayed group release does not reopen a subject after returning to the dashboard',async()=>{
+ let release;const pending=new Promise(resolve=>release=resolve);
+ const page=await boot({students:[{id:'s1',firstName:'Ana',lastName:'Prueba',topicId:'g1'}],
+ topics:[{id:'g1',position:1,name:'Grupo 1',capacity:5}],delays:{teacher_release_student:()=>pending}});
+ await page.openCourse('course-1');
+ const descendants=n=>[n,...n.children.flatMap(descendants)];
+ descendants(page.get('#student-list')).find(n=>n.textContent==='Liberar del grupo').click();
+ await new Promise(setImmediate);await page.loadCourses();release();await new Promise(setImmediate);
+ assert.equal(page.get('#dashboard').hidden,false);
+ assert.equal(page.get('#detail').hidden,true);
 });

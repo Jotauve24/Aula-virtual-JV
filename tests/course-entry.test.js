@@ -1,3 +1,4 @@
+import {attachmentInfo,fileSizeLabel} from '../assets/attachments.js';
 import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from '../assets/student-document.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -60,7 +61,7 @@ class Element {
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
-  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, documentRequired = false, setDocument, search = '' } = {}) {
+  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, documentRequired = false, setDocument, uploadFile, sendMessage, search = '' } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -106,7 +107,9 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     requestAnimationFrame: handler => { pendingFrames.set(++frameId, handler); return frameId; },
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
     CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
-    createIncomingMessageTracker, normalizeStudentDocument, DOCUMENT_COUNTRIES,
+    createIncomingMessageTracker, normalizeStudentDocument, DOCUMENT_COUNTRIES, attachmentInfo, fileSizeLabel,
+    uploadTeamFile:async(id,team,file,info)=>{calls.push({name:'upload_file',body:{id,team,name:info.name}});return uploadFile?uploadFile():id+'/'+team+'/qa/file.pdf';},
+    cancelTeamFile:async path=>calls.push({name:'cancel_file',body:{path}}),
     avatarSVG, drawWorld: (_canvas, options) => { frames.push(options); },
     createParticipantPalette: () => () => '#456789',
     applyParticipantColor() {}, participantAvatar: name => Object.assign(new Element(), { textContent: name }),
@@ -150,6 +153,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       }
       if (name === 'course_room' && roomError) throw new Error(roomError);
       if (name === 'course_room') return JSON.parse(JSON.stringify(roomFixture));
+      if (name === 'team_chat_send' || name === 'team_chat_send_file') { if(sendMessage) await sendMessage(body);return; }
       if (name === 'team_chat_read') { if (chatFailure?.()) throw new Error('Conexión temporalmente no disponible'); return messages; }
       if (name === 'classroom_presence_ping') {
         if (presenceFailure?.()) throw new Error('Conexión temporalmente no disponible');
@@ -847,4 +851,121 @@ test('the saved team stays visibly marked after reopening and refreshing the roo
   assert.ok(marked[0].children.some(n=>n.textContent==='✓ Tu equipo'));
   await page.state('refreshRoom()');
  }
+});
+
+test('a delayed enrollment response cannot reopen a room after logout',async()=>{
+ let release;
+ const pending=new Promise(resolve=>release=resolve);
+ const page=await boot({submitted:NEW,enroll:()=>pending});
+ page.get('#logout').click();release();await page.settle();await page.settle();
+ assert.equal(page.state('courseId'),'');
+ assert.equal(page.state('profile'),null);
+ assert.equal(page.get('#room').dataset.stage,'registration');
+});
+test('an expired student session still explains why course entry failed',async()=>{
+ const page=await boot();
+ await assert.rejects(page.state(`(()=>{
+   studentRpc=async()=>{studentSignOut();throw Error('Tu sesión venció. Recupera el acceso con tu correo.');};
+   return enterCourse('${NEW}');
+ })()`), /Tu sesión venció/);
+ assert.equal(page.state('courseId'),'');
+});
+test('logging out during the registration contact check prevents a late enrollment',async()=>{
+ let release;
+ const page=await boot({signedIn:true,phoneHint:()=>new Promise(resolve=>release=resolve)});
+ page.fields.code.value=NEW;page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';
+ page.fields.email.value='a@example.invalid';page.fields.phone.value='60000009';
+ await page.get('#registration-form').dispatch('submit');await page.settle();
+ page.get('#logout').click();release(false);await page.settle();
+ assert.equal(page.calls.some(c=>c.name==='enroll_student_document'),false);
+ assert.equal(page.state('courseId'),'');
+});
+test('a delayed profile response cannot restore the student after logout',async()=>{
+ const page=await boot({submitted:NEW});
+ const opening=page.state(`(()=>{
+   const original=studentRpc;
+   studentRpc=async(name,body)=>{
+     if(name==='my_profile')await new Promise(resolve=>{globalThis.releaseProfile=resolve});
+     return original(name,body);
+   };
+   return openStudentCourse({course_id:'course-fixture',course_name:'Materia'});
+ })()`);
+ page.get('#logout').click();page.state('releaseProfile()');await opening;
+ assert.equal(page.state('profile'),null);
+ assert.equal(page.state('courseId'),'');
+ assert.equal(page.get('#room').dataset.stage,'registration');
+});
+test('leaving while the room loads discards its layout and polling',async()=>{
+ const page=await boot({submitted:NEW});
+ const opening=page.state(`(()=>{
+   const original=studentRpc;
+   studentRpc=async(name,body)=>{
+     if(name==='course_room')await new Promise(resolve=>{globalThis.releaseLayout=resolve});
+     return original(name,body);
+   };
+   return enterRoom();
+ })()`);
+ page.get('#logout').click();page.state('releaseLayout()');await opening;
+ assert.equal(page.get('#room').dataset.stage,'registration');
+ assert.equal(page.state('profile'),null);
+ assert.equal(page.state('chatTimer'),0);
+});
+test('a malformed cached unread marker cannot hide the team chat history',async()=>{
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'team-1',avatar:{skin:1}},
+ roomFixture:[{id:'team-1',name:'Grupo 1',capacity:5,members:[]}],messages:[{id:1,senderId:'mate',name:'Beto',body:'Hola',mine:false}]});
+ page.localStorage.setItem('aula-chat-seen:course-fixture:self:team-1','old-invalid-marker');
+ await page.state('refreshChat()');
+ assert.equal(page.get('#team-chat-messages').children.length,1);
+ assert.equal(page.get('#chat-unread').textContent,'1');
+ assert.equal(page.get('#chat-connection-status').hidden,true);
+});
+
+test('double submission sends a chat message once while its request is pending',async()=>{
+ let release;const pending=new Promise(resolve=>release=resolve);
+ const page=await boot({submitted:NEW,sendMessage:()=>pending,
+ profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'team-1',avatar:{skin:1}},
+ roomFixture:[{id:'team-1',name:'Grupo 1',capacity:5,members:[]}]});
+ page.get('#team-chat-input').value='Hola';
+ const form=page.get('#team-chat-host').children[0].children.find(n=>n.listeners.has('submit'));
+ const first=form.dispatch('submit');const second=form.dispatch('submit');
+ assert.equal(page.calls.filter(c=>c.name==='team_chat_send').length,1);
+ release();await first;await second;
+});
+test('an upload finishing after a course change is canceled instead of posted to the new course',async()=>{
+ let release;const pending=new Promise(resolve=>release=resolve);
+ const page=await boot({submitted:NEW,uploadFile:()=>pending,
+ profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'team-1',avatar:{skin:1}},
+ roomFixture:[{id:'team-1',name:'Grupo 1',capacity:5,members:[]}]});
+ const form=page.get('#team-chat-host').children[0].children.find(n=>n.listeners.has('submit'));
+ const picker=form.children.find(n=>n.type==='file');picker.files=[{name:'Prueba.pdf',size:100}];
+ await picker.dispatch('change');
+ const posting=form.dispatch('submit');await page.settle();
+ page.state("courseId='another-course';profile.topicId='another-team'");
+ release('course-fixture/team-1/qa/file.pdf');await posting;
+ assert.equal(page.calls.some(c=>c.name==='team_chat_send_file'),false);
+ assert.equal(page.calls.filter(c=>c.name==='cancel_file').length,1);
+});
+
+test('reopening a restored subject rebuilds a usable chat for the saved team',async()=>{
+ const page=await boot({submitted:NEW,
+ profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'team-1',avatar:{skin:1}},
+ roomFixture:[{id:'team-1',name:'Grupo 1',capacity:5,members:[]}]});
+ const oldForm=page.get('#team-chat-host').children[0].children.find(n=>n.listeners.has('submit'));
+ await page.state(`(()=>{
+   const original=studentRpc;
+   studentRpc=async(name,body)=>{
+     if(name==='course_room'){studentRpc=original;throw Error('Materia deshabilitada');}
+     return original(name,body);
+   };
+   return refreshRoom();
+ })()`);
+ assert.equal(page.get('#room').dataset.stage,'registration');
+ assert.equal(page.get('#team-chat-host').children.length,0);
+ await page.state(`enterCourse('${NEW}')`);
+ const form=page.get('#team-chat-host').children[0].children.find(n=>n.listeners.has('submit'));
+ assert.notEqual(form,oldForm);
+ page.get('#team-chat-input').value='Ya regresé';
+ await form.dispatch('submit');
+ assert.equal(page.calls.filter(c=>c.name==='team_chat_send').length,1);
+ assert.equal(page.get('#room').dataset.stage,'room');
 });

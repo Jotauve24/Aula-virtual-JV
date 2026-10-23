@@ -102,12 +102,12 @@ de prueba y haber activado Manual Linking.
 - El código compartido identifica la materia y permite crear un perfil nuevo
   si la inscripción está abierta. No verifica quién escribió los datos.
 - Cada estudiante registra correo, nombres, apellidos, documento, teléfono y avatar. Los compañeros
-  ven únicamente nombres y avatar de integrantes. Los cupos se adjudican en una
+  ven nombres y avatares; dentro del propio equipo también ven el correo y el teléfono si se comparte. Los cupos se adjudican en una
   transacción con bloqueo por materia.
 - La elección de equipo es definitiva para el estudiante en esta etapa; el
   docente puede liberarlo para que elija otro. El docente puede cerrar nuevas
   inscripciones. El chat interno de equipo y la preferencia de compartir el teléfono
-  contacto están disponibles para sus integrantes. Las actividades y el
+  están disponibles para sus integrantes. Las actividades y el
   mensajero académico siguen en Educativa; esta aplicación no los integra.
   Están disponibles la edición de temas y cupos y la configuración de 1 a 40
   mesas. Al reducir, se archivan grupos vacíos sin borrar su historial. No se
@@ -152,10 +152,10 @@ con funciones protegidas por la base de datos; ocultar su URL no es seguridad.
 Las funciones `request_course`, `teacher_approve_claim` y `save_my_profile`
 pertenecían al ingreso anterior con perfiles precargados. La versión 0.5.0
 retira su permiso de ejecución para los roles públicos. Los datos y el historial
-de migraciones se conservan; el ingreso actual utiliza `enroll_student`,
+de migraciones se conservan; el ingreso actual utiliza `enroll_student_document`,
 `save_student_avatar` y la recuperación con correo verificado.
 
-La función `enroll_student` comprueba también el teléfono mediante
+El núcleo del registro comprueba también el teléfono mediante
 `private.registration_phone_key`, bajo el mismo bloqueo de materia que protege
 los cupos y los correos. El aviso de teléfono es preliminar y requiere coincidencia
 de nombres; el guardado bloquea el duplicado aunque cambien los nombres o falle
@@ -190,3 +190,16 @@ existentes durante la migración. Los números nuevos permanecen en private y no
 copian a students.national_id ni a los listados de compañeros.
 
 En 0.6.1, course_room devuelve el correo de los integrantes del propio equipo con independencia de share_contact_with_team. Esa columna histórica conserva su nombre por compatibilidad y controla exclusivamente el teléfono. No se alteran preferencias existentes, y los contactos de otros equipos siguen siendo null. La demostración docente muestra únicamente su correo ficticio sin necesitar activar la casilla del teléfono.
+
+### Mantenimiento 0.6.2
+
+La migración `20261023211531_audit_retire_roster_import_and_lookup_indexes.sql`
+retira el permiso de ejecución de `teacher_import_roster`, el API de precarga
+que ya no utiliza la aplicación. No elimina perfiles ni funciones históricas.
+Añade siete índices para consultas por cuenta, materia, equipo y autor, y para
+las referencias de identidad y presencia docente.
+
+Las siete pruebas `tests/*.integration.sql` se ejecutan con datos sintéticos y
+`ROLLBACK`: códigos y propiedad docente, contactos repetidos, documentos,
+privacidad por equipo, archivos/cupos, recuperación y permisos del API retirado. No comprueban
+el envío real de correos ni suben binarios a Storage.

@@ -6,6 +6,7 @@ begin
   foreach role_name in array array['anon','authenticated'] loop
     foreach signature in array array[
       'public.request_course(text,uuid)',
+      'public.teacher_import_roster(uuid,jsonb)',
       'public.teacher_approve_claim(uuid,uuid)',
       'public.save_my_profile(uuid,text,text,text,text,jsonb)'
     ] loop
@@ -16,6 +17,7 @@ begin
   end loop;
   foreach signature in array array[
     'public.enroll_student(text,text,text,text,text)',
+    'public.enroll_student_document(text,text,text,text,text,text,text,text)',
     'public.save_student_avatar(uuid,jsonb)',
     'public.student_owned_courses()',
     'public.student_request_profile_recovery(text)',
