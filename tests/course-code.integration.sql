@@ -32,7 +32,7 @@ begin
   begin perform public.teacher_generate_course_code(c,'MAT-DDDDD-EEEEE-FFFFF'); exception when others then denied:=true; end;
   if not denied then raise exception 'Another teacher can replace the code'; end if;
   perform set_config('request.jwt.claim.sub',current_setting('aula.code_student'),true);
-  perform public.enroll_student('MAT-AAAAA-BBBBB-CCCCC','qa@example.invalid','Prueba','Codigo','6000-0000');
+  perform public.enroll_student_document('MAT-AAAAA-BBBBB-CCCCC','qa@example.invalid','Prueba','Codigo','6000-0000','passport','QACODE00001','PA');
   perform public.choose_topic(c,(public.course_room(c)->0->>'id')::uuid);
   perform set_config('aula.code_topic',public.my_profile(c)->>'topicId',true);
   denied:=false;
