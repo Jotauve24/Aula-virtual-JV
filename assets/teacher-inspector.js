@@ -1,6 +1,6 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.6.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.6.0';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.6.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.6.1';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.6.1';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.6.1';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);
@@ -112,6 +112,7 @@ function joinTeam(topic){
   closeTopic();
   refreshDemo();
   changeTab('aula');
+  inspectTopic(topic); $('#view-my-team')?.focus();
   context().status('Te uniste al equipo de '+topic.name+' (solo demostración).');
 }
 function memberList(topic){
@@ -134,7 +135,13 @@ export function inspectTopic(topic,confirmation=false){
   const title=el('h2',topic.name);title.id='topic-title';
   const count=el('span',members.length+' de '+topic.capacity+' integrantes'+(mine?' · Tu equipo':''),'side-tag');
   const nodes=[header,title,el('p',topic.instructions||'Sin indicaciones todavía.'),count,memberList(topic)];
-  if(mine) nodes.push(el('p','Ya formas parte de este equipo. Tu lugar está guardado.'));
+  if(mine) {
+    nodes.push(el('p','Ya formas parte de este equipo. Tu lugar está guardado.'));
+    const viewTeam=el('button','Ver mi equipo →','button primary team-open-button');
+    viewTeam.id='view-my-team';viewTeam.type='button';
+    viewTeam.addEventListener('click',()=>{closeTopic();changeTab('equipo');$('#tab-equipo').focus();});
+    nodes.push(viewTeam);
+  }
   else if(chosen) nodes.push(el('p','Ya perteneces a otro equipo. Puedes consultar este tema y sus integrantes.'));
   else if(full) nodes.push(el('p','Este equipo está completo.'));
   else if(confirmation){
@@ -186,15 +193,15 @@ function teamRosterPanel(topic){
   const icon=el('span','✉','share-contact-icon');icon.setAttribute('aria-hidden','true');
   const headingText=el('div');
   headingText.append(el('span','TU PRIVACIDAD','share-contact-eyebrow'),
-    el('h4','¿Quieres compartir tus datos con tu equipo?','share-contact-title'));
+    el('h4','¿Quieres compartir tu teléfono con tu equipo?','share-contact-title'));
   heading.append(icon,headingText);
-  const explanation=el('p','Al activarlo, tus compañeros podrán ver tu correo y teléfono. Puedes cambiarlo cuando quieras.','share-contact-description');
+  const explanation=el('p','Tu correo siempre es visible para los integrantes de tu equipo. Activa esta opción si también quieres compartir tu teléfono.','share-contact-description');
   const label=el('label','','share-contact');
   const input=document.createElement('input');input.type='checkbox';
-  input.checked=demo.sharing;input.setAttribute('aria-label','Sí, compartir mi correo y teléfono con mi equipo');
-  const text=el('span','Sí, compartir mi correo y teléfono con mi equipo');
+  input.checked=demo.sharing;input.setAttribute('aria-label','Sí, compartir mi teléfono con mi equipo');
+  const text=el('span','Sí, compartir mi teléfono con mi equipo');
   label.append(input,text);
-  const state=el('span',demo.sharing?'Visible para mi equipo':'Contacto privado','share-contact-status');
+  const state=el('span',demo.sharing?'Teléfono visible para mi equipo':'Teléfono privado','share-contact-status');
   state.setAttribute('role','status');
   sharingCard.append(heading,explanation,label,state);
   section.append(sharingCard,
@@ -213,18 +220,18 @@ function teamRosterPanel(topic){
     presence.dataset.connected=member.mine||context().peers.some(peer=>peer.id===member.id)?'true':'false';
     if(!member.mine)presence.dataset.adminStudentId=member.id;
     card.append(presence);
+    if(member.mine){const email=el('a',DEMO_STUDENT.email);email.href='mailto:'+DEMO_STUDENT.email;card.append(email);}
     if(member.mine&&demo.sharing){
-      const email=el('a',DEMO_STUDENT.email);email.href='mailto:'+DEMO_STUDENT.email;
       const phone=el('a',DEMO_STUDENT.phone);phone.href='tel:'+DEMO_STUDENT.phone.replace(/\D/g,'');
-      card.append(email,phone);
-    }else card.append(el('small','Contacto privado · usa el chat'));
+      card.append(phone);
+    }else card.append(el('small','Teléfono privado · usa el correo o el chat'));
     roster.append(card);
   }
   section.append(roster);
   input.addEventListener('change',()=>{
     demo.share(input.checked);
     sharingCard.dataset.sharing=String(demo.sharing);
-    state.textContent=demo.sharing?'Visible para mi equipo':'Contacto privado';
+    state.textContent=demo.sharing?'Teléfono visible para mi equipo':'Teléfono privado';
     // Rebuild only the roster so that the checkbox stays focused.
     const replacement=el('div','','team-roster');
     for(const person of demo.members(topic)){
@@ -238,11 +245,11 @@ function teamRosterPanel(topic){
       presence.dataset.connected=person.mine||context().peers.some(peer=>peer.id===person.id)?'true':'false';
       if(!person.mine)presence.dataset.adminStudentId=person.id;
       card.append(presence);
+      if(person.mine){const email=el('a',DEMO_STUDENT.email);email.href='mailto:'+DEMO_STUDENT.email;card.append(email);}
       if(person.mine&&demo.sharing){
-        const email=el('a',DEMO_STUDENT.email);email.href='mailto:'+DEMO_STUDENT.email;
         const phone=el('a',DEMO_STUDENT.phone);phone.href='tel:'+DEMO_STUDENT.phone.replace(/\D/g,'');
-        card.append(email,phone);
-      }else card.append(el('small','Contacto privado · usa el chat'));
+        card.append(phone);
+      }else card.append(el('small','Teléfono privado · usa el correo o el chat'));
       replacement.append(card);
     }
     roster.replaceChildren(...replacement.childNodes);

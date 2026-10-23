@@ -58,7 +58,7 @@ quietos si el navegador solicita movimiento reducido.
 - [Panel docente](https://jotauve24.github.io/Aula-virtual-JV/docente.html): la cuenta docente autorizada crea materias con la cantidad de grupos y cupos que necesita; puede aumentar o reducir mesas, editar temas e indicaciones, consultar estudiantes, liberar integrantes y abrir o cerrar las inscripciones.
 - El mapa muestra exactamente una mesa por grupo, de 1 a 40. Para reducir la cantidad se retiran los últimos grupos vacíos; se conserva su historial y no se desplaza a estudiantes de grupos ocupados. El avatar recorre puertas y pasillos, evitando paredes y muebles.
 - Las pestañas **Aula y temas**, **Mi equipo** y **Chat** separan el mapa, los integrantes y la conversación. El chat conserva los colores por participante y admite un adjunto de hasta 10 MB por mensaje: imágenes, PDF, Word, Excel, PowerPoint, TXT, CSV o ZIP. Los archivos se guardan en un bucket privado y solo los integrantes actuales del grupo y su docente autorizado pueden descargarlos.
-- Compartir correo y teléfono con el equipo es opcional.
+- El correo es visible para los integrantes del equipo. Compartir el teléfono es opcional.
 
 Al abrir una materia, el docente encuentra su código en **Código de la materia** y puede copiarlo. Las materias creadas antes de esta función conservaban solo una huella del código, que no permite recuperar el original. En esos casos, **Generar código nuevo** pide confirmación y guarda uno consultable. El anterior deja de funcionar; los estudiantes pueden ingresar con el nuevo desde su misma sesión y conservan sus perfiles y equipos.
 
@@ -136,3 +136,5 @@ Los números se guardan en tablas privadas sin acceso directo de anon/authentica
 no en el listado de compañeros ni en el almacenamiento del navegador.
 El API antiguo solo permite reabrir inscripciones existentes; no admite registros
 nuevos sin documento. Las pruebas SQL usan datos sintéticos y ROLLBACK.
+
+Desde 0.6.1, el equipo guardado tiene borde destacado y marca «✓ Tu equipo» en el mapa y la lista; «Ver mi equipo» abre la pestaña de compañeros. El correo se muestra a los integrantes del propio equipo. Solo el teléfono depende de la casilla de privacidad. Otros equipos y estudiantes sin asignación no reciben los contactos.

@@ -106,7 +106,7 @@ de prueba y haber activado Manual Linking.
   transacción con bloqueo por materia.
 - La elección de equipo es definitiva para el estudiante en esta etapa; el
   docente puede liberarlo para que elija otro. El docente puede cerrar nuevas
-  inscripciones. El chat interno de equipo y la preferencia de compartir
+  inscripciones. El chat interno de equipo y la preferencia de compartir el teléfono
   contacto están disponibles para sus integrantes. Las actividades y el
   mensajero académico siguen en Educativa; esta aplicación no los integra.
   Están disponibles la edición de temas y cupos y la configuración de 1 a 40
@@ -188,3 +188,5 @@ propietario anterior anónimo y sin presencia reciente. El documento no autentic
 No se rellenan documentos históricos por inferencia, ni se alteran los estudiantes
 existentes durante la migración. Los números nuevos permanecen en private y no se
 copian a students.national_id ni a los listados de compañeros.
+
+En 0.6.1, course_room devuelve el correo de los integrantes del propio equipo con independencia de share_contact_with_team. Esa columna histórica conserva su nombre por compatibilidad y controla exclusivamente el teléfono. No se alteran preferencias existentes, y los contactos de otros equipos siguen siendo null. La demostración docente muestra únicamente su correo ficticio sin necesitar activar la casilla del teléfono.

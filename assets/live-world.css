@@ -393,3 +393,16 @@ body{background:#f4f7f9;--ink:#22384c;--muted:#617284;--green:#235e8b;--green-ho
 #room .room-header .group-badge{max-width:100%;overflow-wrap:anywhere}
 @media(max-width:900px){#room .room-header{flex-wrap:wrap}}
 @media(max-width:650px){#room .room-header-actions{flex-direction:row;align-items:center;justify-content:flex-start}#room .in-room-dialog .avatar-actions .button,#room .in-room-dialog .avatar-actions #cancel-avatar{flex:1 1 100%}}
+
+/* Primary shortcut after enrollment, including keyboard and reduced motion. */
+.team-open-button{display:block;width:100%;margin:14px 0 10px;box-shadow:0 0 0 3px #d9e9e0,0 5px 16px #28594c25;font-weight:800;animation:team-shortcut-appear .35s ease-out}
+.team-open-button:focus-visible{outline:3px solid #d8ad50;outline-offset:4px}
+@keyframes team-shortcut-appear{from{transform:translateY(4px);opacity:.65}to{transform:translateY(0);opacity:1}}
+@media(prefers-reduced-motion:reduce){.team-open-button{animation:none}}
+
+/* Persistently distinguish the saved team from every room theme. */
+#room .map-action.is-mine{background:#e7f4e6f5;border:2px solid #246548;border-left:6px solid #246548;outline:2px solid #f8d477;box-shadow:0 0 0 5px #246548,0 5px 12px #183b4430;color:#163f2e}
+#room .map-action.is-mine small.team-selected-marker{color:#174c34;font-weight:800;display:inline-block;background:#fff3bd;border-radius:3px;padding:2px 5px;margin-top:3px}
+#room[data-stage="room"] .topic-list .topic-link.is-mine{background:#e5f2e7;border:2px solid #246548;border-left:6px solid #246548;box-shadow:0 0 0 2px #d3e8d7;color:#163f2e;font-weight:800}
+#room[data-stage="room"] .topic-list .topic-link.is-mine span{color:#174c34;background:#fff3bd;border-radius:4px;padding:3px 6px;white-space:nowrap}
+@media(forced-colors:active){#room .map-action.is-mine,#room[data-stage="room"] .topic-list .topic-link.is-mine{border:3px solid Highlight;outline:2px solid Highlight;color:CanvasText;background:Canvas}}
