@@ -1,6 +1,6 @@
 # AulaVirtualJv · Alcance vigente
 
-Estado: versión 0.6.0, 23 de octubre de 2026.
+Estado: versión 0.6.1, 23 de octubre de 2026.
 
 El aula se publica en GitHub Pages y utiliza Supabase para sesiones, materias,
 perfiles, equipos, presencia y chat. Todas las materias comparten las mismas
@@ -37,3 +37,5 @@ en la plataforma universitaria. El docente comparte un enlace y el código de la
 materia, sin incrustar el aula en un iframe.
 
 Comprobaciones: `npm run check` y `npm test` con Node.js 24.
+
+El equipo elegido se distingue con la marca «✓ Tu equipo» y un borde destacado en el mapa y la lista. La ventana del tema incluye «Ver mi equipo». Los correos son visibles dentro del propio equipo; únicamente el teléfono depende de la preferencia voluntaria. Otros equipos no reciben esos contactos.

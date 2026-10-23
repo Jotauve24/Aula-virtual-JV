@@ -32,7 +32,7 @@ function storage(entries = {}) {
 
 class Element {
   constructor() {
-    this.value = ''; this.textContent = ''; this.hidden = false;
+    this.value = ''; this.className=''; this.textContent = ''; this.hidden = false;
     this.dataset = {}; this.style = { setProperty(name, value) { this[name] = value; } };
     this.classList = { add() {}, remove() {} }; this.offsetWidth = 0;
     this.listeners = new Map(); this.children = []; this.isConnected = true;
@@ -134,6 +134,12 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       if (name === 'student_set_document') {if(setDocument) await setDocument(body); documentRequired=false; return;}
       if (name === 'my_profile') return profileData;
       if (name === 'save_student_avatar') { profileData.avatar = body.p_avatar; return; }
+      if (name === 'team_contact_setting') {
+        for(const team of roomFixture) for(const member of team.members) if(member.mine) {
+          member.sharing=body.p_share; member.phone=body.p_share?'60000001':null;
+        }
+        return;
+      }
       if (name === 'choose_topic') {
         profileData.topicId = body.p_topic_id;
         const team = roomFixture.find(row => row.id === body.p_topic_id);
@@ -792,4 +798,53 @@ test('editing a document during the contact hint discards the pending enrollment
  release(false);await page.settle();
  assert.equal(page.calls.some(c=>c.name==='enroll_student_document'),false);
  assert.equal(page.get('#finish-registration').disabled,false);
+});
+
+test('joining a team shows a highlighted shortcut in the same dialog and opens Mi equipo',async()=>{
+ const topic={id:'shortcut-team',name:'Grupo 1',capacity:5,members:[]};
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:null,registrationOpen:true,avatar:{skin:1}},roomFixture:[topic]});
+ page.state('topicPanel(topics[0],true)');
+ const find=(node,text)=>node.textContent===text?node:node.children.map(n=>find(n,text)).find(Boolean);
+ find(page.get('#topic-dialog'),'Sí, unirme al equipo').click();await page.settle();
+ const shortcut=page.get('#topic-dialog').querySelector('#view-my-team');
+ assert.ok(shortcut);
+ assert.match(shortcut.className,/primary.*team-open-button/);
+ assert.equal(shortcut.focused,true);
+ shortcut.click();
+ assert.equal(page.state('activeTab'),'equipo');
+ assert.equal(page.get('#topic-dialog').hidden,true);
+ assert.equal(page.get('#tab-equipo').focused,true);
+});
+test('email remains visible when the phone preference is enabled then disabled',async()=>{
+ const topic={id:'phone-team',name:'Grupo 1',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true,email:'ana@example.invalid',phone:null,sharing:false}]};
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:topic.id,avatar:{skin:1}},roomFixture:[topic]});
+ const descendants=node=>[node,...node.children.flatMap(descendants)];
+ const toggle=()=>descendants(page.get('#team-roster-host')).find(n=>n.type==='checkbox');
+ const links=()=>descendants(page.get('#team-roster-host')).filter(n=>n.href).map(n=>n.href);
+ assert.ok(links().includes('mailto:ana@example.invalid'));
+ assert.equal(links().some(l=>l.startsWith('tel:')),false);
+ assert.ok(descendants(page.get('#team-roster-host')).some(n=>n.textContent==='¿Quieres compartir tu teléfono con tu equipo?'));
+ toggle().checked=true;toggle().dispatch('change');await page.settle();
+ assert.ok(links().includes('tel:60000001'));
+ toggle().checked=false;toggle().dispatch('change');await page.settle();
+ assert.ok(links().includes('mailto:ana@example.invalid'));
+ assert.equal(links().some(l=>l.startsWith('tel:')),false);
+});
+
+test('the saved team stays visibly marked after reopening and refreshing the room',async()=>{
+ const profileFixture={id:'self',firstName:'Ana',lastName:'Prueba',topicId:'mine',avatar:{skin:1}};
+ const roomFixture=[{id:'mine',name:'Grupo elegido',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true}]},
+ {id:'other',name:'Otro grupo',capacity:5,members:[]}];
+ const page=await boot({submitted:NEW,profileFixture,roomFixture});
+ for(let i=0;i<2;i++) {
+  const selected=page.get('#topic-buttons').children.filter(n=>n['aria-current']==='true');
+  assert.equal(selected.length,1);assert.equal(selected[0].dataset.topic,'mine');
+  assert.match(selected[0].className,/is-mine/);
+  assert.match(selected[0].children[1].textContent,/✓ Tu equipo/);
+  const descendants=n=>[n,...n.children.flatMap(descendants)];
+  const marked=descendants(page.get('#side-content')).filter(n=>n['aria-current']==='true');
+  assert.equal(marked.length,1);
+  assert.ok(marked[0].children.some(n=>n.textContent==='✓ Tu equipo'));
+  await page.state('refreshRoom()');
+ }
 });

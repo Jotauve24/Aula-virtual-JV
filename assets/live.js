@@ -1,12 +1,12 @@
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.6.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.6.0';
-import './embed.js?v=0.6.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.6.0';
-import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.6.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.6.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.6.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.6.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.6.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.6.1';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.6.1';
+import './embed.js?v=0.6.1';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.6.1';
+import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.6.1';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.6.1';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.6.1';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.6.1';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.6.1';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -96,9 +96,9 @@ const questionText = {
   code: ['¿Cuál es el código de tu materia?', 'El código de tu docente te abre la puerta de esta sala.'],
   firstName: ['¡Hola! ¿Cómo te llamas?', 'Escribe tus nombres para comenzar a crear tu perfil.'],
   lastName: ['¿Y cuál es tu apellido?', 'Así aparecerás en la lista del docente.'],
-  email: ['¿Qué correo podemos usar para contactarte?', 'No tienes que abrir ningún enlace de confirmación.'],
+  email: ['¿Qué correo podemos usar para contactarte?', 'Tu equipo podrá ver este correo. No tienes que abrir ningún enlace de confirmación.'],
   documentNumber: ['Tu documento de identidad', 'Una sola cuenta por estudiante, aunque cambies de correo o dispositivo.'],
-  phone: ['Por último, ¿tu número de teléfono?', 'Tu teléfono solo lo verá el docente; no se muestra a tus compañeros.']
+  phone: ['Por último, ¿tu número de teléfono?', 'Tu teléfono empieza privado. En «Mi equipo» decides si lo compartes.']
 };
 const registrationForm = $('#registration-form');
 // An explicit entry must win over the code remembered from an earlier visit.
@@ -534,10 +534,13 @@ function renderTopics() {
     button.style.setProperty('--table-soft', theme.card);
     button.style.left = locations[i][0] / 8 + '%'; button.style.top = locations[i][1] / layout.height * 100 + '%';
     const occupancy = topic.members.length + '/' + topic.capacity;
-    const details = topic.name + ', ' + topic.members.length + ' de ' + topic.capacity + ' lugares ocupados. Abrir el tema.';
+    const details = (topic.id === profile.topicId ? 'Tu equipo seleccionado. ' : '') + topic.name + ', ' + topic.members.length + ' de ' + topic.capacity + ' lugares ocupados. Abrir el tema.';
     button.title = details; button.setAttribute('aria-label', details);
-    const count = element('small', occupancy + ' ');
-    count.append(element('span', 'lugares', 'map-place-word'));
+    const count = topic.id === profile.topicId
+      ? element('small', '✓ Tu equipo · ' + occupancy, 'team-selected-marker')
+      : element('small', occupancy + ' ');
+    if (topic.id === profile.topicId) button.setAttribute('aria-current','true');
+    else count.append(element('span', 'lugares', 'map-place-word'));
     button.append(element('strong', topic.name), count);
     button.addEventListener('click', () => openTopic(topic, { x: locations[i][2], y: locations[i][3] }));
     return button;
@@ -579,8 +582,10 @@ function homePanel() {
   selectedTopic = null;
   closeTopic();
   const greeting = element('span', 'HOLA, ' + profile.firstName.split(' ')[0].toLocaleUpperCase('es'), 'eyebrow');
-  const title = element('h2', 'Encuentra tu lugar.');
-  const intro = element('p', 'Explora los temas de tu materia. Abre un espacio para ver integrantes y elegir equipo.');
+  const ownTopic = topics.find(topic=>topic.id === profile.topicId);
+  const title = element('h2', ownTopic ? 'Tu equipo está guardado.' : 'Encuentra tu lugar.');
+  const intro = element('p', ownTopic ? 'Elegiste ' + ownTopic.name + '. Está marcado con ✓ en el mapa y en esta lista.'
+    : 'Explora los temas de tu materia. Abre un espacio para ver integrantes y elegir equipo.');
   const list = element('div', '', 'topic-list');
   if (!topics.length) list.append(element('p', 'El docente todavía no ha añadido temas.'));
   for (const [index, topic] of topics.entries()) {
@@ -589,8 +594,9 @@ function homePanel() {
     const theme = roomTheme(index);
     button.style.setProperty('--table-accent', theme.accent);
     button.style.setProperty('--table-soft', theme.card);
-    const label = topic.id === profile.topicId ? 'Tu equipo' : topic.members.length + '/' + topic.capacity + ' lugares';
+    const label = topic.id === profile.topicId ? '✓ Tu equipo' : topic.members.length + '/' + topic.capacity + ' lugares';
     button.append(element('span', label));
+    if(topic.id === profile.topicId)button.setAttribute('aria-current','true');
     button.addEventListener('click', () => { const i = topics.indexOf(topic);
       openTopic(topic, { x: locationsForTopics[i][0], y: locationsForTopics[i][1] });
     });
@@ -601,7 +607,13 @@ function homePanel() {
   const wasHidden = chatHost.hidden;
   chatHost.hidden = !team;
   if (team && wasHidden) refreshChat();
-  const nodes = [greeting, title, intro, list];
+  const nodes = [greeting, title, intro];
+  if(team) {
+    const shortcut=element('button','Ver mi equipo →','button primary team-open-button');
+    shortcut.type='button';shortcut.addEventListener('click',()=>{setRoomTab('equipo');$('#tab-equipo').focus();});
+    nodes.push(shortcut);
+  }
+  nodes.push(list);
   $('#team-roster-host').replaceChildren(team ? teamRosterPanel(team) : element('p', 'Elige un grupo en «Aula y temas» para ver aquí a tus compañeros.', 'empty-team'));
   updateTeamPresence();
   nodes.push(element('p', 'Consulta tus compañeros en Mi equipo y comparte mensajes y archivos en Chat.', 'field-hint'));
@@ -618,14 +630,14 @@ function teamRosterPanel(team) {
   sharingIcon.setAttribute('aria-hidden', 'true');
   const sharingText = element('div');
   sharingText.append(element('span', 'TU PRIVACIDAD', 'share-contact-eyebrow'),
-    element('h4', '¿Quieres compartir tus datos con tu equipo?', 'share-contact-title'));
+    element('h4', '¿Quieres compartir tu teléfono con tu equipo?', 'share-contact-title'));
   sharingHeading.append(sharingIcon, sharingText);
-  const sharingDescription = element('p', 'Al activarlo, tus compañeros podrán ver tu correo y teléfono. Puedes cambiarlo cuando quieras.', 'share-contact-description');
+  const sharingDescription = element('p', 'Tu correo siempre es visible para los integrantes de tu equipo. Activa esta opción si también quieres compartir tu teléfono.', 'share-contact-description');
   const label = element('label', '', 'share-contact');
   const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = !!mine?.sharing;
-  const toggleText = element('span', 'Sí, compartir mi correo y teléfono con mi equipo');
+  const toggleText = element('span', 'Sí, compartir mi teléfono con mi equipo');
   label.append(toggle, toggleText);
-  const sharingStatus = element('span', toggle.checked ? 'Visible para mi equipo' : 'Contacto privado', 'share-contact-status');
+  const sharingStatus = element('span', toggle.checked ? 'Teléfono visible para mi equipo' : 'Teléfono privado', 'share-contact-status');
   sharingStatus.setAttribute('role', 'status');
   sharingCard.append(sharingHeading, sharingDescription, label, sharingStatus);
   section.append(sharingCard,
@@ -648,7 +660,7 @@ function teamRosterPanel(team) {
     if (member.phone) {
       const link = element('a', member.phone); link.href = 'tel:' + member.phone.replace(/[^+0-9]/g, ''); card.append(link);
     }
-    if (!member.email && !member.phone) card.append(element('small', 'Contacto privado · usa el chat'));
+    if (!member.phone) card.append(element('small', 'Teléfono privado · puedes usar el correo o el chat'));
     roster.append(card);
   }
   section.append(roster);
@@ -658,7 +670,7 @@ function teamRosterPanel(team) {
     try { await studentRpc('team_contact_setting', { p_course_id: courseId, p_share: toggle.checked });
       topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId })); renderTopics(); }
     catch (error) { toggle.checked = !toggle.checked;
-      sharingStatus.textContent = toggle.checked ? 'Visible para mi equipo' : 'Contacto privado';
+      sharingStatus.textContent = toggle.checked ? 'Teléfono visible para mi equipo' : 'Teléfono privado';
       throw error; }
     finally { toggle.disabled = false; }
   }));
@@ -836,7 +848,13 @@ function topicPanel(topic, confirmJoin = false) {
   const title = element('h2', topic.name); title.id = 'topic-title';
   const nodes = [header, title,
     element('p', topic.instructions || 'Sin indicaciones todavía.'), count, members];
-  if (mine) nodes.push(element('p', 'Ya formas parte de este equipo. Tu lugar está guardado.'));
+  if (mine) {
+    nodes.push(element('p', 'Ya formas parte de este equipo. Tu lugar está guardado.'));
+    const viewTeam = element('button', 'Ver mi equipo →', 'button primary team-open-button');
+    viewTeam.id = 'view-my-team'; viewTeam.type = 'button';
+    viewTeam.addEventListener('click', () => { homePanel(); setRoomTab('equipo'); $('#tab-equipo').focus(); });
+    nodes.push(viewTeam);
+  }
   else if (profile.topicId) nodes.push(element('p', 'Ya perteneces a otro equipo. Puedes consultar este tema y sus integrantes.'));
   else if (full) nodes.push(element('p', 'Este equipo está completo.'));
   else if (!profile.registrationOpen) nodes.push(element('p', 'La elección de equipos está cerrada.'));
@@ -857,7 +875,7 @@ function topicPanel(topic, confirmJoin = false) {
         await studentRpc('choose_topic', { p_course_id: courseId, p_topic_id: topic.id });
         profile = await studentRpc('my_profile', { p_course_id: courseId });
         topics = sortTopics(await studentRpc('course_room', { p_course_id: courseId }));
-        renderTopics(); status('Te uniste al equipo de ' + topic.name + '.');
+        renderTopics(); $('#view-my-team')?.focus(); status('Te uniste al equipo de ' + topic.name + '.');
       } finally { join.disabled = false; join.textContent = 'Sí, unirme al equipo'; }
     }));
     actions.append(cancel, join); confirmation.append(warning, heading, explanation, actions);

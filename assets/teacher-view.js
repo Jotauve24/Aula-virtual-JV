@@ -1,8 +1,8 @@
-import './embed.js?v=0.6.0';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam } from './teacher-inspector.js?v=0.6.0';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.6.0';
-import { drawWorld, roomTheme } from './world.js?v=0.6.0';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.6.0';
+import './embed.js?v=0.6.1';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam } from './teacher-inspector.js?v=0.6.1';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.6.1';
+import { drawWorld, roomTheme } from './world.js?v=0.6.1';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.6.1';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -86,10 +86,12 @@ function renderTopicButtons() {
     button.style.setProperty('--table-accent',theme.accent);
     button.style.setProperty('--table-soft',theme.card);
     const occupancy = (topic.members.length + Number(isDemoTeam(topic.id))) + '/' + topic.capacity;
-    button.title = `${topic.name}: ${occupancy} estudiantes. Abrir el grupo.`;
+    button.title = (isDemoTeam(topic.id)?'Tu equipo seleccionado. ':'') + `${topic.name}: ${occupancy} estudiantes. Abrir el grupo.`;
     button.setAttribute('aria-label',button.title);
     const name = document.createElement('strong'); name.textContent = topic.name;
-    const capacity = document.createElement('small'); capacity.textContent = occupancy + ' lugares';
+    const capacity = document.createElement('small');
+    capacity.textContent = isDemoTeam(topic.id) ? '✓ Tu equipo · ' + occupancy : occupancy + ' lugares';
+    if(isDemoTeam(topic.id)){capacity.className='team-selected-marker';button.setAttribute('aria-current','true');}
     button.append(name,capacity);
     button.addEventListener('click',() => inspectTopic(topic));
     return button;
