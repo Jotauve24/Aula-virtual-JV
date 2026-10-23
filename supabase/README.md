@@ -52,7 +52,7 @@ el permiso docente sigue asociado al identificador de esa cuenta.
 En Authentication > Sign In / Providers > Anonymous Sign-Ins activa el ingreso
 anónimo. Cada navegador obtiene una sesión privada de Supabase sin contraseña
 ni correo de confirmación. El estudiante escribe el código de materia, correo
-de contacto, nombres, apellidos y teléfono; luego crea su avatar y elige tema.
+de contacto, nombres, apellidos, cédula o pasaporte y teléfono; luego crea su avatar y elige tema.
 El correo escrito durante la primera inscripción es inicialmente solo de contacto
 y **no prueba identidad**. Mientras el estudiante conserva su sesión anónima,
 continúa entrando de la misma manera, sin recibir correos nuevos.
@@ -101,7 +101,7 @@ de prueba y haber activado Manual Linking.
 - El ingreso publicado acepta códigos `MAT-…` y lleva al aula de la materia.
 - El código compartido identifica la materia y permite crear un perfil nuevo
   si la inscripción está abierta. No verifica quién escribió los datos.
-- Cada estudiante registra correo, nombres, apellidos, teléfono y avatar. Los compañeros
+- Cada estudiante registra correo, nombres, apellidos, documento, teléfono y avatar. Los compañeros
   ven únicamente nombres y avatar de integrantes. Los cupos se adjudican en una
   transacción con bloqueo por materia.
 - La elección de equipo es definitiva para el estudiante en esta etapa; el
@@ -162,3 +162,29 @@ de nombres; el guardado bloquea el duplicado aunque cambien los nombres o falle
 el aviso. `tests/student-contact-guard.integration.sql` prueba los formatos,
 la conservación del perfil y el uso de los mismos contactos en otra materia
 con datos temporales y `ROLLBACK`.
+
+
+### Documento único (0.6.0)
+
+El cliente utiliza enroll_student_document. enroll_student queda como compatibilidad
+para reabrir perfiles existentes y rechaza registros nuevos. El núcleo de contactos
+queda en private.enroll_student_contact, sin permiso EXECUTE de clientes.
+private.student_identities posee UNIQUE(document_type,country,document_key), y
+private.student_identity_links posee UNIQUE(identity_id,course_id) y un enlace por
+student_id. RLS está habilitado sin políticas de acceso directo; los RPC públicos
+comprueban auth.uid(), pertenencia al perfil y materia activa. Sus SECURITY DEFINER
+son intencionales y usan search_path vacío, como el resto del API del aula.
+
+Los bloqueos transaccionales por cuenta y documento serializan intentos entre
+materias; el bloqueo existente por materia conserva los controles de correo,
+teléfono y cupos. Una excepción revierte también el INSERT de inscripción.
+
+student_document_status solo devuelve required y reutiliza la identidad de otra
+materia del mismo usuario. student_set_document completa un perfil propio sin
+editar el documento ya asociado. student_recover_document_account exige correo
+verificado y utiliza la recuperación existente, con coincidencia única por materia,
+propietario anterior anónimo y sin presencia reciente. El documento no autentica.
+
+No se rellenan documentos históricos por inferencia, ni se alteran los estudiantes
+existentes durante la migración. Los números nuevos permanecen en private y no se
+copian a students.national_id ni a los listados de compañeros.

@@ -52,7 +52,7 @@ quietos si el navegador solicita movimiento reducido.
 ## Sitio publicado
 
 - **Recuperación voluntaria de cuentas estudiantiles:** los estudiantes existentes mantienen su sesión anónima, equipo y avatar. En el aula pueden proteger su perfil mediante correo verificado y regresar desde otro navegador. Quienes perdieron la sesión pueden recuperarla automáticamente tras verificar su correo si ese correo identifica **un solo perfil** en la materia, el perfil antiguo es anónimo y no está conectado. Las solicitudes que pueden resolverse automáticamente **no aparecen como pendientes de aprobación docente**; el estudiante termina la recuperación desde su cuenta verificada. El panel docente muestra únicamente los casos que necesitan identificar al estudiante por otra vía, como correos compartidos o no coincidentes. No se eliminan solicitudes existentes al cambiar esta vista. Esta función requiere Manual Linking y redirecciones configuradas en Supabase (ver supabase/README.md).
-- [Ingreso de estudiantes](https://jotauve24.github.io/Aula-virtual-JV/): cada materia usa un código `MAT-…` compartido por el docente. El estudiante registra nombre, apellido, correo y teléfono de contacto, personaliza su avatar y elige un equipo con cupos disponibles.
+- [Ingreso de estudiantes](https://jotauve24.github.io/Aula-virtual-JV/): cada materia usa un código `MAT-…` compartido por el docente. El estudiante registra nombre, apellido, cédula o pasaporte, correo y teléfono de contacto, personaliza su avatar y elige un equipo con cupos disponibles.
 - Desde el detalle de cada materia activa, **Entrar a la sala · Administrador** abre **ZombieAdmin**, una simulación de la experiencia estudiantil sin código de materia ni inscripción. El docente recorre el mismo mapa como zombi sin etiqueta, abre los temas, pulsa «Quiero este equipo», confirma la elección y prueba «Mi equipo» con su casilla de privacidad y datos ficticios (`jair.demo@ejemplo.com`, `6000-0011`). El chat es de práctica: contiene mensajes ficticios y permite enviar textos y adjuntos de prueba solo en el navegador; nada modifica las inscripciones, cupos, contactos o conversaciones reales. Los chats de estudiantes reales permanecen accesibles solo para sus integrantes. **Reiniciar demostración** comienza el recorrido desde cero.
 - **Secciones activas** del panel docente presentan indicadores de materias, estudiantes inscritos y **conectados ahora**. Cada tarjeta permite desplegar **Ver estudiantes conectados** para consultar nombre, grupo y última señal; la misma información está disponible al administrar la materia. Las cifras y la lista proceden de una sola consulta cada 5 segundos; solo se cuentan señales de aula de menos de 15 segundos. El docente/ZombieAdmin no cuenta como alumno. El acceso exige una sesión docente autorizada y únicamente incluye sus materias activas. Si la conexión falla se muestra «—» en lugar de un falso cero.
 - [Panel docente](https://jotauve24.github.io/Aula-virtual-JV/docente.html): la cuenta docente autorizada crea materias con la cantidad de grupos y cupos que necesita; puede aumentar o reducir mesas, editar temas e indicaciones, consultar estudiantes, liberar integrantes y abrir o cerrar las inscripciones.
@@ -109,3 +109,30 @@ Desde la versión 0.5.1, cambiar el correo no permite crear otro perfil si el
 teléfono ya está inscrito en esa materia. La comparación reconoce espacios,
 guiones y los prefijos de Panamá +507 y 00507. Recuperar el perfil exige verificar
 el correo original; una coincidencia de teléfono no concede acceso por sí sola.
+
+
+### Identidad del estudiante (0.6.0)
+
+La cédula o el pasaporte son obligatorios en nuevas inscripciones. El formulario
+une prefijo, tomo y asiento con guiones, sin adivinar sus límites. Para pasaportes
+se elige el país emisor. Se normalizan mayúsculas, separadores y ceros de relleno
+en los grupos de la cédula; números como 8-12-345 y 8-123-45 siguen siendo distintos.
+El identificador interno continúa siendo UUID.
+
+Una identidad documental puede tener una inscripción por materia. Otro usuario
+no puede reclamar ese documento aunque cambie ambos contactos. La cuenta original
+sí puede inscribirse en más materias con el mismo documento. Correo y teléfono
+siguen siendo únicos dentro de cada materia. Los documentos son declarados por
+el estudiante: validar el formato no equivale a verificar su autenticidad ante
+una autoridad y no permite identificar a una persona que use datos falsos distintos.
+
+Los perfiles anteriores completan el documento al entrar; no se reconstruyen ni
+se eliminan avatares, equipos o conversaciones. La identidad se enlaza al ID del
+estudiante y sobrevive a la recuperación por correo verificado. La recuperación
+documental busca sus materias originales mediante ese correo; conocer una cédula
+o un pasaporte nunca concede acceso.
+
+Los números se guardan en tablas privadas sin acceso directo de anon/authenticated,
+no en el listado de compañeros ni en el almacenamiento del navegador.
+El API antiguo solo permite reabrir inscripciones existentes; no admite registros
+nuevos sin documento. Las pruebas SQL usan datos sintéticos y ROLLBACK.

@@ -36,13 +36,13 @@ begin
   perform set_config('aula.contact_course_a',course_a::text,true);
   perform set_config('aula.contact_course_b',course_b::text,true);
   perform set_config('request.jwt.claim.sub',current_setting('aula.contact_a'),true);
-  perform public.enroll_student(code_a,'first@example.invalid','Ana','Prueba','6000-0001');
+  perform public.enroll_student_document(code_a,'first@example.invalid','Ana','Prueba','6000-0001','passport','QA'||left(replace(auth.uid()::text,'-',''),20),'PA');
   perform public.save_student_avatar(course_a,'{"skin":1,"shirt":0,"hair":"short"}'::jsonb);
   topic:=(public.course_room(course_a)->0->>'id')::uuid;
   perform public.choose_topic(course_a,topic);
   original:=public.my_profile(course_a);
   -- Reopening with the original session is idempotent and preserves team/avatar.
-  perform public.enroll_student(code_a,'changed@example.invalid','Otro','Nombre','6000-0002');
+  perform public.enroll_student_document(code_a,'changed@example.invalid','Otro','Nombre','6000-0002','passport','QA'||left(replace(auth.uid()::text,'-',''),20),'PA');
   if public.my_profile(course_a) is distinct from original then raise exception 'Existing profile changed'; end if;
   perform set_config('request.jwt.claim.sub',current_setting('aula.contact_b'),true);
   if not public.student_registration_phone_hint(code_a,'+507 6000-0001','Ana','Prueba') then
@@ -53,23 +53,23 @@ begin
   end if;
   foreach raw in array array['60000001','6000-0001','6000 0001','+507 6000-0001','50760000001','0050760000001'] loop
     begin
-      perform public.enroll_student(code_a,'new-email@example.invalid','Otro','Nombre',raw);
+      perform public.enroll_student_document(code_a,'new-email@example.invalid','Otro','Nombre',raw,'passport','QA'||left(replace(auth.uid()::text,'-',''),20),'PA');
       raise exception 'Duplicate phone was accepted';
     exception when others then
       if sqlerrm not like 'Este teléfono ya tiene una inscripción%' then raise; end if;
     end;
   end loop;
   begin
-    perform public.enroll_student(code_a,' FIRST@EXAMPLE.INVALID ','Otro','Nombre','6000-0002');
+    perform public.enroll_student_document(code_a,' FIRST@EXAMPLE.INVALID ','Otro','Nombre','6000-0002','passport','QA'||left(replace(auth.uid()::text,'-',''),20),'PA');
     raise exception 'Duplicate email was accepted';
   exception when others then
     if sqlerrm not like 'Este correo ya tiene una inscripción%' then raise; end if;
   end;
   -- The same contacts are allowed in another subject.
-  result:=public.enroll_student(code_b,'first@example.invalid','Ana','Prueba','+507 6000-0001');
+  result:=public.enroll_student_document(code_b,'first@example.invalid','Ana','Prueba','+507 6000-0001','passport','QA'||left(replace(auth.uid()::text,'-',''),20),'PA');
   if result->>'course_id' is distinct from course_b::text then raise exception 'Different subject rejected'; end if;
   perform set_config('request.jwt.claim.sub',current_setting('aula.contact_c'),true);
-  perform public.enroll_student(code_a,'second@example.invalid','Nueva','Persona','6000-0002');
+  perform public.enroll_student_document(code_a,'second@example.invalid','Nueva','Persona','6000-0002','passport','QA'||left(replace(auth.uid()::text,'-',''),20),'PA');
 end $$;
 reset role;
 do $$ begin
