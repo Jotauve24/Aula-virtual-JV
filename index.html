@@ -8,9 +8,9 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Ingreso de estudiantes · AulaVirtualJv</title>
   <link rel="icon" href="./assets/favicon.svg?v=20261014k" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/styles.css?v=0.7.0"><link rel="stylesheet" href="./assets/brand.css?v=0.7.0">
-  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.7.0">
-  <script src="./assets/app.js?v=0.7.0" type="module"></script>
+  <link rel="stylesheet" href="./assets/styles.css?v=0.7.1"><link rel="stylesheet" href="./assets/brand.css?v=0.7.1">
+  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.7.1">
+  <script src="./assets/app.js?v=0.7.1" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Ir al contenido</a>
@@ -37,7 +37,7 @@
         <a class="text-button help-button" href="./live.html?login=1">¿Ya estabas inscrito? Recupera tu cuenta →</a><button class="text-button help-button" id="code-help" type="button"><span class="help-circle" aria-hidden="true">?</span>¿Dónde encuentro mi código?</button>
         <div class="entry-note"><span class="entry-note-icon" aria-hidden="true">✓</span><p><strong>Tu espacio se guarda.</strong> Sigue entrando normalmente desde tu navegador habitual. Si quieres recuperar tu equipo desde otro dispositivo, protege tu cuenta con un correo verificado dentro del aula.</p></div>
       </div>
-      <section class="tour-panel" id="entrance-tutorial" aria-labelledby="tour-title" data-step="0" data-playing="false" data-joined="false">
+      <section class="tour-panel" id="entrance-tutorial" aria-labelledby="tour-title" data-step="0" data-scene="code" data-playing="false" data-joined="false" data-choice="open">
         <div class="tour-heading"><div><span class="eyebrow">UN VISTAZO A TU PRÓXIMA AULA</span><h2 id="tour-title">Así empieza tu equipo.</h2></div><span class="tour-demo-label">TUTORIAL · DEMO</span></div>
         <div class="tour-stage">
           <div class="tour-orbit" aria-hidden="true"></div>
@@ -48,41 +48,51 @@
             <div class="tour-room" data-tour-room aria-hidden="true"><strong>Equipo Creativo</strong><small>2/5 · Disponible</small></div>
             <div class="tour-room" data-tour-room aria-hidden="true"><strong>Equipo Cosmos</strong><small>2/5 · Disponible</small></div>
           </div>
-          <div class="tour-card" data-tour-card="0" aria-hidden="true">
+          <div class="tour-card" data-tour-card="code" aria-hidden="true">
             <div class="tour-card-top"><span>AulaVirtualJv · Ingreso</span><span class="tour-window-dots"><i></i><i></i><i></i></span></div>
-            <div class="tour-card-body"><p class="tour-mini-eyebrow">TU PRIMER PASO</p><h3>Entra a tu materia.</h3><div class="tour-code"><span>#</span><b>MAT-ABCDE-FGHJK-LMNPQ</b></div><div class="tour-data-line"><i>✓</i> Nombre y apellido</div><div class="tour-data-line"><i>✓</i> Cédula o pasaporte</div><div class="tour-data-line"><i>✓</i> Correo y teléfono</div><span class="tour-mini-button">Continuar →</span></div>
+            <div class="tour-card-body"><p class="tour-mini-eyebrow">PRIMERO: LA PORTADA</p><h3>Entra a tu materia.</h3><div class="tour-code"><span>#</span><b>MAT-ABCDE-FGHJK-LMNPQ</b></div><div class="tour-data-line"><i>✓</i> Tu docente comparte el código.</div><div class="tour-data-line"><i>✓</i> Lo escribes en la portada.</div><span class="tour-mini-button">Entrar a mi materia →</span></div>
           </div>
-          <div class="tour-card" data-tour-card="1" aria-hidden="true" hidden>
+          <div class="tour-card" data-tour-card="registration" aria-hidden="true" hidden>
+            <div class="tour-card-top"><span>Completa tu registro</span><span class="tour-chip" id="tour-register-count">1 de 5</span></div>
+            <div class="tour-card-body"><p class="tour-mini-eyebrow">UN DATO A LA VEZ</p><h3 id="tour-register-label">Tus nombres</h3><div class="tour-register-field" id="tour-register-value">Alex</div><p class="tour-mini-text">Nombre → Apellido → Documento → Correo → Teléfono</p><span class="tour-mini-button" id="tour-register-next">Continuar →</span></div>
+          </div>
+          <div class="tour-card" data-tour-card="avatar" aria-hidden="true" hidden>
             <div class="tour-card-top"><span>Tu personaje</span><span class="tour-chip">A tu estilo</span></div>
-            <div class="tour-card-body"><div class="tour-avatar-display" data-tour-avatar="0"></div><div class="tour-swatches"><i style="--swatch:#557d61"></i><i style="--swatch:#6887ad"></i><i style="--swatch:#d8588f"></i><i style="--swatch:#9c69c7"></i><i style="--swatch:#b28c3e"></i></div><span class="tour-mini-button">¡Listo para entrar! →</span></div>
+            <div class="tour-card-body"><div class="tour-avatar-display" data-tour-avatar="0"></div><div class="tour-swatches"><i style="--swatch:#557d61"></i><i style="--swatch:#6887ad"></i><i style="--swatch:#d8588f"></i><i style="--swatch:#9c69c7"></i><i style="--swatch:#b28c3e"></i></div><span class="tour-mini-button">Guardar y explorar el aula ↗</span></div>
           </div>
-          <div class="tour-card" data-tour-card="2" aria-hidden="true" hidden>
-            <div class="tour-card-top"><span>Explora los temas</span><span class="tour-chip">Disponible</span></div>
-            <div class="tour-card-body"><h3>Equipo Bosque</h3><div class="tour-choice-row"><span class="tour-mini-text">Un espacio para tu proyecto.</span><span class="tour-capacity">3/5</span></div><div class="tour-mini-avatars"><span data-tour-avatar="1"></span><span data-tour-avatar="2"></span><span data-tour-avatar="3"></span><span class="tour-free-seat">+</span></div><p class="tour-mini-text">Revisa las indicaciones y confirma tu elección.</p><span class="tour-mini-button tour-choice-action">Quiero este equipo →</span><span class="tour-mini-button tour-choice-saved">✓ Tu lugar quedó guardado</span></div>
+          <div class="tour-card" data-tour-card="movement" aria-hidden="true" hidden>
+            <div class="tour-card-top"><span>Ya estás en el aula</span><span class="tour-chip">Explora</span></div>
+            <div class="tour-card-body"><h3>Mueve tu personaje.</h3><div class="tour-movement-hero"><span data-tour-avatar="0"></span><div><div class="tour-movement-keys"><i>↑</i><i>←</i><i>↓</i><i>→</i></div><span class="tour-wasd">W A S D</span></div></div><p class="tour-mini-text">También puedes tocar el suelo para caminar.</p><span class="tour-mini-button">Acércate a una mesa y pulsa E</span></div>
           </div>
-          <div class="tour-card" data-tour-card="3" aria-hidden="true" hidden>
+          <div class="tour-card" data-tour-card="capacity" aria-hidden="true" hidden>
             <div class="tour-card-top"><span>Revisa los lugares</span><span class="tour-chip is-amber">5 de 5</span></div>
             <div class="tour-card-body"><h3>Equipo Océano</h3><div class="tour-mini-avatars"><span data-tour-avatar="1"></span><span data-tour-avatar="2"></span><span data-tour-avatar="3"></span><span data-tour-avatar="4"></span><span data-tour-avatar="0"></span></div><span class="tour-mini-button is-disabled">Equipo completo</span><p class="tour-mini-text">Explora otra mesa con lugares disponibles.</p></div>
           </div>
-          <div class="tour-card" data-tour-card="4" aria-hidden="true" hidden>
+          <div class="tour-card" data-tour-card="choose" aria-hidden="true" hidden>
+            <div class="tour-card-top"><span>Elige y confirma</span><span class="tour-chip">Disponible</span></div>
+            <div class="tour-card-body"><h3>Equipo Bosque</h3><div class="tour-choice-row"><span class="tour-mini-text">Un espacio para tu proyecto.</span><span class="tour-capacity" id="tour-choice-capacity">3/5</span></div><div class="tour-mini-avatars"><span data-tour-avatar="1"></span><span data-tour-avatar="2"></span><span data-tour-avatar="3"></span><span class="tour-free-seat">+</span><span class="tour-choice-self" data-tour-avatar="0"></span></div><p class="tour-mini-text">Tu lugar se guarda después de confirmar.</p><span class="tour-mini-button tour-choice-action">Quiero este equipo →</span><span class="tour-mini-button tour-choice-confirm">Sí, unirme al equipo</span><span class="tour-mini-button tour-choice-saved">✓ Tu lugar quedó guardado</span></div>
+          </div>
+          <div class="tour-card" data-tour-card="team" aria-hidden="true" hidden>
             <div class="tour-card-top"><span>Mi equipo</span><span class="tour-chip">✓ Tu equipo</span></div>
             <div class="tour-card-body"><h3>Equipo Bosque</h3><div class="tour-roster"><div class="tour-person"><span data-tour-avatar="0"></span><div><strong>Tú</strong><small>Tu lugar está guardado</small></div></div><div class="tour-person"><span data-tour-avatar="1"></span><div><strong>Ana</strong><small>Correo visible para tu equipo</small></div></div><div class="tour-person"><span data-tour-avatar="2"></span><div><strong>Luis</strong><small>Correo visible para tu equipo</small></div></div><div class="tour-person"><span data-tour-avatar="3"></span><div><strong>Sofía</strong><small>Correo visible para tu equipo</small></div></div></div><div class="tour-phone"><i></i><span>Compartir mi teléfono es opcional.</span></div></div>
           </div>
-          <div class="tour-card" data-tour-card="5" aria-hidden="true" hidden>
+          <div class="tour-card" data-tour-card="chat" aria-hidden="true" hidden>
             <div class="tour-card-top"><span>Chat · Equipo Bosque</span><span class="tour-chip">Privado</span></div>
             <div class="tour-card-body"><div class="tour-bubble"><small>Ana</small>¡Hola, equipo! ¿Empezamos?</div><div class="tour-bubble mine"><small>Tú</small>¡Sí! Les comparto la actividad.</div><div class="tour-file"><span class="tour-file-icon">PDF</span><div><strong>Actividad.pdf</strong><small>Archivo de ejemplo · 120 KB</small></div></div><div class="tour-composer"><span>Escribe a tu equipo…</span><b>↗</b></div></div>
           </div>
           <span class="tour-scene-label"><i aria-hidden="true"></i>Escena y datos de ejemplo</span>
         </div>
-        <div class="tour-story"><span class="tour-counter" id="tour-counter">01 / 06</span><h3 id="tour-caption">Tu materia es el punto de partida.</h3><p id="tour-description">Escribe el código de tu docente. Si eres nuevo, completa tus datos y tu cédula o pasaporte. Si ya te registraste, conserva tu perfil o recupera tu cuenta.</p></div>
+        <div class="tour-story"><span class="tour-counter" id="tour-counter">01 / 08</span><h3 id="tour-caption">Primero, el código de tu materia.</h3><p id="tour-description">En la portada, escribe el código que te compartió tu docente y pulsa «Entrar a mi materia».</p></div>
         <div class="tour-progress" aria-hidden="true"><span></span></div>
         <ol class="tour-steps" aria-label="Pasos del tutorial">
-          <li><button type="button" data-tour-step="0" aria-label="Paso 1: ingreso y registro" aria-current="step"><span aria-hidden="true">01</span>Ingreso</button></li>
-          <li><button type="button" data-tour-step="1" aria-label="Paso 2: crea tu avatar"><span aria-hidden="true">02</span>Avatar</button></li>
-          <li><button type="button" data-tour-step="2" aria-label="Paso 3: elige un equipo"><span aria-hidden="true">03</span>Elegir</button></li>
-          <li><button type="button" data-tour-step="3" aria-label="Paso 4: equipos completos"><span aria-hidden="true">04</span>Completo</button></li>
-          <li><button type="button" data-tour-step="4" aria-label="Paso 5: ver mi equipo"><span aria-hidden="true">05</span>Mi equipo</button></li>
-          <li><button type="button" data-tour-step="5" aria-label="Paso 6: chat y archivos"><span aria-hidden="true">06</span>Chat</button></li>
+          <li><button type="button" data-tour-step="code" aria-label="Paso 1: código de materia" aria-current="step"><span aria-hidden="true">01</span>Código</button></li>
+          <li><button type="button" data-tour-step="registration" aria-label="Paso 2: registro de datos"><span aria-hidden="true">02</span>Registro</button></li>
+          <li><button type="button" data-tour-step="avatar" aria-label="Paso 3: personaliza tu avatar"><span aria-hidden="true">03</span>Avatar</button></li>
+          <li><button type="button" data-tour-step="movement" aria-label="Paso 4: mueve tu avatar"><span aria-hidden="true">04</span>Mover</button></li>
+          <li><button type="button" data-tour-step="capacity" aria-label="Paso 5: revisa los cupos"><span aria-hidden="true">05</span>Cupos</button></li>
+          <li><button type="button" data-tour-step="choose" aria-label="Paso 6: elige y confirma tu equipo"><span aria-hidden="true">06</span>Elegir</button></li>
+          <li><button type="button" data-tour-step="team" aria-label="Paso 7: ver mi equipo"><span aria-hidden="true">07</span>Mi equipo</button></li>
+          <li><button type="button" data-tour-step="chat" aria-label="Paso 8: chat y archivos"><span aria-hidden="true">08</span>Chat</button></li>
         </ol>
         <div class="tour-controls"><button type="button" id="tour-toggle" aria-label="Reproducir tutorial" aria-pressed="false">▶ Reproducir</button><button type="button" id="tour-replay" aria-label="Repetir tutorial desde el inicio">↻ Repetir</button><div class="tour-step-arrows"><button type="button" id="tour-previous" aria-label="Paso anterior" disabled>←</button><button type="button" id="tour-next" aria-label="Paso siguiente">→</button></div></div>
         <p class="screen-reader-only" id="tour-announcement" role="status" aria-live="polite"></p>

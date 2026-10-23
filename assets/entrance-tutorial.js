@@ -1,13 +1,23 @@
-import { drawWorld, avatarSVG } from './world.js?v=0.7.0';
-import { createRoomLayout, findPath } from './world-layout.js?v=0.7.0';
+import { drawWorld, avatarSVG } from './world.js?v=0.7.1';
+import { createRoomLayout, findPath } from './world-layout.js?v=0.7.1';
 
 export const TUTORIAL_STEPS = [
-  { short: 'Ingreso', title: 'Tu materia es el punto de partida.', description: 'Escribe el código de tu docente. Si eres nuevo, completa tus datos y tu cédula o pasaporte. Si ya te registraste, conserva tu perfil o recupera tu cuenta.', duration: 7200 },
-  { short: 'Avatar', title: 'Dale tu estilo a tu personaje.', description: 'Personaliza tu avatar antes de entrar. Tu personaje y tus cambios quedan guardados para tu próximo ingreso.', duration: 5400 },
-  { short: 'Elegir', title: 'Encuentra un lugar para ti.', description: 'Recorre el aula, abre un tema y revisa los cupos. Pulsa «Quiero este equipo» y confirma para guardar tu lugar.', duration: 6500 },
-  { short: 'Completo', title: '¿Está completo? Explora otro equipo.', description: 'Un equipo con todos sus lugares ocupados no admite más integrantes. Elige otro con cupos; para cambiar después, pide ayuda al docente.', duration: 6000 },
-  { short: 'Mi equipo', title: 'Tu equipo, siempre a mano.', description: 'Busca la marca «✓ Tu equipo» o pulsa «Ver mi equipo». Aquí ves a tus compañeros y sus correos. Compartir tu teléfono es opcional.', duration: 6500 },
-  { short: 'Chat', title: 'La conversación continúa aquí.', description: 'Abre Chat para conversar y compartir archivos de hasta 10 MB. Solo los integrantes del equipo pueden participar en esta conversación.', duration: 6500 }
+  { id: 'code', short: 'Código', title: 'Primero, el código de tu materia.', description: 'En la portada, escribe el código que te compartió tu docente y pulsa «Entrar a mi materia».', duration: 6000 },
+  { id: 'registration', short: 'Registro', title: 'Luego, completa tu registro.', description: 'Responde en orden: nombre, apellido, cédula o pasaporte, correo y teléfono. Al terminar, pulsa «Crear mi personaje». Si ya tienes perfil, utiliza la recuperación.', duration: 11000 },
+  { id: 'avatar', short: 'Avatar', title: 'Después, personaliza tu avatar.', description: 'Elige tu avatar, tono de piel, color de ropa y cabello. Pulsa «Guardar y explorar el aula» para entrar a la sala.', duration: 6500 },
+  { id: 'movement', short: 'Mover', title: 'Ahora sí: entra y mueve tu personaje.', description: 'Toca el suelo o usa las flechas y W A S D para caminar. Acércate a una mesa y pulsa E, o toca su rótulo, para ver el tema.', duration: 6500 },
+  { id: 'capacity', short: 'Cupos', title: 'Revisa los cupos antes de elegir.', description: 'Un equipo con 5 de 5 lugares está completo. Explora otra mesa con cupos disponibles; todavía no has elegido tu equipo.', duration: 6500 },
+  { id: 'choose', short: 'Elegir', title: 'Elige un equipo y confirma tu lugar.', description: 'Abre un equipo disponible, pulsa «Quiero este equipo» y después «Sí, unirme al equipo». Tu lugar se guarda al confirmar.', duration: 7500 },
+  { id: 'team', short: 'Mi equipo', title: 'Tu equipo, siempre a mano.', description: 'Busca la marca «✓ Tu equipo» o pulsa «Ver mi equipo». Aquí ves a tus compañeros y sus correos. Compartir tu teléfono es opcional.', duration: 6500 },
+  { id: 'chat', short: 'Chat', title: 'La conversación continúa aquí.', description: 'Abre Chat para conversar y compartir archivos de hasta 10 MB. Solo los integrantes del equipo pueden participar en esta conversación.', duration: 6500 }
+];
+
+export const TUTORIAL_REGISTRATION_FIELDS = [
+  { id: 'firstName', label: 'Tus nombres', value: 'Alex' },
+  { id: 'lastName', label: 'Tus apellidos', value: 'Ejemplo' },
+  { id: 'documentNumber', label: 'Cédula o pasaporte', value: '8-123-456' },
+  { id: 'email', label: 'Correo de contacto', value: 'alex@ejemplo.com' },
+  { id: 'phone', label: 'Tu teléfono', value: '6000-0011' }
 ];
 
 const TOTAL = TUTORIAL_STEPS.reduce((sum, step) => sum + step.duration, 0);
@@ -44,26 +54,42 @@ export function createTutorialClock(paused = false) {
 
 export function createTutorialScene() {
   const layout = createRoomLayout(4);
-  const points = [layout.spawn, ...findPath(layout.spawn, layout.rooms[0].arrival, layout)];
-  let length = 0;
-  const segments = points.slice(1).map((to, index) => {
-    const from = points[index], start = length;
-    length += Math.hypot(to.x - from.x, to.y - from.y);
-    return { from, to, start, end: length };
-  }).filter(part => part.end > part.start);
-  const player = (step, phase) => {
-    const progress = step < 2 ? 0 : step > 2 ? 1 : Math.min(1, phase / .72);
-    const distance = length * progress;
-    const part = segments.find(segment => segment.end >= distance) || segments.at(-1);
+  const hall = { x: 400, y: layout.rooms[0].arrival.y + 55 };
+  const fullTeam = layout.rooms[1].arrival, chosenTeam = layout.rooms[0].arrival;
+  function route(from, target) {
+    const points = [from, ...findPath(from, target, layout)];
+    let length = 0;
+    const segments = points.slice(1).map((to, index) => {
+      const origin = points[index], start = length;
+      length += Math.hypot(to.x - origin.x, to.y - origin.y);
+      return { from: origin, to, start, end: length };
+    }).filter(part => part.end > part.start);
+    return { from, length, segments };
+  }
+  const routes = { movement: route(layout.spawn, hall),
+    capacity: route(hall, fullTeam), choose: route(fullTeam, chosenTeam) };
+  const state = (id, phase = 0) => {
+    const joined = ['team', 'chat'].includes(id) || (id === 'choose' && phase >= .83);
+    const choice = joined ? 'saved' : id === 'choose' && phase >= .65 ? 'confirm' : 'open';
+    const fieldIndex = Math.min(TUTORIAL_REGISTRATION_FIELDS.length - 1,
+      Math.floor(Math.max(0, phase) * TUTORIAL_REGISTRATION_FIELDS.length));
+    const details = { joined, choice, fieldIndex };
+    // Personalization comes before entering the room. The example student must
+    // not appear or move on the map while code, registration or avatar is shown.
+    if (['code', 'registration', 'avatar'].includes(id)) return { ...details, player: null };
+    const currentRoute = routes[id] || routes.choose;
+    const progress = routes[id] ? Math.min(1, Math.max(0, phase) / .62) : 1;
+    const distance = currentRoute.length * progress;
+    const part = currentRoute.segments.find(segment => segment.end >= distance) || currentRoute.segments.at(-1);
     const ratio = part ? (distance - part.start) / (part.end - part.start) : 0;
-    const x = part ? part.from.x + (part.to.x - part.from.x) * ratio : layout.spawn.x;
-    const y = part ? part.from.y + (part.to.y - part.from.y) * ratio : layout.spawn.y;
+    const x = part ? part.from.x + (part.to.x - part.from.x) * ratio : currentRoute.from.x;
+    const y = part ? part.from.y + (part.to.y - part.from.y) * ratio : currentRoute.from.y;
     const dx = part ? part.to.x - part.from.x : 0, dy = part ? part.to.y - part.from.y : 0;
-    return { id: 'tour-me', x, y, skin: 1, shirt: 0, hair: 'curly',
+    return { ...details, player: { id: 'tour-me', x, y, skin: 1, shirt: 0, hair: 'curly',
       direction: Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'),
-      moving: step === 2 && progress < 1 };
+      moving: !!routes[id] && progress < 1 } };
   };
-  return { layout, player };
+  return { layout, state };
 }
 
 const LOOKS = [
@@ -81,7 +107,7 @@ export function mountEntranceTutorial(root) {
   const cards = [...root.querySelectorAll('[data-tour-card]')];
   const buttons = [...root.querySelectorAll('[data-tour-step]')];
   const labels = [...root.querySelectorAll('[data-tour-room]')];
-  let frame = 0, lastPaint = -Infinity, renderedStep = -1, renderedJoined = null;
+  let frame = 0, lastPaint = -Infinity, renderedStep = -1, renderedJoined = null, renderedField = -1;
   let inView = true, motionOverride = false;
   const seated = scene.layout.rooms.flatMap((room, roomIndex) =>
     Array.from({ length: [3, 5, 2, 2][roomIndex] }, (_, seatIndex) => ({
@@ -100,21 +126,23 @@ export function mountEntranceTutorial(root) {
 
   function paint() {
     const state = clock.snapshot(), step = TUTORIAL_STEPS[state.step];
-    const joined = state.step > 2 || (state.step === 2 && state.phase >= .72);
+    const example = scene.state(step.id, state.phase), { joined } = example;
     root.dataset.playing = String(!state.paused && state.visible);
     root.dataset.step = String(state.step);
+    root.dataset.scene = step.id;
+    root.dataset.choice = example.choice;
     root.style.setProperty('--tour-progress', state.progress);
     $('#tour-toggle').textContent = state.paused ? '▶ Reproducir' : 'Ⅱ Pausar';
     $('#tour-toggle').setAttribute('aria-label', state.paused ? 'Reproducir tutorial' : 'Pausar tutorial');
     $('#tour-toggle').setAttribute('aria-pressed', String(!state.paused));
     if (renderedStep !== state.step) {
       renderedStep = state.step;
-      cards.forEach((card, index) => { card.hidden = index !== state.step; });
-      buttons.forEach((button, index) => {
-        if (index === state.step) button.setAttribute('aria-current', 'step');
+      cards.forEach(card => { card.hidden = card.dataset.tourCard !== step.id; });
+      buttons.forEach(button => {
+        if (button.dataset.tourStep === step.id) button.setAttribute('aria-current', 'step');
         else button.removeAttribute('aria-current');
       });
-      $('#tour-counter').textContent = String(state.step + 1).padStart(2, '0') + ' / 06';
+      $('#tour-counter').textContent = String(state.step + 1).padStart(2, '0') + ' / ' + String(TUTORIAL_STEPS.length).padStart(2, '0');
       $('#tour-caption').textContent = step.title;
       $('#tour-description').textContent = step.description;
       $('#tour-previous').disabled = state.step === 0;
@@ -124,10 +152,19 @@ export function mountEntranceTutorial(root) {
       renderedJoined = joined;
       root.dataset.joined = String(joined);
       $('#tour-my-place').textContent = joined ? '✓ Tu equipo · 4/5' : '3/5 · Disponible';
+      $('#tour-choice-capacity').textContent = joined ? '4/5' : '3/5';
     }
-    const player = scene.player(state.step, state.phase);
+    if (step.id === 'registration' && renderedField !== example.fieldIndex) {
+      renderedField = example.fieldIndex;
+      const field = TUTORIAL_REGISTRATION_FIELDS[example.fieldIndex];
+      $('#tour-register-label').textContent = field.label;
+      $('#tour-register-value').textContent = field.value;
+      $('#tour-register-count').textContent = String(example.fieldIndex + 1) + ' de ' + TUTORIAL_REGISTRATION_FIELDS.length;
+      $('#tour-register-next').textContent = example.fieldIndex === TUTORIAL_REGISTRATION_FIELDS.length - 1 ? 'Crear mi personaje →' : 'Continuar →';
+    }
+    const player = example.player;
     drawWorld(canvas, { layout: scene.layout, player, hidePlayerName: true,
-      walking: player.moving && !state.paused, time: state.elapsed,
+      walking: !!player?.moving && !state.paused, time: state.elapsed,
       ambientTime: state.elapsed + 5000, reducedMotion: reducedMotion.matches && !motionOverride,
       seated, seatCounts: [5, 5, 5, 5] });
   }
@@ -148,7 +185,7 @@ export function mountEntranceTutorial(root) {
     clock.go(index); clock.pause(true); sync();
     $('#tour-announcement').textContent = TUTORIAL_STEPS[clock.snapshot().step].title + ' ' + TUTORIAL_STEPS[clock.snapshot().step].description;
   }
-  buttons.forEach((button, index) => button.addEventListener('click', () => chooseStep(index)));
+  buttons.forEach(button => button.addEventListener('click', () => chooseStep(TUTORIAL_STEPS.findIndex(step => step.id === button.dataset.tourStep))));
   $('#tour-previous').addEventListener('click', () => chooseStep(clock.snapshot().step - 1));
   $('#tour-next').addEventListener('click', () => chooseStep(clock.snapshot().step + 1));
   $('#tour-toggle').addEventListener('click', () => {
@@ -158,6 +195,7 @@ export function mountEntranceTutorial(root) {
   });
   $('#tour-replay').addEventListener('click', () => {
     clock.go(0); clock.pause(reducedMotion.matches && !motionOverride); sync();
+    $('#tour-announcement').textContent = 'Tutorial desde el inicio: código, registro, avatar y entrada al aula.';
   });
   reducedMotion.addEventListener('change', () => {
     motionOverride = false;

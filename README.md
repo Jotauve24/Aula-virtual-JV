@@ -2,10 +2,14 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
-## Tutorial de la portada (0.7.0)
+## Tutorial de la portada (0.7.1)
 
-La portada presenta un recorrido animado de seis pasos: ingreso y registro,
-avatar, elección de equipo, equipos completos, Mi equipo y chat con archivos.
+La portada presenta un recorrido animado de ocho pasos, en el orden del ingreso
+real: código, registro de datos, personalización del avatar, movimiento en el
+aula, revisión de cupos, elección y confirmación de equipo, Mi equipo y chat.
+El registro muestra nombre, apellido, documento, correo y teléfono por separado.
+El personaje aparece en el mapa después de personalizarse y entrar; el equipo
+se marca como elegido únicamente después de la confirmación de un lugar disponible.
 Utiliza el mapa y los personajes actuales, con cuatro mesas de ejemplo y una
 presentación en perspectiva. Las escenas y los contactos son ficticios.
 

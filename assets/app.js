@@ -1,7 +1,7 @@
-import './embed.js?v=0.7.0';
-import { normalizeCode } from './model.js?v=0.7.0';
-import { mountEntranceTutorial } from './entrance-tutorial.js?v=0.7.0';
-import { configured } from './supabase-client.js?v=0.7.0';
+import './embed.js?v=0.7.1';
+import { normalizeCode } from './model.js?v=0.7.1';
+import { mountEntranceTutorial } from './entrance-tutorial.js?v=0.7.1';
+import { configured } from './supabase-client.js?v=0.7.1';
 
 const form = document.querySelector('#course-form');
 const input = document.querySelector('#course-code');
