@@ -1,3 +1,4 @@
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from '../assets/student-document.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -59,7 +60,7 @@ class Element {
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
-  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, search = '' } = {}) {
+  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, documentRequired = false, setDocument, search = '' } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -71,8 +72,9 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     if (!nodes.has(selector)) nodes.set(selector, new Element());
     return nodes.get(selector);
   };
-  const fields = Object.fromEntries(['code', 'firstName', 'lastName', 'email', 'phone']
+  const fields = Object.fromEntries(['code', 'firstName', 'lastName', 'documentNumber', 'documentType', 'documentCountry', 'documentPrefix', 'documentTome', 'documentEntry', 'email', 'phone']
     .map(key => [key, new Element()]));
+  fields.documentType.value='cedula'; fields.documentPrefix.value='8'; fields.documentTome.value='123'; fields.documentEntry.value='45';
   get('#registration-form').elements = { namedItem: key => fields[key] };
   get('#registration-form').reset = () => Object.values(fields).forEach(field=>{field.value='';});
   const steps = Object.keys(fields).map(key => Object.assign(new Element(), { dataset: { step: key } }));
@@ -104,7 +106,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     requestAnimationFrame: handler => { pendingFrames.set(++frameId, handler); return frameId; },
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
     CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
-    createIncomingMessageTracker,
+    createIncomingMessageTracker, normalizeStudentDocument, DOCUMENT_COUNTRIES,
     avatarSVG, drawWorld: (_canvas, options) => { frames.push(options); },
     createParticipantPalette: () => () => '#456789',
     applyParticipantColor() {}, participantAvatar: name => Object.assign(new Element(), { textContent: name }),
@@ -124,10 +126,12 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       calls.push({ name, body: JSON.parse(JSON.stringify(body)) });
       if (name === 'student_registration_email_hint') return emailHint;
       if (name === 'student_registration_phone_hint') { if(phoneHintError) throw Error('Servicio no disponible'); return typeof phoneHint==='function'?phoneHint(body):phoneHint; }
-      if (name === 'enroll_student') {
+      if (name === 'enroll_student_document') {
         if (enroll) await enroll(body);
         return { course_id: 'course-fixture', course_name: 'Materia de prueba' };
       }
+      if (name === 'student_document_status') return {required:documentRequired};
+      if (name === 'student_set_document') {if(setDocument) await setDocument(body); documentRequired=false; return;}
       if (name === 'my_profile') return profileData;
       if (name === 'save_student_avatar') { profileData.avatar = body.p_avatar; return; }
       if (name === 'choose_topic') {
@@ -220,7 +224,7 @@ test('a student entering a different subject can register with the submitted cod
   Object.assign(page.fields.phone, { value: '6000-0000' });
   page.get('#registration-form').dispatch('submit');
   await page.settle();
-  assert.equal(page.calls.filter(call => call.name === 'enroll_student').at(-1).body.p_code, NEW);
+  assert.equal(page.calls.filter(call => call.name === 'enroll_student_document').at(-1).body.p_code, NEW);
   assert.equal(page.localStorage.getItem(LAST_CODE), NEW);
   assert.equal(page.get('#room').dataset.stage, 'avatar');
 });
@@ -601,7 +605,7 @@ test('a delayed room response cannot restore a profile after leaving its course'
 test('new students see first-time steps and returning students have a separate recovery action', async () => {
   const page = await boot({ submitted: NEW, signedIn: false });
   assert.equal(page.state('questions[questionIndex]'), 'firstName');
-  assert.equal(page.get('#dialog-progress').textContent, 'PASO 1 DE 4 · REGISTRO POR PRIMERA VEZ');
+  assert.equal(page.get('#dialog-progress').textContent, 'PASO 1 DE 5 · REGISTRO POR PRIMERA VEZ');
   assert.equal(page.get('#dialog-description').textContent,
     'Escribe tus nombres para comenzar a crear tu perfil.');
   assert.equal(page.get('#next-question').hidden, false);
@@ -617,13 +621,14 @@ test('si el correo ya está inscrito con los mismos nombres aparece recuperar an
   page.fields.email.value='ana@ejemplo.com';page.fields.code.value=NEW;
   await page.get('#next-question').click(); // nombre
   await page.get('#next-question').click(); // apellido
+  await page.get('#next-question').click(); // documento
   assert.equal(page.state("questions[questionIndex]"),'email');
   await page.get('#next-question').click();
   assert.equal(page.state("questions[questionIndex]"),'email','el flujo NO continúa al teléfono');
   assert.equal(page.get('#email-duplicate-notice').hidden,false);
   assert.equal(page.get('#next-question').disabled,true);
   assert.ok(page.calls.some(x=>x.name==='student_registration_email_hint'));
-  assert.equal(page.calls.some(x=>x.name==='enroll_student'),false);
+  assert.equal(page.calls.some(x=>x.name==='enroll_student_document'),false);
   await page.get('#email-duplicate-recover').click();
   assert.equal(page.localStorage.getItem('aula-student-recovery-code'),NEW);
   assert.equal(page.signOutCount(),0,'nunca cerrar la sesión sin permiso');
@@ -639,6 +644,7 @@ test('un correo nuevo no muestra el aviso y permite completar el registro',async
   await page.get('#next-question').click();
   await page.get('#next-question').click();
   await page.get('#next-question').click();
+  await page.get('#next-question').click(); // correo, después del documento
   assert.equal(page.state("questions[questionIndex]"),'phone');
   assert.equal(page.get('#email-duplicate-notice').hidden,true);
   assert.equal(page.get('#next-question').disabled,false);
@@ -666,7 +672,7 @@ test('a repeated phone with a new email stops before enrollment and offers recov
   assert.equal(page.get('#email-duplicate-notice').hidden,false);
   assert.match(page.get('#registration-duplicate-title').textContent,/teléfono/);
   assert.equal(page.get('#finish-registration').disabled,true);
-  assert.equal(page.calls.some(call=>call.name==='enroll_student'),false);
+  assert.equal(page.calls.some(call=>call.name==='enroll_student_document'),false);
   await page.get('#email-duplicate-recover').click();
   assert.equal(page.localStorage.getItem('aula-student-recovery-code'),NEW);
   assert.equal(page.signOutCount(),0);
@@ -689,7 +695,7 @@ test('a failed preliminary phone check still reaches the authoritative server gu
   page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';
   page.fields.email.value='nuevo@ejemplo.invalid';page.fields.phone.value='6000-0001';
   await page.get('#registration-form').dispatch('submit');await page.settle();
-  assert.ok(page.calls.some(call=>call.name==='enroll_student'));
+  assert.ok(page.calls.some(call=>call.name==='enroll_student_document'));
   assert.equal(page.get('#finish-registration').disabled,true);
 });
 test('correcting a repeated phone clears its warning and permits another attempt',async()=>{
@@ -716,7 +722,7 @@ test('editing a phone while its check is pending discards the stale result',asyn
   page.fields.phone.value='6000-0002';page.fields.phone.dispatch('input');
   assert.equal(page.get('#finish-registration').disabled,true);
   release(true);await page.settle();
-  assert.equal(page.calls.some(call=>call.name==='enroll_student'),false);
+  assert.equal(page.calls.some(call=>call.name==='enroll_student_document'),false);
   assert.equal(page.get('#email-duplicate-notice').hidden,true);
   assert.equal(page.get('#finish-registration').disabled,false);
 });
@@ -729,5 +735,61 @@ test('a second submit cannot create another pending registration request',async(
   await page.get('#registration-form').dispatch('submit');await page.settle();
   assert.equal(page.calls.filter(call=>call.name==='student_registration_phone_hint').length,1);
   release(false);await page.settle();
-  assert.equal(page.calls.filter(call=>call.name==='enroll_student').length,1);
+  assert.equal(page.calls.filter(call=>call.name==='enroll_student_document').length,1);
+});
+
+test('document fields add cedula dashes and switch cleanly to passport',async()=>{
+ const page=await boot({submitted:NEW,signedIn:false});
+ page.fields.documentTome.value='0123';page.fields.documentEntry.value='00045';
+ page.fields.documentTome.dispatch('input');
+ assert.equal(page.fields.documentNumber.value,'8-0123-00045');
+ assert.equal(page.state('documentDetails().p_document_number'),'8-123-45');
+ page.fields.documentType.value='passport';page.fields.documentType.dispatch('change');
+ assert.equal(page.get('#cedula-parts').hidden,true);
+ assert.equal(page.fields.documentNumber.value,'');
+ assert.equal(page.fields.documentNumber.readOnly,false);
+ page.fields.documentNumber.value='ab-001234';page.fields.documentCountry.value='CO';
+ assert.equal(page.state('documentDetails().p_document_number'),'AB001234');
+ assert.equal(page.state('documentDetails().p_document_country'),'CO');
+});
+test('missing document never submits a new registration',async()=>{
+ const page=await boot({submitted:NEW,signedIn:false});
+ page.fields.documentTome.value='';
+ await page.get('#registration-form').dispatch('submit');await page.settle();
+ assert.equal(page.calls.length,0);
+ assert.match(page.get('#registration-error').textContent,/cédula/);
+});
+test('duplicate document with a changed email and phone offers recovery instead of creating another avatar',async()=>{
+ const page=await boot({submitted:NEW,signedIn:false,enroll:()=>{throw Error('Este documento ya tiene una cuenta. Recupera tu cuenta');}});
+ page.fields.firstName.value='Otra';page.fields.lastName.value='Persona';
+ page.fields.email.value='new@example.invalid';page.fields.phone.value='60000009';
+ await page.get('#registration-form').dispatch('submit');await page.settle();
+ assert.equal(page.state('questions[questionIndex]'),'documentNumber');
+ assert.equal(page.get('#email-duplicate-notice').hidden,false);
+ assert.equal(page.get('#next-question').disabled,true);
+ assert.equal(page.get('#room').dataset.stage,'registration');
+});
+test('legacy students add a document without another enrollment or losing avatar and team',async()=>{
+ const profileFixture={id:'legacy-a',firstName:'Ana',lastName:'Prueba',topicId:'team-a',avatar:{skin:2}};
+ const page=await boot({submitted:NEW,documentRequired:true,profileFixture});
+ assert.equal(page.state('completingDocument'),true);
+ assert.equal(page.get('#room').dataset.stage,'registration');
+ assert.equal(page.get('#edit-avatar').hidden,true);
+ const enrollments=page.calls.filter(c=>c.name==='enroll_student_document').length;
+ await page.get('#registration-form').dispatch('submit');await page.settle();
+ assert.equal(page.calls.filter(c=>c.name==='enroll_student_document').length,enrollments);
+ assert.equal(page.calls.filter(c=>c.name==='student_set_document').length,1);
+ assert.equal(page.get('#room').dataset.stage,'room');
+ assert.equal(page.state('profile.topicId'),'team-a');
+ assert.equal(page.state('profile.avatar.skin'),2);
+});
+test('editing a document during the contact hint discards the pending enrollment',async()=>{
+ let release;
+ const page=await boot({submitted:NEW,signedIn:false,phoneHint:()=>new Promise(resolve=>release=resolve)});
+ page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';page.fields.email.value='a@example.invalid';page.fields.phone.value='60000009';
+ await page.get('#registration-form').dispatch('submit');await page.settle();
+ page.fields.documentEntry.value='46';page.fields.documentEntry.dispatch('input');
+ release(false);await page.settle();
+ assert.equal(page.calls.some(c=>c.name==='enroll_student_document'),false);
+ assert.equal(page.get('#finish-registration').disabled,false);
 });

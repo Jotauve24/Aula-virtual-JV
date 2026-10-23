@@ -1,6 +1,6 @@
 import {
   studentSignedIn, studentRpc, studentAuthUser, protectStudentAccount, emailStudentLogin
-} from './supabase-client.js?v=0.5.2';
+} from './supabase-client.js?v=0.6.0';
 
 const $ = selector => document.querySelector(selector);
 const dialog = $('#student-account-dialog'), area = $('#account-dialog-content');
@@ -78,6 +78,15 @@ async function openSignIn() {
     try {
       const user=await studentAuthUser();
       const verified=user && !user.is_anonymous && user.email_confirmed_at;
+      if(verified && localStorage.getItem('aula-student-document-recovery')) {
+        await studentRpc('student_recover_document_account');
+        const recoveredCourses=await studentRpc('student_owned_courses');
+        if(recoveredCourses.length) {
+          showOwnedCourses(recoveredCourses);
+          setNotice('Tu cuenta está recuperada. Puedes abrir tus materias y usar esta misma cuenta para inscribirte en otra.');
+          localStorage.removeItem('aula-student-document-recovery'); return;
+        }
+      }
       if(verified && localStorage.getItem('aula-student-recovery-code')) {
         await openRecoveryRequest();
         return;
@@ -213,6 +222,20 @@ async function onEmailReturn() {
   if(!studentSignedIn()){
     openDialog('Confirma tu acceso','No pudimos completar el enlace. Abre nuevamente el correo o solicita otro.');
     setNotice('No se encontró una sesión de acceso válida.','error');return;
+  }
+  if(localStorage.getItem('aula-student-document-recovery')) {
+    const verifiedUser=await studentAuthUser();
+    if(!verifiedUser || verifiedUser.is_anonymous || !verifiedUser.email_confirmed_at) {
+      openDialog('Verifica tu correo','Abre el enlace enviado al correo de tu inscripción anterior para recuperar tu cuenta.');
+      return;
+    }
+    await studentRpc('student_recover_document_account');
+    const recoveredCourses=await studentRpc('student_owned_courses');
+    if(recoveredCourses.length) {
+      showOwnedCourses(recoveredCourses);
+      setNotice('Tu cuenta está recuperada. Abre una de tus materias o vuelve al enlace de la nueva materia usando esta sesión.');
+      localStorage.removeItem('aula-student-document-recovery'); return;
+    }
   }
   const own=await studentRpc('student_owned_courses').catch(()=>null);
   if(!own){

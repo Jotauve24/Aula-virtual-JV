@@ -18,11 +18,12 @@ class Element {
   showModal(){this.open=true;}
   close(){this.open=false;}
 }
-function browser({pending={status:'pending'},own=[],search='',storedCode='',recoveryCode='',confirmed=true,anonymous=false,hasEnrollment=false,authFailure='',expireSession=false}={}){
+function browser({pending={status:'pending'},own=[],search='',storedCode='',recoveryCode='',documentRecovery=false,confirmed=true,anonymous=false,hasEnrollment=false,authFailure='',expireSession=false}={}){
   const elements=new Map();
   const get=selector=>{if(!elements.has(selector))elements.set(selector,new Element());return elements.get(selector);};
   const memory=new Map(storedCode?[['aula-student-course-code',storedCode]]:[]);
   if(recoveryCode)memory.set('aula-student-recovery-code',recoveryCode);
+  if(documentRecovery)memory.set('aula-student-document-recovery','1');
   const localStorage={getItem:key=>memory.get(key)||null,removeItem:key=>memory.delete(key),setItem:(key,value)=>memory.set(key,String(value))};
   const sessionStorage={getItem:()=>null};
   const events=[],rpcCalls=[],navigations=[];
@@ -34,6 +35,7 @@ function browser({pending={status:'pending'},own=[],search='',storedCode='',reco
   };
   const studentRpc=async(name,args)=>{
     rpcCalls.push({name,args});
+    if(name==='student_recover_document_account')return {recovered:own.length};
     if(name==='student_has_any_enrollment')return hasEnrollment;
     if(name==='student_owned_courses')return own;
     if(name==='student_complete_profile_recovery')return pending;
@@ -195,4 +197,20 @@ test('a temporary account check failure preserves the session instead of offerin
   await page.get('#student-sign-in').listeners.get('click')();
   assert.equal(page.get('#account-dialog-content').children.some(node=>node.tagName==='form'),false);
   assert.match(page.get('#account-dialog-error').textContent,/no perder tu perfil/);
+});
+
+test('verified document recovery locates original subjects without silently opening the new subject',async()=>{
+ const page=browser({search:'?student_auth=login',documentRecovery:true,recoveryCode:'MAT-AAAAA-BBBBB-CCCCC',
+ own:[{course_id:ownedCourse,course_name:'Materia original'}]});
+ await page.settle();
+ assert.equal(page.rpcCalls[0].name,'student_recover_document_account');
+ assert.equal(page.navigations.length,0);
+ assert.ok(page.get('#account-dialog-content').children.some(n=>n.textContent==='Materia original →'));
+ assert.match(page.get('#account-dialog-message').textContent,/recuperada/);
+});
+test('document recovery flag never bypasses the verified email requirement',async()=>{
+ const page=browser({search:'?student_auth=login',documentRecovery:true,anonymous:true,confirmed:false});
+ await page.settle();
+ assert.equal(page.rpcCalls.some(c=>c.name==='student_recover_document_account'),false);
+ assert.equal(page.navigations.length,0);
 });

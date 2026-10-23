@@ -1,4 +1,4 @@
-import { findPath, isWalkable, canWalkSegment } from './world-layout.js?v=0.5.2';
+import { findPath, isWalkable, canWalkSegment } from './world-layout.js?v=0.6.0';
 
 // Ambient animals walk on the student collision map. Only the explicit table
 // jumps leave that floor, so roaming never lets them pass through a wall.
