@@ -2,6 +2,19 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
+## Tutorial de la portada (0.7.0)
+
+La portada presenta un recorrido animado de seis pasos: ingreso y registro,
+avatar, elección de equipo, equipos completos, Mi equipo y chat con archivos.
+Utiliza el mapa y los personajes actuales, con cuatro mesas de ejemplo y una
+presentación en perspectiva. Las escenas y los contactos son ficticios.
+
+Se puede pausar, repetir o elegir cualquier paso; al avanzar manualmente se
+detiene la reproducción para leer. El tutorial se pausa al salir de la pestaña
+o de la zona visible y respeta la preferencia de movimiento reducido. No hace
+consultas de estudiantes ni crea inscripciones, equipos o mensajes. El campo
+real para ingresar el código permanece separado del ejemplo.
+
 ## Sonido retro opcional
 
 El aula estudiantil y ZombieAdmin tienen un control **🔉 Sonido / 🔇 Sin sonido**

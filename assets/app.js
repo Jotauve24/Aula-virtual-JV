@@ -1,33 +1,19 @@
-import './embed.js?v=0.6.2';
-import { normalizeCode } from './model.js?v=0.6.2';
-import { drawWorld } from './world.js?v=0.6.2';
-import { configured } from './supabase-client.js?v=0.6.2';
+import './embed.js?v=0.7.0';
+import { normalizeCode } from './model.js?v=0.7.0';
+import { mountEntranceTutorial } from './entrance-tutorial.js?v=0.7.0';
+import { configured } from './supabase-client.js?v=0.7.0';
 
 const form = document.querySelector('#course-form');
 const input = document.querySelector('#course-code');
 const submit = document.querySelector('#enter-course');
 const error = document.querySelector('#code-error');
 const dialog = document.querySelector('#info-dialog');
-const canvas = document.querySelector('#preview-map');
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-let frame = 0, lastFrame = 0;
 
 function setError(text) {
   error.textContent = text;
   error.hidden = !text;
   if (text) input.setAttribute('aria-invalid', 'true');
   else input.removeAttribute('aria-invalid');
-}
-function drawPreview(time = 0) { drawWorld(canvas, { decorative: true, time }); }
-function animate(time) {
-  if (time - lastFrame > 45) { drawPreview(time); lastFrame = time; }
-  frame = requestAnimationFrame(animate);
-}
-function updatePreview() {
-  cancelAnimationFrame(frame);
-  frame = 0;
-  drawPreview();
-  if (!reducedMotion.matches && !document.hidden) frame = requestAnimationFrame(animate);
 }
 
 submit.disabled = !input.value.trim();
@@ -62,8 +48,5 @@ document.querySelector('#code-help').addEventListener('click', () => {
 dialog.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
 dialog.querySelector('.dialog-done').addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
-reducedMotion.addEventListener('change', updatePreview);
-document.addEventListener('visibilitychange', updatePreview);
-window.addEventListener('pagehide', () => cancelAnimationFrame(frame));
-updatePreview();
+mountEntranceTutorial(document.querySelector('#entrance-tutorial'));
 

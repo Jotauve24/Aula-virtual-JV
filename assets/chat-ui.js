@@ -1,4 +1,4 @@
-import { fileSizeLabel } from './attachments.js?v=0.6.2';
+import { fileSizeLabel } from './attachments.js?v=0.7.0';
 // Stable student IDs distinguish participants who share a display name.
 // Share one palette between the roster and the conversation, scoped to a team.
 const TONES = [
