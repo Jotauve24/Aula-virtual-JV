@@ -1066,6 +1066,9 @@ reducedMotion.addEventListener('change', () => {
 });
 function stopRoomPolling() {
   stopAmbientAnimation();
+  chatTeamId = '';
+  $('#team-chat-host').hidden = true;
+  $('#team-chat-host').replaceChildren();
   incomingMessages.reset();
   clearTimeout(arrivalHighlightTimer);
   arrivalHighlightTimer = 0;
@@ -1086,9 +1089,7 @@ $('#logout').addEventListener('click', () => {
   localStorage.removeItem('aula-student-resume-id');
   localStorage.removeItem('aula-student-recovery-code');
   localStorage.removeItem('aula-student-document-recovery');
-  stopRoomPolling(); chatTeamId = '';
-  $('#team-chat-host').hidden = true;
-  $('#team-chat-host').replaceChildren();
+  stopRoomPolling();
   courseId = ''; courseName = ''; profile = null; topics = []; selectedTopic = null;
   completingDocument = false;
   registrationForm.reset(); documentType.value='cedula'; updateDocumentInput(true); questions = ['code', 'firstName', 'lastName', 'documentNumber', 'email', 'phone'];

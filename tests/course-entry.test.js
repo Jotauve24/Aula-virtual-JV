@@ -945,3 +945,27 @@ test('an upload finishing after a course change is canceled instead of posted to
  assert.equal(page.calls.some(c=>c.name==='team_chat_send_file'),false);
  assert.equal(page.calls.filter(c=>c.name==='cancel_file').length,1);
 });
+
+test('reopening a restored subject rebuilds a usable chat for the saved team',async()=>{
+ const page=await boot({submitted:NEW,
+ profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'team-1',avatar:{skin:1}},
+ roomFixture:[{id:'team-1',name:'Grupo 1',capacity:5,members:[]}]});
+ const oldForm=page.get('#team-chat-host').children[0].children.find(n=>n.listeners.has('submit'));
+ await page.state(`(()=>{
+   const original=studentRpc;
+   studentRpc=async(name,body)=>{
+     if(name==='course_room'){studentRpc=original;throw Error('Materia deshabilitada');}
+     return original(name,body);
+   };
+   return refreshRoom();
+ })()`);
+ assert.equal(page.get('#room').dataset.stage,'registration');
+ assert.equal(page.get('#team-chat-host').children.length,0);
+ await page.state(`enterCourse('${NEW}')`);
+ const form=page.get('#team-chat-host').children[0].children.find(n=>n.listeners.has('submit'));
+ assert.notEqual(form,oldForm);
+ page.get('#team-chat-input').value='Ya regresé';
+ await form.dispatch('submit');
+ assert.equal(page.calls.filter(c=>c.name==='team_chat_send').length,1);
+ assert.equal(page.get('#room').dataset.stage,'room');
+});

@@ -10,7 +10,7 @@ Versión resultante: **0.6.2**. Base publicada: `7cab53f` (0.6.1).
 | Registro preliminar | Salir durante la consulta de teléfono descarta el intento pendiente. La caducidad de la sesión sigue mostrando un mensaje de recuperación. |
 | Avatar, documento y equipo | Las operaciones capturan su materia y descartan resultados de un contexto anterior. La preferencia de teléfono tampoco reconstruye una lista de otra materia. |
 | Chat | Se impiden envíos simultáneos desde el mismo formulario. El adjunto usa la materia original; si cambia el contexto antes de publicarlo, se intenta cancelar el archivo pendiente. |
-| Mensajes pendientes | Un marcador local de lectura dañado deja de interrumpir la actualización del chat. |
+| Mensajes pendientes | Un marcador local de lectura dañado deja de interrumpir la actualización del chat. Al reabrir una materia restaurada se reconstruye su formulario y se conserva la posibilidad de enviar mensajes al equipo guardado. |
 | Panel docente | Crear/restaurar materias, administrar grupos, cambiar inscripciones y resolver recuperaciones respetan la navegación actual. Los diálogos se cierran al salir. Una consulta antigua no repone solicitudes de recuperación. |
 | Exportación docente | Una exportación pendiente no descarga información después de cerrar sesión. |
 | API antigua | Se retira el permiso de ejecución de `teacher_import_roster(uuid,jsonb)`, sin llamadas desde el cliente actual. Se conserva la función y su historial. |
@@ -24,7 +24,7 @@ Las migraciones anteriores se conservan porque reconstruyen el esquema existente
 
 ## Verificación desde el estudiante y el docente
 
-- **191 pruebas de Node.js aprobadas**, sin fallos ni omisiones; once casos nuevos
+- **192 pruebas de Node.js aprobadas**, sin fallos ni omisiones; doce casos nuevos
   cubren respuestas tardías, cierre de sesión, registro, chat y exportaciones.
 - Sintaxis correcta en los **25 módulos** de producción y herramientas.
 - Integridad de las cuatro páginas: IDs únicos, referencias locales existentes,

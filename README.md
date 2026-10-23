@@ -148,5 +148,5 @@ pendientes no descargan datos tras cerrar la sesión docente. Se retira el acces
 al API antiguo de precarga de estudiantes y se añaden índices de consulta.
 
 La [auditoría del 23 de octubre](docs/auditoria-tecnica-2026-10-23.md) describe
-los hallazgos, las 191 pruebas automatizadas, las siete comprobaciones SQL y
+los hallazgos, las 192 pruebas automatizadas, las siete comprobaciones SQL y
 los límites de la revisión con navegador.
