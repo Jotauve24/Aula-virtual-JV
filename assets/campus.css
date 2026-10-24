@@ -1,0 +1,189 @@
+/* One visual language for the entrance, classroom and teacher workspace. */
+@font-face{font-family:AulaNunito;src:url('./fonts/nunito-latin.woff') format('woff');font-style:normal;font-weight:400 900;font-display:swap}
+.campus-theme{--paper:#f7f6ee;--ink:#253e35;--muted:#66756b;--green:#31664e;--green-hover:#254f3c;--mint:#e9f0e3;--line:#dce3d5;--focus:#b65d2d;font-family:AulaNunito,ui-rounded,'Segoe UI',sans-serif;background:var(--paper);color:var(--ink)}
+.campus-theme button,.campus-theme input,.campus-theme select{font-family:inherit}
+.campus-theme ::selection{background:#f7cd8b;color:#243e32}
+.campus-theme .brand{color:var(--ink);letter-spacing:-.7px}
+.campus-theme .brand-mark{filter:drop-shadow(0 3px 0 #243d3510)}
+.campus-theme .brand-name{font-weight:900}
+.campus-theme .brand-name .brand-light{font-weight:500}
+.campus-theme .brand small{color:var(--muted);font-size:11px}
+.campus-theme .button{border-radius:13px;font-weight:800;transition:background .18s,transform .18s,box-shadow .18s}
+.campus-theme .button.primary{background:var(--green);border:1px solid #29573f;box-shadow:0 4px 0 #214a36,0 7px 15px #214a3614;color:#fff}
+.campus-theme .button.primary:not(:disabled):hover{background:#3a785b;box-shadow:0 5px 0 #214a36,0 10px 18px #214a3620;transform:translateY(-1px)}
+.campus-theme .button.primary:not(:disabled):active{transform:translateY(3px);box-shadow:0 1px 0 #214a36}
+.campus-theme .button.primary:disabled{opacity:1;background:#dce6d7;border-color:#d2decc;color:#5c705b;box-shadow:0 3px 0 #cad6c4;cursor:not-allowed}
+.campus-theme .button.secondary{background:#fffef9;border-color:#d5dece;color:#3c5b48;box-shadow:0 2px 0 #dfe5d8}
+.campus-theme .button.secondary:hover{background:#eef3e8;border-color:#acbfa4;transform:translateY(-1px)}
+.campus-theme button:focus-visible,.campus-theme a:focus-visible,.campus-theme input:focus-visible,.campus-theme select:focus-visible{outline-color:var(--focus)}
+.campus-theme .site-footer{border-top:1px solid #dde3d4;color:#71806c;font-size:12px;padding-top:23px;padding-bottom:25px}
+.campus-theme .site-footer a{color:#43634f;font-weight:800;text-underline-offset:4px}
+
+/* Entrance: a warm canvas, a living diorama and one unmistakable entry. */
+.campus-theme.campus-entrance{background:radial-gradient(ellipse at 84% 30%,#e6efdc 0,transparent 48%),#f7f6ee}
+.campus-entrance .site-header{max-width:1480px;min-height:100px;padding:25px 56px 19px}
+.campus-entrance #main{max-width:1480px}
+.entry-nav{margin-left:auto;margin-right:34px}
+.entry-nav a{display:inline-flex;align-items:center;gap:12px;font-size:13px;font-weight:800;text-decoration:none;padding:12px 4px;color:#4b6453}
+.entry-nav a span{font-size:21px;color:#bc794e;transition:transform .2s}
+.entry-nav a:hover span{transform:translate(2px,2px)}
+.campus-entrance .entry-tools{gap:10px}
+.campus-entrance .version-badge{font-size:10px;letter-spacing:.05em;font-weight:800;background:#edf3e6;border-color:#d5e2cd;color:#466349;padding:9px 11px}
+.campus-entrance .status-dot{width:6px;height:6px;background:#619060;box-shadow:0 0 0 3px #6f9a5e13}
+.campus-entrance .entry-tools .button{font-size:12px;min-height:40px;padding:9px 13px;border-radius:11px}
+.campus-entrance .login-layout{grid-template-columns:minmax(330px,.88fr) minmax(0,1.32fr);gap:clamp(30px,4vw,58px);padding:32px 56px 43px;align-items:center;min-height:0}
+.campus-entrance .login-content{max-width:465px;padding:8px 0 0}
+.campus-entrance .login-content>.eyebrow{font-size:10px;letter-spacing:.12em;font-weight:900;color:#637656}
+.campus-entrance .eyebrow-line{width:9px;height:9px;border-radius:3px;background:#e4a165;transform:rotate(-12deg)}
+.campus-entrance .login-content h1{font-family:inherit;font-size:clamp(43px,4.3vw,63px);font-weight:900;line-height:1.035;letter-spacing:-.055em;color:#283f34;margin:22px 0 24px;text-wrap:initial}
+.campus-entrance .login-content h1 em{position:relative;display:inline-block;font-style:normal;font-weight:900;color:#50835e;white-space:nowrap}
+.login-content h1 em svg{position:absolute;left:-3%;bottom:-13px;width:106%;height:18px;fill:none;stroke:#e8ae65;stroke-width:4;stroke-linecap:round}
+.campus-entrance .login-content .intro{max-width:390px;font-size:15px;line-height:1.7;color:#62705c;margin:0 0 15px}
+.entry-community{display:flex;align-items:center;gap:12px;margin:14px 0 23px}
+.entry-faces{display:flex;padding-left:3px}
+.entry-faces>span{display:grid;place-items:center;width:40px;height:40px;border:3px solid #f7f6ee;border-radius:50%;overflow:hidden;background:#dce8cd;margin-left:-3px;transform:rotate(-7deg)}
+.entry-faces>span:nth-child(2){background:#f1d1b1;transform:rotate(5deg);margin-left:-9px}
+.entry-faces>span:nth-child(3){background:#d5d7ec;transform:rotate(-5deg);margin-left:-9px}
+.entry-faces svg{width:31px;height:48px;transform:translateY(7px)}
+.entry-community p{font-size:11px;line-height:1.45;color:#6d7b66;margin:0}
+.entry-community strong{font-weight:900;color:#425d43}
+.entry-spark{margin-left:auto;margin-right:12px;color:#c8904a;font-size:29px;transform:rotate(14deg)}
+.campus-entrance #course-form{position:relative;padding:20px 21px 22px;border:1px solid #dce3d3;border-radius:20px;background:#fffef9;box-shadow:0 5px 0 #e8ebde,0 13px 30px #3c583709}
+.entry-form-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.campus-entrance .entry-form-heading label{font-size:13px;font-weight:900;margin:0;color:#3e5842}
+.entry-form-heading>span{font-size:24px;line-height:1;color:#bd8257;transform:rotate(-9deg)}
+.campus-entrance .login-content .code-field{border:1.5px solid #d4dfcc;border-radius:11px;background:#f8faf3;box-shadow:inset 0 2px 3px #48653905}
+.campus-entrance .login-content .code-field:hover{border-color:#a9bfa0}
+.campus-entrance .login-content .code-field:focus-within{border-color:#598354;box-shadow:0 0 0 4px #628d4f14}
+.campus-entrance .code-field input{padding:15px 11px;font-size:15px;letter-spacing:1px;font-weight:700}
+.campus-entrance .code-field input::placeholder{color:#829177;font-size:13px;font-weight:500}
+.campus-entrance .login-content .code-field svg{stroke:#6a8b5c;width:19px;margin-left:13px}
+.campus-entrance .login-content .field-hint{font-size:11px;margin-top:9px;color:#667558}
+.campus-entrance .login-content .enter-button{margin-top:17px;min-height:49px;font-size:14px;background:#346a4f;border-color:#2c5d44;box-shadow:0 4px 0 #224e36}
+.campus-entrance .login-content .enter-button:disabled{background:#e0e8d9;border-color:#d4dfcb;color:#62755b;box-shadow:0 3px 0 #cbd7c2}
+.campus-entrance .login-content .enter-button:not(:disabled):hover{background:#407e5a;box-shadow:0 5px 0 #224e36}
+.campus-entrance .login-content .help-button{font-size:11px;color:#69815f;min-height:31px;margin-top:10px;padding:5px 0;text-underline-offset:3px;justify-content:center;text-align:center}
+.campus-entrance .login-content #code-help{margin-top:3px;color:#64764f}
+.campus-entrance .login-content .entry-note{display:flex;gap:10px;margin-top:15px;padding:12px 0 0;background:transparent;border:0;border-top:1px solid #dfe5d6;border-radius:0;box-shadow:none}
+.campus-entrance .login-content .entry-note-icon{flex:none;width:22px;height:22px;font-size:11px;background:#e8efdf;color:#548150;border:1px solid #d3dfca}
+.campus-entrance .login-content .entry-note p{font-size:10px;line-height:1.6;color:#657752;margin:0}
+.campus-entrance .login-content .entry-note strong{font-size:11px;color:#4e6847}
+.campus-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:1px 56px 39px;padding:23px 30px;border:1px solid #dce4d0;border-radius:20px;background:#edf1e4}
+.campus-values>div{display:flex;align-items:center;gap:14px;min-width:0}
+.campus-values>div+div{padding-left:26px;border-left:1px solid #d4dfc6}
+.campus-values p{margin:0;line-height:1.5}
+.campus-values strong{display:block;font-size:13px;font-weight:900;color:#425c3e}
+.campus-values p>span{display:block;font-size:11px;margin-top:3px;color:#748469}
+.campus-value-icon{display:grid;place-items:center;flex:none;width:47px;height:47px;border:1px solid #d1ddc2;border-radius:15px;background:#dce8cd;box-shadow:0 3px 0 #d4dfc4;transform:rotate(-5deg);overflow:hidden}
+.avatar-value svg{width:30px;height:46px;transform:translateY(6px)}
+.team-value{background:#f4dfc1;border-color:#e8d0ab;box-shadow:0 3px 0 #e8d0ab;transform:rotate(4deg)}
+.chat-value{background:#dce1ee;border-color:#ccd3e6;box-shadow:0 3px 0 #ccd3e6}
+.team-value svg,.chat-value svg{width:28px;height:28px;fill:none;stroke:#9e7947;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.chat-value svg{stroke:#7a81a3;width:25px;height:25px}
+
+/* The same welcoming material and colors continue inside the live classroom. */
+.campus-theme #room .room-header{position:relative;isolation:isolate;overflow:hidden;background:#2c493b;color:#fffef4;border:1px solid #365b44;border-radius:24px;box-shadow:0 5px 0 #d6dfce,0 15px 30px #324b380c;padding:25px 30px}
+.campus-theme #room .room-header:after{content:'';position:absolute;z-index:-1;width:260px;height:260px;right:10%;top:-188px;border:36px solid #9cb77a13;border-radius:50%;box-shadow:0 0 0 28px #9cb77a06;pointer-events:none}
+.campus-theme #room .room-heading h1{font-family:inherit;font-weight:900;letter-spacing:-.035em}
+.campus-theme #room .room-header .eyebrow{color:#c1d3a6;font-family:inherit;letter-spacing:.12em}
+.campus-theme #room-intro{color:#d4dfc9}
+.campus-theme #room .room-header .group-badge{background:#42634b;border-color:#779267;color:#f6f9eb;border-radius:12px;font-weight:800}
+.campus-theme #room .room-header .online-count{background:#e4eed8;border-color:#bbd3a3;color:#426b35;font-weight:800}
+.campus-theme #room .room-header #edit-avatar,.campus-theme #room .room-header #protect-account{background:#f4f4e5;color:#3c5c40;border-color:#d6dfc7}
+.campus-theme #room[data-stage="registration"] .room-header,.campus-theme #room[data-stage="avatar"] .room-header{background:#edf2e4;color:#304c39;border-color:#d7e0cb;box-shadow:0 4px 0 #e3e8d9}
+.campus-theme #room[data-stage="registration"] .room-header .eyebrow,.campus-theme #room[data-stage="avatar"] .room-header .eyebrow{color:#698253}
+.campus-theme #room[data-stage="registration"] #room-intro,.campus-theme #room[data-stage="avatar"] #room-intro{color:#6a7c5d}
+.campus-theme #room[data-stage="room"] .room-tabs{margin-top:24px;padding:6px;gap:6px;border:1px solid #d9e2ce;border-radius:16px;background:#eaf0e1;box-shadow:none}
+.campus-theme #room[data-stage="room"] .room-tabs [role="tab"]{min-height:47px;border-radius:11px;color:#61734f;font-family:inherit;font-size:14px;font-weight:900}
+.campus-theme #room[data-stage="room"] .room-tabs [role="tab"][aria-selected="true"]{background:#3a6a4c;color:#fff;box-shadow:0 3px 0 #2b5139,0 6px 12px #34563812}
+.campus-theme #room[data-stage="room"] .room-tabs [role="tab"]:hover:not([aria-selected="true"]){background:#fafbf4;color:#456642}
+.campus-theme #room .room-layout{gap:22px}
+.campus-theme #room .room-map-container{border:6px solid #fffef7;border-radius:23px;background:#e9efdf;box-shadow:0 5px 0 #d7e0cc,0 14px 28px #3b57391a;overflow:hidden}
+.campus-theme #room .room-map{background:#f1ead5}
+.campus-theme #room[data-stage="room"] .room-tools{padding:15px 17px;background:#f8f9f0;border-color:#dce4d0}
+.campus-theme #room .movement-hint,.campus-theme .room-legend{color:#647653}
+.campus-theme #room .movement-hint strong{display:inline-block;min-width:19px;text-align:center;color:#4d6c43}
+.campus-theme #room .room-status{font-size:12px;color:#69825b;font-weight:800;margin-top:14px}
+.campus-theme #room .room-side{border:1px solid #d8e1cc;border-radius:23px;background:#fffef7;box-shadow:0 4px 0 #e5e9dc,0 12px 26px #3b573909;padding:24px}
+.campus-theme #room .room-side .eyebrow{color:#627a46;font-weight:900}
+.campus-theme #room .room-side h2{font-family:inherit;font-weight:900;color:#3d5d3d;font-size:25px;letter-spacing:-.025em}
+.campus-theme #room .room-side p{color:#647653}
+.campus-theme #room .room-side .side-footer{border-color:#e1e7d6;color:#6f815b;font-size:11px}
+.campus-theme #room[data-stage="room"] .topic-list .topic-link{border:1px solid #dbe3d0;border-left:4px solid var(--table-accent);border-radius:13px;box-shadow:0 2px 0 #dfe5d9;padding:13px 12px;font-family:inherit}
+.campus-theme #room[data-stage="room"] .topic-list .topic-link:hover{transform:translateY(-2px);border-color:var(--table-accent);box-shadow:0 4px 0 #dfe5d9}
+.campus-theme #room .map-action{border:1px solid #c2d0b8;border-left:4px solid var(--table-accent);border-radius:9px;background:#fffef5f0;box-shadow:0 3px 0 #41533c25,0 5px 12px #33472e18;font-family:inherit;backdrop-filter:blur(3px)}
+.campus-theme #room .map-action strong{font-weight:900;color:#3a513a}
+.campus-theme #room .map-action small{color:#6b815c}
+.campus-theme #room .map-action:hover,.campus-theme #room .map-action:focus-visible{background:#fffef7;border-color:var(--table-accent);transform:translate(-50%,-53%)}
+.campus-theme #room .map-action.is-mine{background:#fff4c8;border:2px solid #4c7b4b;border-left:5px solid #4c7b4b;outline:2px solid #f7d67a;box-shadow:0 0 0 4px #4c7b4b,0 5px 12px #33472e28}
+.campus-theme #room .map-action.is-mine small.team-selected-marker{background:#426d42;color:#fff9db;border-radius:5px;padding:3px 6px}
+.campus-theme #room[data-stage="room"] .topic-list .topic-link.is-mine{background:#f4edce;border-color:#618b53;border-left:5px solid #618b53;box-shadow:0 3px 0 #d7dfbb}
+.campus-theme #room[data-stage="room"] .topic-list .topic-link.is-mine span{background:#e3ebce;color:#476c37}
+.campus-theme #room .dpad button{background:#fffef8;border-color:#d3dfc8;color:#587c48;border-radius:9px;box-shadow:0 3px 0 #cbd8bf;font-weight:900}
+.campus-theme #room .dpad button:hover{background:#eaf2df}
+.campus-theme #room .dpad button:active{transform:translateY(2px);box-shadow:0 1px 0 #cbd8bf}
+
+/* Registration and avatar studio retain their actual step-by-step behavior. */
+.campus-theme #room[data-stage="registration"] .in-room-dialog,.campus-theme #room[data-stage="avatar"] .in-room-dialog{background:#fffef8;border:1px solid #c9d8bd;outline:0;border-radius:23px;box-shadow:0 7px 0 #617a4c35,0 24px 56px #2d462d35}
+.campus-theme #room .dialog-teacher{font-family:inherit;color:#647e4c;border-color:#e2e8d8}
+.campus-theme #room .in-room-dialog .eyebrow{font-family:inherit;color:#6c8a53}
+.campus-theme #room[data-stage="registration"] #dialog-progress{background:#ecf2e2;border-radius:8px;color:#6b8852;font-size:10px;letter-spacing:.06em;font-weight:900}
+.campus-theme #room .in-room-dialog h2{font-family:inherit;font-weight:900;color:#3b573a;line-height:1.2}
+.campus-theme #room .in-room-dialog p{color:#657851;line-height:1.6}
+.campus-theme #room .in-room-dialog input,.campus-theme #room .in-room-dialog select{border:1.5px solid #d2dfc6;border-radius:10px;background:#fbfcf5;color:#425c3d}
+.campus-theme #room .in-room-dialog input:focus{border-color:#799867;outline-color:#79986730}
+.campus-theme #room .in-room-dialog .button.primary{background:#3a6c4c;border-color:#315c40;box-shadow:0 3px 0 #274b34;color:white;font-weight:900}
+.campus-theme #room[data-stage="avatar"] .avatar-preview{position:relative;isolation:isolate;overflow:hidden;border:1px solid #d2dfbe;border-radius:19px;background:radial-gradient(circle at 50% 44%,#f7fae9 0 26%,transparent 27%),#e5edd6;box-shadow:inset 0 -12px 0 #dfe8cb}
+.campus-theme #room[data-stage="avatar"] .avatar-preview:before{bottom:34px;background:#9eb98355;box-shadow:0 6px 0 #859d7240;filter:none}
+.campus-theme #room[data-stage="avatar"] .avatar-preview svg{filter:drop-shadow(4px 6px 0 #6b85532e)}
+.campus-theme #room[data-stage="avatar"] .avatar-style-option{border-color:#d1dec3;background:#f7f9ef;color:#567644;border-radius:12px}
+.campus-theme #room[data-stage="avatar"] .avatar-style-option[aria-pressed="true"],.campus-theme #room[data-stage="avatar"] .avatar-style-option[data-presentation="mujer"][aria-pressed="true"]{border-color:#6b8e52;background:#e9f0db;box-shadow:0 3px 0 #bacda5}
+.campus-theme #room[data-stage="avatar"] .swatch[aria-pressed="true"]{box-shadow:0 0 0 3px #789759,0 4px 0 #c6d5b4}
+.campus-theme #room[data-stage="avatar"] .hair-option[aria-pressed="true"]{border-color:#789759;background:#eaf1df;box-shadow:0 2px 0 #c6d5b4}
+.campus-theme #room .change-code{color:#69874f}
+.campus-theme #topic-dialog.topic-dialog{border:2px solid #718e5a;outline:0;border-radius:21px;background:#fffef5;color:#3a5236;box-shadow:0 6px 0 #728d5940,0 20px 44px #31453040;font-family:inherit}
+.campus-theme #topic-dialog h2{font-family:inherit;font-size:24px;font-weight:900;letter-spacing:-.02em}
+.campus-theme #topic-dialog .eyebrow{font-family:inherit;font-weight:900;color:#7c945a}
+.campus-theme #topic-dialog .button{border-radius:11px;font-size:13px;min-height:42px;font-weight:900}
+.campus-theme .team-open-button{box-shadow:0 3px 0 #274b34,0 0 0 4px #e3ecd7}
+.campus-theme #room .team-roster-panel{background:#fffef8;border:1px solid #d9e2cd;border-radius:22px;padding:27px;box-shadow:0 4px 0 #e4e9d9}
+.campus-theme #room .team-roster-panel h3{font-family:inherit;font-weight:900;font-size:27px;color:#3c5d38}
+.campus-theme #room .team-roster{grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:13px;max-height:none}
+.campus-theme #room .team-member{padding:17px;border-radius:15px}
+.campus-theme #room .team-member strong{font-size:14px;font-weight:900}
+.campus-theme #room .team-chat{border:1px solid #d6e0c9;border-radius:24px;box-shadow:0 4px 0 #e3e9d8;background:#fffef8;font-family:inherit}
+.campus-theme #room .team-chat h2{font-family:inherit;font-weight:900;color:#3d5939}
+.campus-theme #room .team-chat-icon{background:#e8efdb;color:#62854d;box-shadow:0 3px 0 #d3dfc2}
+.campus-theme #room .chat-private-badge{background:#eff4e7;border-color:#d9e4cc;color:#70895b}
+.campus-theme #room .team-chat .chat-messages{background:#f1f4e9;border-color:#dfe6d4;border-radius:19px}
+.campus-theme #room .chat-bubble{border-radius:16px 16px 16px 4px;box-shadow:0 3px 0 #435c3c09}
+.campus-theme #room .chat-message.mine .chat-bubble{border-radius:16px 16px 4px 16px}
+.campus-theme #room .team-chat .chat-form input{border-color:#cddbbf;background:#fffef9;border-radius:12px}
+.campus-theme #room .chat-avatar{border-radius:12px;font-weight:900;box-shadow:0 2px 0 #5d755b12}
+.campus-theme #room .team-chat-host{max-width:1100px;margin-inline:auto}
+.campus-theme .teacher-header{font-family:inherit}
+.campus-theme .teacher-main h1,.campus-theme .teacher-main h2,.campus-theme .teacher-main h3{font-family:inherit;font-weight:900}
+
+.entry-faces svg,.campus-value-icon{transition:transform .25s ease}
+.entry-faces:hover svg{transform:translateY(4px) rotate(7deg)}
+.campus-values>div:hover .campus-value-icon{transform:rotate(0deg) translateY(-3px)}
+/* Optional phone sharing has its own warm, readable choice panel. */
+.campus-theme #room .team-roster-panel .share-contact-card{border:1px solid #dfcb9f;border-radius:18px;background:#f8edcf;box-shadow:0 3px 0 #ebdfbd}
+.campus-theme #room .team-roster-panel .share-contact-icon{background:#c99e58;color:#fffdf1;border-radius:12px;box-shadow:0 3px 0 #b28b45}
+.campus-theme #room .team-roster-panel .share-contact-title{color:#735b32;font-weight:900}
+.campus-theme #room .team-roster-panel .share-contact-eyebrow{color:#97773e;font-weight:900}
+.campus-theme #room .team-roster-panel .share-contact-description{color:#826c48}
+.campus-theme #room .team-roster-panel .share-contact{background:#fffdf5;border-color:#ddcca8;border-radius:11px;color:#755f3a}
+.campus-theme #room .team-roster-panel .share-contact input{accent-color:#5f8348}
+.campus-theme #room .team-roster-panel .share-contact-status{background:#fff9e8;color:#8b744b;border-radius:7px}
+.campus-theme #room .team-roster-panel .share-contact-card[data-sharing="true"]{background:#edf3df;border-color:#c5d6aa;box-shadow:0 3px 0 #dce7ca}
+.campus-theme #room .team-roster-panel .share-contact-card[data-sharing="true"] .share-contact-status{background:#e1eccb;color:#58723b}
+.campus-theme #topic-dialog .topic-close{border:1px solid #d6e0c7;border-radius:10px;background:#eef3e3;color:#6f8656}
+.campus-theme #topic-dialog #join-confirm-title{font-family:inherit;font-weight:900}
+
+@media(min-width:1500px){.campus-entrance .login-layout{padding-top:38px}.campus-entrance .login-content h1{font-size:66px}}
+@media(max-width:1100px){.campus-entrance .site-header{padding-inline:30px}.campus-entrance .login-layout{padding-inline:30px;gap:28px;grid-template-columns:minmax(300px,.85fr) minmax(0,1.15fr)}.campus-entrance .login-content h1{font-size:47px}.entry-nav{margin-right:20px}.campus-values{margin-inline:30px;padding-inline:22px;gap:17px}.campus-values>div+div{padding-left:18px}.campus-values strong{font-size:12px}.campus-values p>span{font-size:10px}.campus-value-icon{width:41px;height:41px}}
+@media(max-width:800px){.campus-entrance .site-header{padding:19px 24px;min-height:85px}.entry-nav{display:none}.campus-entrance .login-layout{grid-template-columns:1fr;max-width:650px;margin:auto;padding:24px 26px 32px;gap:36px}.campus-entrance .login-content{max-width:100%;padding:0}.campus-entrance .login-content h1{font-size:57px;max-width:540px}.campus-entrance .login-content .intro{max-width:460px;font-size:16px}.entry-community{max-width:410px}.campus-entrance #course-form{max-width:500px}.campus-entrance .login-content .help-button{margin-left:0;text-align:left}.campus-entrance .login-content .entry-note{max-width:500px}.campus-values{max-width:598px;margin:5px auto 32px;grid-template-columns:1fr;gap:18px;padding:25px}.campus-values>div+div{padding:18px 0 0;border-left:0;border-top:1px solid #d4dfc6}.campus-values strong{font-size:14px}.campus-values p>span{font-size:12px}.campus-value-icon{width:46px;height:46px}.campus-theme #room .room-side{padding:21px}.campus-theme #room .room-layout{gap:18px}}
+@media(max-width:550px){.campus-entrance .site-header{padding:17px 19px;gap:12px}.campus-entrance .brand{font-size:18px;gap:9px}.campus-entrance .brand-mark{width:36px;height:36px}.campus-entrance .brand small{font-size:9px}.campus-entrance .version-badge{display:none}.campus-entrance .entry-tools .button{font-size:10px;gap:5px;min-height:37px;padding:7px 9px}.campus-entrance .login-layout{padding:20px 20px 30px;gap:30px}.campus-entrance .login-content>.eyebrow{font-size:8px;letter-spacing:.1em}.campus-entrance .login-content h1{font-size:clamp(39px,10.9vw,54px);margin:21px 0 23px}.campus-entrance .login-content .intro{font-size:14px}.entry-community{margin-block:13px 22px}.entry-spark{margin-right:15px}.campus-entrance #course-form{padding:19px 17px 21px;border-radius:18px}.campus-entrance .login-content .help-button{font-size:11px}.campus-values{margin:0 20px 27px;padding:23px;border-radius:19px}.campus-theme .site-footer{padding:19px 20px;gap:12px;flex-wrap:wrap;font-size:10px}.campus-theme #room .room-header{padding:22px 19px;border-radius:20px}.campus-theme #room .room-heading h1{font-size:27px}.campus-theme #room[data-stage="room"] .room-tabs [role="tab"]{font-size:12px;min-height:44px}.campus-theme #room .room-map-container{border-width:4px;border-radius:17px}.campus-theme #room .room-layout{gap:15px}.campus-theme #room .map-action{border-radius:6px}.campus-theme #room .room-tools{padding:12px}.campus-theme #room .team-roster-panel{padding:20px;border-radius:19px}.campus-theme #room[data-stage="avatar"] .avatar-preview{border-radius:14px}.campus-theme #topic-dialog h2{font-size:19px}.campus-theme #topic-dialog .button{font-size:12px}.campus-theme #room .team-chat{border-radius:19px}.campus-theme #room .team-chat .chat-messages{padding:15px 8px}}
+@media(prefers-reduced-motion:reduce){.entry-faces svg,.campus-value-icon{transition:none}.entry-faces:hover svg{transform:translateY(7px)}.campus-values>div:hover .campus-value-icon{transform:none}.campus-theme .button,.entry-nav a span,.campus-theme #room .topic-list .topic-link{transition:none}.campus-theme .button:not(:disabled):hover,.campus-theme .button:not(:disabled):active,.campus-theme #room .topic-list .topic-link:hover{transform:none}}
+@media(forced-colors:active){.campus-theme #room .room-header,.campus-theme #room .map-action,.campus-theme #course-form,.campus-theme .campus-values,.campus-theme .button{border:1px solid CanvasText;box-shadow:none}.campus-theme #room .map-action.is-mine{outline:2px solid Highlight}.campus-value-icon{border:1px solid CanvasText}.campus-theme #room .room-tabs [aria-selected="true"]{outline:2px solid Highlight}.entry-spark{color:CanvasText}}

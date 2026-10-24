@@ -2,7 +2,23 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
-## Tutorial de la portada (0.7.1)
+## Diseño del campus (0.8.0)
+
+La entrada, el registro, el editor de avatar, el aula, Mi equipo, el chat y la
+simulación docente comparten un sistema visual cálido: fondo marfil, verde menta,
+acentos miel y terracota, tipografía Nunito y controles con profundidad.
+La portada presenta el aula actual como una maqueta animada, con una tarjeta guía
+por paso. Las escenas siguen el orden real de ingreso. El mapa utiliza colores
+propios por equipo y luz decorativa sobre el suelo, sin alterar colisiones,
+rutas ni cupos. La marca del equipo elegido se conserva en mapa y lista.
+
+La tipografía se sirve localmente, sin solicitudes a Google Fonts. El subconjunto
+variable Nunito y su licencia SIL OFL están en `assets/fonts/`. La animación
+respeta pausa, visibilidad y movimiento reducido. Los archivos de comprobación
+visual con datos ficticios se usan solo en la vista previa y no se publican.
+
+## Tutorial de la portada
+
 
 La portada presenta un recorrido animado de ocho pasos, en el orden del ingreso
 real: código, registro de datos, personalización del avatar, movimiento en el

@@ -1,7 +1,18 @@
-import './embed.js?v=0.7.1';
-import { normalizeCode } from './model.js?v=0.7.1';
-import { mountEntranceTutorial } from './entrance-tutorial.js?v=0.7.1';
-import { configured } from './supabase-client.js?v=0.7.1';
+import './embed.js?v=0.8.0';
+import { normalizeCode } from './model.js?v=0.8.0';
+import { mountEntranceTutorial } from './entrance-tutorial.js?v=0.8.0';
+import { configured } from './supabase-client.js?v=0.8.0';
+import { avatarSVG } from './world.js?v=0.8.0';
+
+// Decorative classmates use the same characters as the real classroom.
+const entranceLooks = [
+  { skin: 2, shirt: 0, hair: 'curly' },
+  { skin: 0, shirt: 2, hair: 'long', presentation: 'mujer' },
+  { skin: 3, shirt: 3, hair: 'short' }
+];
+document.querySelectorAll('[data-entry-avatar]').forEach(node => {
+  node.innerHTML = avatarSVG(entranceLooks[Number(node.dataset.entryAvatar)] || entranceLooks[0]);
+});
 
 const form = document.querySelector('#course-form');
 const input = document.querySelector('#course-code');
