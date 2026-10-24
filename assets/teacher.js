@@ -1,7 +1,7 @@
-import './embed.js?v=0.11.0';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.11.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.11.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.11.0';
+import './embed.js?v=0.11.1';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.11.1';
+import { allCoursesXlsx } from './teacher-export.js?v=0.11.1';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.11.1';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;

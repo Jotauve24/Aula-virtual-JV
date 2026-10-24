@@ -88,3 +88,27 @@ Top three problems resolved: verde heredado; ayuda pequeña y acceso docente al
 pie; controles que excedían el ancho de 320 px. La maqueta sigue conteniendo texto
 pequeño por ser una demostración: las instrucciones completas se leen debajo y
 las tarjetas ilustrativas están ocultas a tecnologías de asistencia.
+
+
+## Ajuste tipográfico solicitado (0.11.1)
+
+El usuario pidió subrayados, palabras de otro color y cursivas. Se mantiene la
+base azul con énfasis ciruela y dorado suave en la portada. Esta preferencia
+explícita prevalece sobre la regla general de Taste de evitar palabras con
+estilos de acento y queda documentada en `AGENTS.md`.
+
+«Equipo» y algunas palabras del tutorial usan una segunda tipografía cursiva del
+sistema, sin descargas de fuentes. El enlace de recuperación subraya únicamente
+su acción. Los textos largos conservan su letra recta y un gris neutro. El
+contador, la reproducción y el progreso incorporan un acento cálido.
+
+El énfasis de cada título del tutorial se crea con nodos de texto y un elemento
+`em`, sin insertar HTML. Se comprobó el contenido completo y una única tarjeta
+visible en sus ocho pasos. A 320 px todos sus títulos ocupan dos líneas y el
+ancho del documento coincide con los 305 px visibles. Se revisaron también
+escritorio, tableta y celular de 390 px; sin desplazamiento horizontal.
+
+Pasaron las 19 pruebas pertinentes de tutorial, integridad y estructura docente,
+y la sintaxis de los 26 módulos. Se conservan el foco visible, los nombres
+accesibles, los controles de 44 px y la secuencia del ingreso. La publicación
+mantiene la versión de recursos unificada en 0.11.1.
