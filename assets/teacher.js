@@ -1,7 +1,7 @@
-import './embed.js?v=0.9.1';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.9.1';
-import { allCoursesXlsx } from './teacher-export.js?v=0.9.1';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.9.1';
+import './embed.js?v=0.10.0';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.10.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.10.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.10.0';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
@@ -370,6 +370,7 @@ async function refreshStudentRecoveryRequests(id) {
 }
 async function openCourse(id) {
   clearCourseRename();
+  const keepToolsOpen = id === courseId && $('#course-tools').open;
   // Commit only the latest response: slow connections can finish out of order.
   const requestId = ++courseRequestGeneration;
   const details = await rpc('teacher_overview', { p_course_id: id });
@@ -403,6 +404,8 @@ async function openCourse(id) {
   $('#toggle-course').textContent = active ? 'Deshabilitar materia' : 'Restaurar materia';
   $('#enter-room').hidden = !active;
   $('#registration').hidden = !active;
+  $('#course-tools').hidden = !active;
+  $('#course-tools').open = active && (keepToolsOpen || !overview.topics.length);
   $('#new-topic').hidden = !active;
   $('#group-count-form').hidden = !active;
   $('#generate-course-code').hidden = !active;
@@ -480,6 +483,8 @@ async function openCourse(id) {
 }
 function renderRegistrationControl() {
   $('#registration').textContent = overview.course.registrationOpen ? 'Cerrar inscripciones' : 'Abrir inscripciones';
+  $('#detail-registration-status').textContent = overview.course.registrationOpen ? 'Inscripciones abiertas' : 'Inscripciones cerradas';
+  $('#detail-registration-status').hidden = !overview.course.active;
   $('#registration').setAttribute('aria-label', (overview.course.registrationOpen ? 'Inscripciones abiertas. Cerrar' : 'Inscripciones cerradas. Abrir') + ' para ' + overview.course.name);
 }
 $('#export-all').addEventListener('click', () => run(async () => {

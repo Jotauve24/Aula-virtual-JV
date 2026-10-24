@@ -2,6 +2,19 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
+## Panel docente y guías de diseño (0.10.0)
+
+El panel prioriza el estado de la materia, su código, los equipos y los estudiantes.
+Las acciones ocasionales están en **Opciones de la materia**: abrir/cerrar
+inscripciones, ajustar mesas y crear temas. El estado de las inscripciones sigue
+visible junto al nombre. El desplegable conserva los formularios existentes y
+se abre automáticamente cuando una materia activa todavía no tiene temas.
+
+Se incorporaron Taste (`design-taste-frontend`) y Web Design Guidelines de Vercel
+en `.agents/skills/`, con instrucciones de uso en `AGENTS.md`. Se mantiene la
+identidad del aula y se verifican los cambios con las superficies de navegador
+permitidas; no se ejecuta el inspector directo de navegador de Taste.
+
 ## Cambiar el nombre de una materia (0.9.1)
 
 En **Mis materias → Administrar → ícono de lápiz junto al nombre**, el docente puede corregir el
