@@ -1,5 +1,5 @@
-import { drawWorld, avatarSVG } from './world.js?v=0.10.0';
-import { createRoomLayout, findPath } from './world-layout.js?v=0.10.0';
+import { drawWorld, avatarSVG } from './world.js?v=0.11.0';
+import { createRoomLayout, findPath } from './world-layout.js?v=0.11.0';
 
 export const TUTORIAL_STEPS = [
   { id: 'code', short: 'Código', title: 'Primero, el código de tu materia.', description: 'En la portada, escribe el código que te compartió tu docente y pulsa «Entrar a mi materia».', duration: 6000 },
@@ -152,7 +152,7 @@ export function mountEntranceTutorial(root) {
     if (renderedJoined !== joined) {
       renderedJoined = joined;
       root.dataset.joined = String(joined);
-      $('#tour-my-place').textContent = joined ? '✓ Tu equipo · 4/5' : '3/5 · Disponible';
+      $('#tour-my-place').textContent = joined ? 'Tu equipo · 4/5' : '3/5 · Disponible';
       $('#tour-choice-capacity').textContent = joined ? '4/5' : '3/5';
     }
     if (step.id === 'registration' && renderedField !== example.fieldIndex) {

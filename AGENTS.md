@@ -3,7 +3,7 @@
 ## Design work
 
 - Load `.agents/skills/design-taste-frontend/SKILL.md` and `.agents/skills/web-design-guidelines/SKILL.md` for interface work. Use Taste's `references/app-screens.md` for teacher administration; apply its page guidance to the public entrance.
-- Preserve the existing HTML, CSS and JavaScript stack, local Nunito font, ivory and green brand, classroom map, avatars, animals, tutorial sequence and student/team identity flows.
+- Preserve the existing HTML, CSS and JavaScript stack, local Nunito font, classroom map, avatars, animals, tutorial sequence and student/team identity flows. The entrance and teacher panel use navy, blue and cool neutral surfaces; do not restore the former dominant green palette. Classroom illustrations retain their team colors.
 - Keep the main task prominent. Place occasional configuration in a compact native disclosure; give icon buttons accessible names, focus states and 44 px touch targets.
 - Use the supported Browser or CUA surface for visual checks. Do not run the bundled direct browser inspector when it conflicts with the active browser policy; perform and report equivalent checks through the supported surface.
 - Check desktop, tablet and phone layouts with long names, empty data, realistic team counts, closed disclosures and opened dialogs. Preserve real zero counts and distinguish unavailable data.

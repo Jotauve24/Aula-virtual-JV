@@ -9,5 +9,10 @@ document.querySelector('#expand-aula')?.addEventListener('click', async () => {
 });
 document.addEventListener('fullscreenchange', () => {
   const button = document.querySelector('#expand-aula');
-  if (button) button.textContent = document.fullscreenElement ? 'Reducir' : 'Ampliar aula';
+  if (button) {
+    const label = document.fullscreenElement ? 'Reducir aula' : 'Ampliar aula';
+    button.setAttribute('aria-label', label);
+    button.title = label;
+    if (!button.classList.contains('entry-expand')) button.textContent = label;
+  }
 });

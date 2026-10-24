@@ -2,6 +2,14 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
+## Portada y paleta azul (0.11.0)
+
+La portada y el panel docente usan azul noche, azul y superficies claras. El
+formulario de código tiene prioridad, el acceso docente aparece en el encabezado
+y los controles poco frecuentes conservan un tamaño cómodo sin ocupar la portada.
+El tutorial mantiene sus ocho pasos, pausa, repetición y selección manual. La sala
+conserva sus colores por equipo, avatares y comportamiento de ingreso.
+
 ## Panel docente y guías de diseño (0.10.0)
 
 El panel prioriza el estado de la materia, su código, los equipos y los estudiantes.
