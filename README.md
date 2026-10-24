@@ -2,7 +2,7 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
-## Diseño del campus (0.8.0)
+## Diseño del campus (0.8.1)
 
 La entrada, el registro, el editor de avatar, el aula, Mi equipo, el chat y la
 simulación docente comparten un sistema visual cálido: fondo marfil, verde menta,
