@@ -1,0 +1,12 @@
+/* The two user-selected palettes, shared by every public and internal screen. */
+:root{
+ --deep:#031926;--teal:#468189;--seafoam:#77aca2;--opal:#9dbebb;--champagne:#f4e9cd;
+ --sage:#99b898;--peach:#fecea8;--salmon:#ff847c;--coral:#e84a5f;--charcoal:#2a363b;
+ --paper:#fbf8ef;--surface:#fff;--ink:var(--charcoal);--muted:#53615f;
+ --accent:#2f6b73;--accent-hover:var(--deep);--accent-soft:#e3ece8;--line:#cddbd5;
+ --positive:#305c49;--positive-soft:#e7efe3;--warning-ink:#6b442c;--warning-soft:#fff0e3;
+ --red:#b73549;--red-hover:#90283c;--red-soft:#fbe5df;
+ --focus:var(--teal);--green:var(--accent);--green-hover:var(--accent-hover);--mint:var(--accent-soft);
+ --white:var(--surface);--warm:var(--peach);--warm-ink:var(--warning-ink);--warm-soft:var(--champagne);
+ --serif:Georgia,'Times New Roman',serif;
+}

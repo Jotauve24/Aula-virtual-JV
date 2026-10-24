@@ -1,8 +1,8 @@
-import { avatarXFrame, drawAvatarX } from './avatar-x.js?v=0.12.0';
-import { SKINS, SHIRTS } from './model.js?v=0.12.0';
-import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.12.0';
-import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.12.0';
-import { canWalkSegment } from './world-layout.js?v=0.12.0';
+import { avatarXFrame, drawAvatarX } from './avatar-x.js?v=0.13.0';
+import { SKINS, SHIRTS } from './model.js?v=0.13.0';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.13.0';
+import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.13.0';
+import { canWalkSegment } from './world-layout.js?v=0.13.0';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -797,9 +797,9 @@ function drawRoomWorld(canvas, options) {
   if(canvas.height!==layout.height)canvas.height=layout.height;
   const ctx=canvas.getContext('2d');if(!ctx)return;
   ctx.imageSmoothingEnabled=false;
-  rect(ctx,0,0,layout.width,layout.height,'#7e9275');
+  rect(ctx,0,0,layout.width,layout.height,'#468189');
   plankFloor(ctx,18,18,layout.width-36,layout.height-36);
-  rect(ctx,18,18,layout.width-36,5,'#f9f4e8');
+  rect(ctx,18,18,layout.width-36,5,'#f4e9cd');
   const layers=[],names=[];
   const add=(depth,draw)=>layers.push({depth,draw});
   const connectedIds=new Set([options.player?.id,...(options.peers||[]).map(peer=>peer.id)].filter(Boolean));
@@ -823,8 +823,8 @@ function drawRoomWorld(canvas, options) {
     roomSunlight(ctx,room);
     room.walls.forEach(w=>{
       rect(ctx,w.x+3,w.y+5,w.w,w.h,'#30485525');
-      rect(ctx,w.x,w.y,w.w,w.h,'#8b9f83');rect(ctx,w.x,w.y-3,w.w,3,'#faf4df');
-      if(w.h<10)rect(ctx,w.x,w.y+w.h-2,w.w,2,'#70866b');
+      rect(ctx,w.x,w.y,w.w,w.h,'#9dbebb');rect(ctx,w.x,w.y-3,w.w,3,'#f4e9cd');
+      if(w.h<10)rect(ctx,w.x,w.y+w.h-2,w.w,2,'#468189');
     });
     roomWindow(ctx,room,theme);
     rect(ctx,x+178,y+39,46,14,'#fffff01f');
@@ -861,20 +861,20 @@ function drawRoomWorld(canvas, options) {
   }
   // Stone tiles and planting belong to the shared entrance outside the rooms.
   const entryY=layout.height-87;
-  rect(ctx,24,entryY,layout.width-48,69,'#d9dfd6');
-  rect(ctx,24,entryY,layout.width-48,2,'#b8c6be');
+  rect(ctx,24,entryY,layout.width-48,69,'#e3ece8');
+  rect(ctx,24,entryY,layout.width-48,2,'#9dbebb');
   for(let yy=entryY+3;yy<layout.height-18;yy+=17) {
-    rect(ctx,24,yy,layout.width-48,1,'#c4cfc6');
+    rect(ctx,24,yy,layout.width-48,1,'#cddbd5');
     for(let xx=24+(Math.floor((yy-entryY)/17)%2)*23;xx<layout.width-24;xx+=46)
-      rect(ctx,xx,yy,1,Math.min(17,layout.height-18-yy),'#c4cfc6');
+      rect(ctx,xx,yy,1,Math.min(17,layout.height-18-yy),'#cddbd5');
   }
   for(const [i,object] of (layout.exterior||[]).entries())add(object.y+object.h,()=>{
     if(object.kind==='palm')palm(ctx,object.x+object.w/2,object.y+object.h-3,i%2);
     else if(object.kind==='bench')gardenBench(ctx,object.x,object.y,object.w);
     else if(object.kind==='flowers')flowerPlanter(ctx,object.x,object.y,object.w);
   });
-  rect(ctx,369,layout.height-51,62,24,'#839f96');
-  for(let i=0;i<4;i++)rect(ctx,371,layout.height-47+i*5,58,1,'#b2c4b5');
+  rect(ctx,369,layout.height-51,62,24,'#77aca2');
+  for(let i=0;i<4;i++)rect(ctx,371,layout.height-47+i*5,58,1,'#9dbebb');
   if(!layout.rooms.length)sign(ctx,400,155,'BIENVENIDO','#28594c');
   const animals=animalFrames(layout,options.ambientTime ?? options.time ?? 0,options.reducedMotion);
   for(const animal of animals)add(animal.depth,()=>drawAnimal(ctx,animal));

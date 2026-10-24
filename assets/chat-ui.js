@@ -1,19 +1,19 @@
-import { fileSizeLabel } from './attachments.js?v=0.12.0';
+import { fileSizeLabel } from './attachments.js?v=0.13.0';
 // Stable student IDs distinguish participants who share a display name.
 // Share one palette between the roster and the conversation, scoped to a team.
 const TONES = [
-  ['#1e5ab3', '#eaf2ff', '#a8c5ef'],
-  ['#8a3aad', '#f5ebfc', '#d7b7e8'],
-  ['#a04616', '#fff0e4', '#e7be99'],
-  ['#23744b', '#eaf6ee', '#abd4b8'],
-  ['#aa365f', '#fdebf2', '#eab1c5'],
-  ['#136d80', '#e6f5f8', '#9bccd5'],
-  ['#6850a1', '#f0edfc', '#c7bce4'],
-  ['#886200', '#fff7da', '#deca81'],
-  ['#405d89', '#eaf0f8', '#b3c4dd'],
-  ['#974139', '#fdeeea', '#e4b5ad'],
-  ['#636c27', '#f3f5e2', '#c9d39b'],
-  ['#7d5140', '#f8eee5', '#d9c2aa']
+  ['var(--accent)', 'var(--accent-soft)', 'var(--opal)'],
+  ['var(--red)', 'var(--red-soft)', 'var(--salmon)'],
+  ['var(--warning-ink)', 'var(--warning-soft)', 'var(--peach)'],
+  ['var(--positive)', 'var(--positive-soft)', 'var(--sage)'],
+  ['var(--deep)', 'var(--champagne)', 'var(--opal)'],
+  ['#315d59', '#e8f0ee', 'var(--seafoam)'],
+  ['#823a46', '#f8e7e5', 'var(--salmon)'],
+  ['#5a5438', '#f4efdf', 'var(--champagne)'],
+  ['#3c595f', '#e9efef', 'var(--opal)'],
+  ['#794a36', '#fbeddf', 'var(--peach)'],
+  ['#476044', '#edf1e8', 'var(--sage)'],
+  ['#4a4941', '#f0ede3', 'var(--champagne)']
 ];
 
 function nameKey(name) {
@@ -33,10 +33,11 @@ export function createParticipantPalette(members = []) {
         while (occupied.has(index)) index = (index + 1) % TONES.length;
         occupied.add(index);
       }
-      // Larger teams keep distinct hues instead of recycling the first colors.
-      const hue = (colors.size * 137.508 + 19) % 360;
+      // Larger teams keep distinct shades within the same palette families.
+      const hue = [187, 351, 24, 118, 201, 166][colors.size % 6];
+      const lightness = 24 + (Math.floor(colors.size / 6) % 20) * .5;
       const tone = colors.size < TONES.length ? TONES[index]
-        : [`hsl(${hue.toFixed(2)} 55% 30%)`, `hsl(${hue.toFixed(2)} 70% 94%)`, `hsl(${hue.toFixed(2)} 42% 74%)`];
+        : [`hsl(${hue.toFixed(2)} 28% ${lightness}%)`, `hsl(${hue.toFixed(2)} 32% 94%)`, `hsl(${hue.toFixed(2)} 24% 74%)`];
       colors.set(key, { accent: tone[0], background: tone[1], border: tone[2] });
     }
     return colors.get(key);
