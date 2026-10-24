@@ -33,7 +33,7 @@
 .campus-panel .site-footer a{color:var(--accent)}
 
 /* Entrance: an access card beside the real, interactive classroom miniature. */
-.campus-theme.campus-entrance{min-width:0;background:var(--paper)}
+.campus-theme.campus-entrance{--editorial-ink:#933b61;--editorial-soft:#f3e6ed;--warm-ink:#805526;--warm-soft:#f6ecda;--warm-accent:#ad7632;--underline:#d0a057;--prose:#535d6b;--accent-font:Georgia,'Times New Roman',serif;min-width:0;background:var(--paper)}
 .campus-entrance .site-header{max-width:none;min-height:92px;padding:20px max(32px,calc((100% - 1328px)/2));background:#172d49;color:#fff}
 .campus-entrance .brand{color:#fff}
 .campus-entrance .brand-script{filter:brightness(0) invert(1)}
@@ -49,7 +49,9 @@
 .campus-entrance .login-layout{grid-template-columns:minmax(320px,.85fr) minmax(0,1.15fr);gap:clamp(32px,4vw,64px);padding:44px 56px 38px;align-items:start;min-height:0}
 .campus-entrance .login-content{max-width:440px;padding:14px 0 0}
 .campus-entrance .login-content h1{font-family:inherit;font-size:clamp(56px,5vw,72px);font-weight:900;line-height:1.02;letter-spacing:-.055em;color:var(--ink);margin:0 0 22px;text-wrap:balance}
-.campus-entrance .login-content .intro{max-width:390px;font-size:16px;line-height:1.65;color:var(--muted);margin:0 0 28px}
+.campus-entrance .login-content h1 .headline-accent{font-family:var(--accent-font);font-size:1.04em;font-style:italic;font-weight:500;color:var(--editorial-ink);letter-spacing:-.055em;white-space:nowrap;text-decoration-line:underline;text-decoration-color:var(--underline);text-decoration-thickness:.055em;text-underline-offset:.12em;text-decoration-skip-ink:none}
+.campus-entrance .heading-accent{font-family:var(--accent-font);font-size:1.06em;font-style:italic;font-weight:600;color:var(--editorial-ink);letter-spacing:-.025em}
+.campus-entrance .login-content .intro{max-width:390px;font-size:16px;line-height:1.65;color:var(--prose);margin:0 0 28px}
 .campus-entrance #course-form{padding:24px;border:0;border-radius:20px;background:#fff;box-shadow:none}
 .entry-form-heading{margin-bottom:12px}
 .campus-entrance .entry-form-heading label{font-size:15px;font-weight:850;margin:0;color:var(--ink)}
@@ -64,11 +66,16 @@
 .campus-entrance .login-content .enter-button{margin-top:20px;min-height:52px;font-size:16px;border-radius:10px}
 .campus-entrance .login-content .help-button{justify-content:flex-start;min-height:44px;font-size:13px;color:var(--accent);padding:9px 0;margin:8px 0 0;text-align:left;text-underline-offset:4px}
 .campus-entrance .login-content #code-help{margin-top:0;color:var(--muted)}
-.campus-entrance .help-circle{width:18px;height:18px;font-size:12px;border-color:#7d8ea5}
+.campus-entrance .login-content .recovery-link{flex-wrap:wrap;gap:2px 7px;text-decoration:none;color:var(--prose)}
+.campus-entrance .recovery-link strong{display:inline-flex;align-items:center;gap:6px;min-height:30px;font-size:13px;font-weight:800;color:var(--editorial-ink);text-decoration-line:underline;text-decoration-color:var(--underline);text-decoration-thickness:2px;text-underline-offset:5px;text-decoration-skip-ink:none}
+.campus-entrance .login-content .recovery-link:hover{text-decoration:none;color:var(--prose)}
+.campus-entrance .recovery-link:hover strong{color:#742b4b;text-decoration-color:currentColor}
+.campus-entrance .help-circle{width:18px;height:18px;font-size:12px;border-color:#be9b63;background:var(--warm-soft);color:var(--warm-ink)}
 .campus-entrance .login-content .entry-note{display:flex;gap:10px;margin-top:12px;padding:14px 0 0;background:transparent;border:0;border-radius:0;box-shadow:none}
-.campus-entrance .login-content .entry-note-icon{flex:none;display:block;width:22px;height:22px;background:transparent;border:0;border-radius:0;color:#536d95}
-.campus-entrance .login-content .entry-note p{font-size:13px;line-height:1.65;color:var(--muted);margin:0}
+.campus-entrance .login-content .entry-note-icon{flex:none;display:block;width:22px;height:22px;background:transparent;border:0;border-radius:0;color:var(--editorial-ink)}
+.campus-entrance .login-content .entry-note p{font-size:13px;line-height:1.65;color:var(--prose);margin:0}
 .campus-entrance .login-content .entry-note strong{font-size:13px;color:var(--ink);margin-bottom:4px}
+.campus-entrance .entry-note em{font-family:var(--accent-font);font-size:1.12em;font-style:italic;font-weight:600;color:var(--editorial-ink)}
 .campus-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;margin:4px 56px 24px;padding:28px 0;background:transparent}
 .campus-values>div{display:flex;align-items:center;gap:14px;min-width:0}
 .campus-values p{margin:0;line-height:1.6}

@@ -9,10 +9,10 @@
   <title>Ingreso de estudiantes · AulaVirtualJv</title>
   <link rel="icon" href="./assets/favicon.svg?v=20261014k" type="image/svg+xml">
   <link rel="preload" as="font" href="./assets/fonts/nunito-latin.woff" type="font/woff" crossorigin>
-  <link rel="stylesheet" href="./assets/styles.css?v=0.11.0"><link rel="stylesheet" href="./assets/brand.css?v=0.11.0">
-  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.11.0">
-  <link rel="stylesheet" href="./assets/campus.css?v=0.11.0">
-  <script src="./assets/app.js?v=0.11.0" type="module"></script>
+  <link rel="stylesheet" href="./assets/styles.css?v=0.11.1"><link rel="stylesheet" href="./assets/brand.css?v=0.11.1">
+  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.11.1">
+  <link rel="stylesheet" href="./assets/campus.css?v=0.11.1">
+  <script src="./assets/app.js?v=0.11.1" type="module"></script>
 </head>
 <body class="campus-theme campus-panel campus-entrance">
   <a class="skip-link" href="#main">Ir al contenido</a>
@@ -27,7 +27,7 @@
   <main id="main" tabindex="-1">
     <section class="login-layout" aria-labelledby="login-title">
       <div class="login-content">
-        <h1 id="login-title">Tu aula.<br>Tu equipo.</h1>
+        <h1 id="login-title">Tu aula.<br>Tu <em class="headline-accent">equipo.</em></h1>
         <p class="intro">Ingresa con el código de tu materia, crea tu personaje y encuentra a tus compañeros.</p>
         <form id="course-form" novalidate autocomplete="off">
           <div class="entry-form-heading"><label for="course-code">Código de la materia</label></div>
@@ -36,11 +36,11 @@
           <p class="field-error" id="code-error" role="alert" hidden></p>
           <button class="button primary enter-button" id="enter-course" type="submit" disabled>Entrar a mi materia <span aria-hidden="true">↗</span></button>
         </form>
-        <a class="text-button help-button" href="./live.html?login=1">¿Ya estabas inscrito? Recupera tu cuenta →</a><button class="text-button help-button" id="code-help" type="button"><span class="help-circle" aria-hidden="true">?</span>¿Dónde encuentro mi código?</button>
-        <div class="entry-note"><svg class="entry-note-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4 8 9 8 9s8-5 8-9V6l-8-3Z"/><path d="m8 12 3 3 5-6"/></svg><p><strong>Conserva tu mismo perfil.</strong> Regresa desde tu navegador habitual. Para usar otro dispositivo, verifica tu correo dentro del aula y recupera tu cuenta.</p></div>
+        <a class="text-button help-button recovery-link" href="./live.html?login=1"><span>¿Ya estabas inscrito?</span><strong>Recupera tu cuenta <span aria-hidden="true">↗</span></strong></a><button class="text-button help-button" id="code-help" type="button"><span class="help-circle" aria-hidden="true">?</span>¿Dónde encuentro mi código?</button>
+        <div class="entry-note"><svg class="entry-note-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4 8 9 8 9s8-5 8-9V6l-8-3Z"/><path d="m8 12 3 3 5-6"/></svg><p><strong>Conserva tu <em>mismo perfil.</em></strong> Regresa desde tu navegador habitual. Para usar otro dispositivo, verifica tu correo dentro del aula y recupera tu cuenta.</p></div>
       </div>
       <section class="tour-panel" id="entrance-tutorial" aria-labelledby="tour-title" data-step="0" data-scene="code" data-playing="false" data-joined="false" data-choice="open">
-        <div class="tour-heading"><h2 id="tour-title">Así funciona el aula.</h2><span class="tour-demo-label">Guía animada</span></div>
+        <div class="tour-heading"><h2 id="tour-title">Así funciona <em class="heading-accent">el aula.</em></h2><span class="tour-demo-label">Guía animada</span></div>
         <div class="tour-stage" data-ui>
           <span class="tour-greeting" aria-hidden="true">Tu próximo punto de encuentro.</span>
           <div class="tour-map">
@@ -84,7 +84,7 @@
           </div>
           <span class="tour-scene-label"><i aria-hidden="true"></i>Un vistazo al aula · Datos de ejemplo</span>
         </div>
-        <div class="tour-story"><span class="tour-counter" id="tour-counter">01 / 08</span><h3 id="tour-caption">Primero, el código de tu materia.</h3><p id="tour-description">En la portada, escribe el código que te compartió tu docente y pulsa «Entrar a mi materia».</p></div>
+        <div class="tour-story"><span class="tour-counter" id="tour-counter">01 / 08</span><h3 id="tour-caption">Primero, el <em>código</em> de tu materia.</h3><p id="tour-description">En la portada, escribe el código que te compartió tu docente y pulsa «Entrar a mi materia».</p></div>
         <div class="tour-progress" aria-hidden="true"><span></span></div>
         <ol class="tour-steps" aria-label="Pasos del tutorial">
           <li><button type="button" data-tour-step="code" aria-label="Paso 1: código de materia" aria-current="step"><span aria-hidden="true">01</span>Código</button></li>
