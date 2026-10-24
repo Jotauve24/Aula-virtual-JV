@@ -273,9 +273,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 }
 @media(prefers-reduced-motion:reduce){#detail .course-advanced-chevron{transition:none}}
 /* A course can be renamed without changing its shared enrollment code. */
-#detail .course-title-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px 17px}
-#detail .course-title-row h1{min-width:0;overflow-wrap:anywhere}
-#detail .course-rename-trigger{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:7px 11px;font-size:12px;font-weight:750;border-radius:10px}
+#detail .course-title-row{display:block}
+#detail .teacher-icon-button{position:relative;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex:none;width:44px;min-width:44px;height:44px;min-height:44px;padding:0;border-color:transparent;border-radius:50%;background:transparent;color:#456c55;line-height:1;box-shadow:none}
+#detail .teacher-icon-button svg{display:block;width:20px;height:20px;pointer-events:none}
+#detail .teacher-icon-button:hover{background:#e5eedf;border-color:#bfd0b5}
+#detail .course-rename-trigger{margin-inline-start:2px;transform:translateY(-2px)}
+#detail #topic-list .topic-card{position:relative;min-height:124px}
+#detail #topic-list .topic-card h3{padding-inline-end:42px}
+#detail #topic-list .topic-card .topic-edit-trigger{position:absolute;inset-block-start:9px;inset-inline-end:9px;margin:0;padding:0}
 #rename-course-dialog{width:min(530px,calc(100% - 28px));padding:0;border:1px solid #cddbc1;border-radius:22px;background:#fffef8;box-shadow:0 7px 0 #2d4a311c,0 24px 70px #23382736}
 #rename-course-dialog::backdrop{background:#203d365c;backdrop-filter:blur(3px)}
 #rename-course-dialog .panel-card{padding:27px;border:0;border-radius:inherit;background:inherit;box-shadow:none}
@@ -284,4 +289,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 #rename-course-dialog input{font-size:16px;min-width:0;width:100%}
 #rename-course-dialog .field-pair{margin-top:21px;gap:12px}
 #rename-course-error{color:#a33c31;font-size:13px}
-@media(max-width:640px){#detail .course-title-row{align-items:flex-start;gap:7px}#detail .course-rename-trigger{min-height:40px}#rename-course-dialog .panel-card{padding:22px 19px}#rename-course-dialog .field-pair{grid-template-columns:1fr}#rename-course-dialog .field-pair button{width:100%;min-height:46px}}
+@media(max-width:640px){#rename-course-dialog .panel-card{padding:22px 19px}#rename-course-dialog .field-pair{grid-template-columns:1fr}#rename-course-dialog .field-pair button{width:100%;min-height:46px}}
