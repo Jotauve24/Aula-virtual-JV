@@ -1,6 +1,6 @@
 # AulaVirtualJv · Alcance vigente
 
-Estado: versión 0.11.1, 24 de octubre de 2026.
+Estado: versión 0.12.0, 24 de octubre de 2026.
 
 El aula se publica en GitHub Pages y utiliza Supabase para sesiones, materias,
 perfiles, equipos, presencia y chat. Todas las materias comparten las mismas
@@ -8,7 +8,7 @@ páginas, módulos y funciones; no existen copias independientes por materia.
 
 | Área | Comportamiento actual |
 | --- | --- |
-| Diseño visual | Portada y panel docente en azul noche, azul y superficies claras; tipografía local Nunito. La sala conserva su maqueta animada, avatares y colores por equipo. Colores y luz decorativa por mesa; colisiones y rutas conservadas. |
+| Diseño visual | Portada y panel docente con petróleo, verde azulado y crema; acentos coral, durazno y salvia, con cursivas y subrayados. Tipografía local Nunito. La sala conserva su maqueta animada, avatares y colores por equipo. Colores y luz decorativa por mesa; colisiones y rutas conservadas. |
 | Portada | Tutorial animado en el orden real: código, registro, personalización del avatar, movimiento en el aula, cupos, elección y confirmación, Mi equipo y chat. Pausa, repetición y navegación manual. Datos de ejemplo y movimiento reducido; sin operaciones en la base de datos. |
 | Primer ingreso | Código de materia, nombres, apellidos, cédula o pasaporte, correo y teléfono; avatar y elección de equipo. El correo inicial es de contacto y no se confirma. |
 | Regreso habitual | La sesión guardada permite continuar con el mismo perfil, avatar y equipo. |

@@ -28,17 +28,17 @@
 /* Recovery review belongs to the existing course management workflow. */
 .teacher-recovery-panel { margin:0 0 22px; }
 .teacher-recovery-list { display:grid;gap:12px; }
-.student-recovery-request { display:grid;gap:9px;padding:17px;background:#fbfcfd;border:1px solid #d7e4ea;border-radius:11px; }
+.student-recovery-request { display:grid;gap:9px;padding:17px;background:#fbfdfd;border:1px solid #dae7e6;border-radius:11px; }
 .student-recovery-head { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:7px; }
-.student-recovery-head strong { color:#203b55;font-size:13px;overflow-wrap:anywhere; }
-.student-recovery-head small { color:#697e8d;font-size:11px; }
-.student-recovery-request>p { margin:0;color:#607486;font-size:12px;line-height:1.55; }
-.student-recovery-request label { color:#2c4c61;font-size:12px;font-weight:750; }
+.student-recovery-head strong { color:#2a363b;font-size:13px;overflow-wrap:anywhere; }
+.student-recovery-head small { color:#698d8b;font-size:11px; }
+.student-recovery-request>p { margin:0;color:#608683;font-size:12px;line-height:1.55; }
+.student-recovery-request label { color:#305d5a;font-size:12px;font-weight:750; }
 .student-recovery-request .student-recovery-select,.student-recovery-request input {
   display:block;width:100%;box-sizing:border-box;min-height:42px;padding:9px 11px;
-  color:#203b55;background:#fff;border:1px solid #c1d1db;border-radius:8px;font:500 13px ui-sans-serif,system-ui;
+  color:#2a363b;background:#fff;border:1px solid #c4d8d6;border-radius:8px;font:500 13px ui-sans-serif,system-ui;
 }
-.student-recovery-request input:focus-visible,.student-recovery-request select:focus-visible { outline:2px solid #245e89;outline-offset:2px; }
+.student-recovery-request input:focus-visible,.student-recovery-request select:focus-visible { outline:2px solid #2f6b73;outline-offset:2px; }
 .student-recovery-request .student-recovery-warning { font-size:11px;color:#80623c; }
 .student-recovery-actions { display:flex;flex-wrap:wrap;gap:9px;margin-top:5px; }
 .student-recovery-actions button { flex:1 1 175px;min-height:40px; }
