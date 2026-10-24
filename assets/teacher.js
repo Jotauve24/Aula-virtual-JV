@@ -1,7 +1,7 @@
-import './embed.js?v=0.9.0';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.9.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.9.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.9.0';
+import './embed.js?v=0.9.1';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.9.1';
+import { allCoursesXlsx } from './teacher-export.js?v=0.9.1';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.9.1';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
@@ -416,7 +416,10 @@ async function openCourse(id) {
     const title = document.createElement('h3'); title.textContent = topic.name;
     const capacity = document.createElement('small'); capacity.textContent = `${topic.capacity} cupos`;
     const instructions = document.createElement('p'); instructions.textContent = topic.instructions || 'Sin indicaciones todavía.';
-    const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'secondary'; edit.textContent = 'Editar tema y cupos';
+    const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'secondary teacher-icon-button topic-edit-trigger';
+    edit.setAttribute('aria-label', 'Editar tema y cupos de ' + topic.name);
+    edit.setAttribute('title', 'Editar tema y cupos'); edit.setAttribute('aria-haspopup', 'dialog');
+    edit.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 3 5 5-13 13H3v-5L16 3Z"/><path d="m14 5 5 5"/></svg>';
     edit.addEventListener('click', () => editTopic(topic));
     edit.hidden = !active;
     card.append(title, capacity, instructions, edit); return card;
