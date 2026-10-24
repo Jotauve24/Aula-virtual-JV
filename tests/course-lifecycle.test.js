@@ -25,7 +25,7 @@ class Element {
 }
 
 async function boot({ files = [], fileError = null, students = [], topics = [], extraCourses = [],
-  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {} } = {}) {
+  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (!nodes.has(selector)) nodes.set(selector, new Element());
@@ -51,6 +51,13 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     }
     if (name === 'teacher_overview') return body.p_course_id === course?.id
       ? { course: { ...course }, topics, students: [...students] } : overviewById[body.p_course_id];
+    if (name === 'teacher_rename_course') {
+      assert.equal(body.p_course_id, course.id);
+      const failure = typeof renameError === 'function' ? renameError() : renameError;
+      if (failure) throw new Error(failure);
+      course.name = body.p_name;
+      return { id: course.id, name: course.name };
+    }
     if (name === 'teacher_release_student') {students.find(s=>s.id===body.p_student_id).topicId=null;return;}
     if (name === 'teacher_move_student') {
       assert.equal(body.p_course_id, course.id);
@@ -437,4 +444,110 @@ test('a delayed group release does not reopen a subject after returning to the d
  await new Promise(setImmediate);await page.loadCourses();release();await new Promise(setImmediate);
  assert.equal(page.get('#dashboard').hidden,false);
  assert.equal(page.get('#detail').hidden,true);
+});
+
+test('renaming a course keeps its shared code, identity, students and teams', async () => {
+  const students=[{id:'s1',firstName:'Ana',lastName:'Ejemplo',topicId:'g1'}];
+  const topics=[{id:'g1',name:'Bosque',position:0,capacity:5}];
+  const page=await boot({students,topics});
+  await page.openCourse('course-1');
+  const before=JSON.stringify({id:page.current().id,code:page.current().accessCode,students,topics});
+  await page.get('#edit-course-name').click();
+  assert.equal(page.get('#rename-course-dialog').open,true);
+  assert.equal(page.get('#rename-course-name').value,'Mantenimiento');
+  page.get('#rename-course-name').value='  Taller de Informática · Sección A  ';
+  await page.get('#rename-course-form').dispatch('submit');
+  assert.equal(page.get('#course-title').textContent,'Taller de Informática · Sección A');
+  assert.equal(page.get('#registration')['aria-label'],'Inscripciones abiertas. Cerrar para Taller de Informática · Sección A');
+  assert.equal(page.get('#rename-course-dialog').open,false);
+  assert.equal(JSON.stringify({id:page.current().id,code:page.current().accessCode,students,topics}),before);
+  assert.deepEqual(JSON.parse(JSON.stringify(page.calls.filter(([n])=>n==='teacher_rename_course'))),
+    [['teacher_rename_course',{p_course_id:'course-1',p_name:'Taller de Informática · Sección A'}]]);
+  assert.equal(page.calls.some(([n])=>['create_course','create_course_with_groups','teacher_generate_course_code'].includes(n)),false);
+  await page.loadCourses();await page.openCourse('course-1');
+  assert.equal(page.get('#course-title').textContent,'Taller de Informática · Sección A');
+});
+
+test('canceling or saving an unchanged course name performs no update',async()=>{
+  const page=await boot();await page.openCourse('course-1');
+  await page.get('#edit-course-name').click();page.get('#rename-course-name').value='Otro nombre';
+  await page.get('#cancel-course-rename').click();
+  assert.equal(page.get('#rename-course-dialog').open,false);
+  assert.equal(page.current().name,'Mantenimiento');
+  await page.get('#edit-course-name').click();await page.get('#rename-course-form').dispatch('submit');
+  assert.equal(page.get('#rename-course-dialog').open,false);
+  assert.equal(page.calls.some(([n])=>n==='teacher_rename_course'),false);
+});
+
+test('blank, short and overly long course names are rejected before sending',async()=>{
+  const page=await boot();await page.openCourse('course-1');await page.get('#edit-course-name').click();
+  for(const name of ['', '   ', 'A', 'x'.repeat(121)]){
+    page.get('#rename-course-name').value=name;await page.get('#rename-course-form').dispatch('submit');
+    assert.equal(page.get('#rename-course-error').hidden,false);
+    assert.equal(page.get('#rename-course-dialog').open,true);
+    assert.equal(page.current().name,'Mantenimiento');
+  }
+  assert.equal(page.calls.some(([n])=>n==='teacher_rename_course'),false);
+  page.get('#rename-course-name').value='Á'.repeat(120);await page.get('#rename-course-form').dispatch('submit');
+  assert.equal(page.current().name,'Á'.repeat(120));
+});
+
+test('a failed rename preserves the original title and allows a successful retry',async()=>{
+  let attempts=0;const page=await boot({renameError:()=>++attempts===1?'No se pudo guardar':null});
+  await page.openCourse('course-1');await page.get('#edit-course-name').click();
+  page.get('#rename-course-name').value='Informática';await page.get('#rename-course-form').dispatch('submit');
+  assert.equal(page.get('#course-title').textContent,'Mantenimiento');
+  assert.equal(page.get('#rename-course-dialog').open,true);
+  assert.match(page.get('#rename-course-error').textContent,/No se pudo guardar/);
+  assert.equal(page.get('#save-course-name').disabled,false);
+  assert.equal(page.get('#rename-course-name').disabled,false);
+  await page.get('#rename-course-form').dispatch('submit');
+  assert.equal(page.get('#course-title').textContent,'Informática');
+  assert.equal(page.current().accessCode,'MAT-AAAAA-BBBBB-CCCCC');
+});
+
+test('a pending rename cannot be submitted twice or canceled midway',async()=>{
+  let release;const gate=new Promise(resolve=>release=resolve);
+  const page=await boot({delays:{teacher_rename_course:()=>gate}});
+  await page.openCourse('course-1');await page.get('#edit-course-name').click();
+  page.get('#rename-course-name').value='Informática';
+  const pending=page.get('#rename-course-form').dispatch('submit');
+  await page.get('#rename-course-form').dispatch('submit');await page.get('#cancel-course-rename').click();
+  assert.equal(page.calls.filter(([n])=>n==='teacher_rename_course').length,1);
+  assert.equal(page.get('#rename-course-dialog').open,true);
+  assert.equal(page.get('#save-course-name').disabled,true);
+  release();await pending;
+  assert.equal(page.get('#course-title').textContent,'Informática');
+});
+
+test('logging out during rename prevents the late response from reopening private UI',async()=>{
+  let release;const gate=new Promise(resolve=>release=resolve);
+  const page=await boot({delays:{teacher_rename_course:()=>gate}});
+  await page.openCourse('course-1');await page.get('#edit-course-name').click();
+  page.get('#rename-course-name').value='Nombre guardado';const pending=page.get('#rename-course-form').dispatch('submit');
+  await page.get('#logout').click();release();await pending;
+  assert.equal(page.get('#rename-course-dialog').open,false);
+  assert.equal(page.get('#login').hidden,false);
+  assert.equal(page.get('#course-title').textContent,'Mantenimiento');
+  assert.doesNotMatch(page.get('#teacher-success').textContent,/Nombre actualizado/);
+});
+
+test('switching courses while a rename is pending preserves the newer course title',async()=>{
+  let release;const gate=new Promise(resolve=>release=resolve);
+  const page=await boot({delays:{teacher_rename_course:()=>gate},overviewById:{'course-2':{
+    course:{id:'course-2',name:'Sistemas II',active:true,accessCode:'MAT-DDDDD-EEEEE-FFFFF'},topics:[],students:[]}}});
+  await page.openCourse('course-1');await page.get('#edit-course-name').click();
+  page.get('#rename-course-name').value='Nombre anterior corregido';const pending=page.get('#rename-course-form').dispatch('submit');
+  await page.openCourse('course-2');release();await pending;
+  assert.equal(page.get('#course-title').textContent,'Sistemas II');
+  assert.equal(page.get('#rename-course-dialog').open,false);
+  assert.doesNotMatch(page.get('#teacher-success').textContent,/Nombre actualizado/);
+});
+
+test('a disabled course can be renamed while its code and disabled state remain intact',async()=>{
+  const page=await boot();page.current().active=false;await page.openCourse('course-1');
+  await page.get('#edit-course-name').click();page.get('#rename-course-name').value='Materia corregida';
+  await page.get('#rename-course-form').dispatch('submit');
+  assert.equal(page.current().name,'Materia corregida');assert.equal(page.current().active,false);
+  assert.equal(page.current().accessCode,'MAT-AAAAA-BBBBB-CCCCC');
 });

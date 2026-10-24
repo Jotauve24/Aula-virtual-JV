@@ -203,3 +203,7 @@ Las siete pruebas `tests/*.integration.sql` se ejecutan con datos sintéticos y
 `ROLLBACK`: códigos y propiedad docente, contactos repetidos, documentos,
 privacidad por equipo, archivos/cupos, recuperación y permisos del API retirado. No comprueban
 el envío real de correos ni suben binarios a Storage.
+
+## Renombrar materias
+
+`20261024021813_teacher_rename_course.sql` añade `teacher_rename_course(uuid,text)`: un envoltorio invocador público que delega en una función privada con comprobación explícita del docente propietario. Actualiza únicamente el nombre; conserva código, hash, ID, estados y referencias de estudiantes y equipos. `anon` no puede ejecutarla y no se habilita actualización directa de tablas. La prueba `tests/course-rename.integration.sql` usa identidades ficticias y revierte todas sus filas al finalizar.

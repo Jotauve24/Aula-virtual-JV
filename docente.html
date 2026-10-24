@@ -8,9 +8,9 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Panel docente · AulaVirtualJv</title>
   <link rel="icon" href="./assets/favicon.svg?v=20261014k" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/live.css?v=0.8.1"><link rel="stylesheet" href="./assets/brand.css?v=0.8.1"><link rel="stylesheet" href="./assets/teacher-live.css?v=0.8.1"><link rel="stylesheet" href="./assets/student-account.css?v=0.8.1">
-  <script type="module" src="./assets/teacher.js?v=0.8.1"></script>
-<link rel="stylesheet" href="./assets/campus.css?v=0.8.1">
+  <link rel="stylesheet" href="./assets/live.css?v=0.9.0"><link rel="stylesheet" href="./assets/brand.css?v=0.9.0"><link rel="stylesheet" href="./assets/teacher-live.css?v=0.9.0"><link rel="stylesheet" href="./assets/student-account.css?v=0.9.0">
+  <script type="module" src="./assets/teacher.js?v=0.9.0"></script>
+<link rel="stylesheet" href="./assets/campus.css?v=0.9.0">
 </head>
 <body class="campus-theme">
   <a class="skip-link" href="#main">Ir al contenido</a>
@@ -44,7 +44,7 @@
     <section id="detail" class="teacher-course-detail" hidden>
       <button id="back" class="back-button" type="button">← Mis materias</button>
       <div class="section-heading detail-heading">
-        <div class="detail-heading-copy"><span class="eyebrow">GESTIÓN DE LA MATERIA</span><h1 id="course-title"></h1>
+        <div class="detail-heading-copy"><span class="eyebrow">GESTIÓN DE LA MATERIA</span><div class="course-title-row"><h1 id="course-title"></h1><button id="edit-course-name" class="secondary course-rename-trigger" type="button" aria-label="Editar nombre de la materia"><span aria-hidden="true">✎</span> Editar nombre</button></div>
           <div class="detail-heading-meta"><span id="detail-status-pill" class="detail-status-pill" data-active="true">Materia activa</span><p id="course-summary"></p></div>
         </div>
         <div class="course-header-actions"><button id="enter-room" class="primary" type="button">Entrar a la sala · Administrador →</button><button id="registration" class="secondary" type="button"></button></div>
@@ -90,6 +90,13 @@
         <div class="course-advanced-content"><p class="course-advanced-note">Estas acciones afectan el acceso a la materia. Se encuentran separadas de la gestión cotidiana para evitar cambios accidentales.</p><section class="course-management" aria-label="Estado y eliminación de la materia"><div><strong id="course-state-label">Materia activa</strong><p id="course-state-description">El código permite el ingreso a esta materia.</p></div><div class="course-management-actions"><button id="toggle-course" class="secondary" type="button">Deshabilitar materia</button><button id="delete-course" class="danger-outline" type="button">Eliminar definitivamente</button></div></section></div>
       </details>
     </section>
+    <dialog id="rename-course-dialog" aria-labelledby="rename-course-title"><form id="rename-course-form" class="panel-card" novalidate>
+      <span class="eyebrow">DATOS DE LA MATERIA</span><h2 id="rename-course-title">Editar nombre</h2>
+      <p id="rename-course-hint" class="rename-course-note">El código que ya compartiste sigue siendo el mismo. Los estudiantes y equipos conservan su lugar.</p>
+      <label for="rename-course-name">Nombre de la materia</label><input id="rename-course-name" name="name" required minlength="2" maxlength="120" autocomplete="off" aria-describedby="rename-course-hint rename-course-error" placeholder="Ej.: Taller de Informática · Sección A">
+      <p id="rename-course-error" class="field-error" role="alert" hidden></p>
+      <div class="field-pair"><button id="cancel-course-rename" class="secondary" type="button">Cancelar</button><button id="save-course-name" class="primary" type="submit">Guardar nombre</button></div>
+    </form></dialog>
     <dialog id="edit-topic-dialog"><form id="edit-topic-form" class="panel-card"><span class="eyebrow">EDITAR GRUPO</span><h2>Tema y cupos</h2><label for="edit-topic-name">Tema</label><input id="edit-topic-name" name="name" minlength="2" maxlength="80" required><label for="edit-topic-instructions">Indicaciones</label><textarea id="edit-topic-instructions" name="instructions" maxlength="1000" rows="4"></textarea><label for="edit-topic-capacity">Cupos</label><input id="edit-topic-capacity" name="capacity" type="number" min="1" max="100" required><p id="edit-topic-error" role="alert" hidden></p><div class="field-pair"><button class="secondary" id="cancel-topic-edit" type="button">Cancelar</button><button class="primary" type="submit">Guardar cambios</button></div></form></dialog>
     <dialog id="delete-course-dialog" aria-labelledby="delete-course-title"><form id="delete-course-form" class="panel-card"><span class="eyebrow">ELIMINACIÓN PERMANENTE</span><h2 id="delete-course-title">Eliminar materia</h2><p>Se borrarán estudiantes, equipos, mensajes y archivos de <strong id="delete-course-name"></strong>. Su código dejará de funcionar. Esta acción no se puede deshacer.</p><p id="delete-course-counts" class="delete-course-counts"></p><label for="delete-course-confirmation">Escribe el nombre exacto de la materia para confirmar</label><input id="delete-course-confirmation" type="text" autocomplete="off" required><p id="delete-course-progress" role="status"></p><p id="delete-course-error" role="alert" hidden></p><div class="delete-course-actions"><button id="cancel-course-delete" class="secondary" type="button">Cancelar</button><button id="confirm-course-delete" class="danger" type="submit" disabled>Eliminar definitivamente</button></div></form></dialog>
     <dialog id="move-student-dialog" aria-labelledby="move-student-title"><form id="move-student-form" class="panel-card">

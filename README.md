@@ -2,6 +2,20 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
+## Cambiar el nombre de una materia (0.9.0)
+
+En **Mis materias → Administrar → Editar nombre**, el docente puede corregir el
+nombre de su materia y pulsar **Guardar nombre**. El código compartido, el ID,
+los estudiantes, los equipos, los avatares y el chat se conservan. El nombre nuevo
+aparece al volver a abrir la materia; los estudiantes que ya tienen el aula
+abierta pueden actualizar la página para verlo. También se pueden renombrar
+materias deshabilitadas sin restaurarlas.
+
+El servidor exige que la cuenta sea docente y propietaria de la materia. Solo
+actualiza `courses.name`; no se conceden permisos de actualización directa a las
+tablas. El formulario valida entre 2 y 120 caracteres, bloquea envíos simultáneos
+y descarta respuestas de una materia o sesión anterior.
+
 ## Diseño del campus (0.8.1)
 
 La entrada, el registro, el editor de avatar, el aula, Mi equipo, el chat y la

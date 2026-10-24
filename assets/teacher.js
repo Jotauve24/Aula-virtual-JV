@@ -1,10 +1,11 @@
-import './embed.js?v=0.8.1';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.8.1';
-import { allCoursesXlsx } from './teacher-export.js?v=0.8.1';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.8.1';
+import './embed.js?v=0.9.0';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.9.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.9.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.9.0';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
+let renamingCourseTarget = null;
 const courseIsCurrent = (id,generation) => id === courseId && generation === courseRequestGeneration && signedIn();
 let dashboardCourses = [], liveTimer = 0, liveGeneration = 0, liveRefreshing = false;
 let liveRosterSnapshot = null, lastLiveFetch = 0;
@@ -37,6 +38,7 @@ $('#login').addEventListener('submit', event => { event.preventDefault(); run(as
   show('verify'); $('#notice').textContent = 'Revisa el correo docente y abre el enlace de ingreso en este navegador.';
 }); });
 async function loadCourses() {
+  clearCourseRename();
   // An older dashboard fetch must not hide a more recently opened course.
   const requestId = ++courseRequestGeneration;
   const [courses, disabled] = await Promise.all([rpc('my_courses'), rpc('teacher_disabled_courses')]);
@@ -367,6 +369,7 @@ async function refreshStudentRecoveryRequests(id) {
   }
 }
 async function openCourse(id) {
+  clearCourseRename();
   // Commit only the latest response: slow connections can finish out of order.
   const requestId = ++courseRequestGeneration;
   const details = await rpc('teacher_overview', { p_course_id: id });
@@ -441,7 +444,7 @@ async function openCourse(id) {
       if (!group.id) {
         const remove = document.createElement('button'); remove.type = 'button';
         remove.className = 'danger-outline'; remove.textContent = 'Eliminar';
-        remove.setAttribute('aria-label', `Eliminar de ${overview.course.name} a ${student.firstName} ${student.lastName}`);
+        remove.setAttribute('aria-label', `Eliminar de esta materia a ${student.firstName} ${student.lastName}`);
         remove.addEventListener('click', () => openDeleteStudent(student));
         row.append(remove);
       } else if (active) {
@@ -470,6 +473,9 @@ async function openCourse(id) {
     }
     return card;
   }));
+  renderRegistrationControl();
+}
+function renderRegistrationControl() {
   $('#registration').textContent = overview.course.registrationOpen ? 'Cerrar inscripciones' : 'Abrir inscripciones';
   $('#registration').setAttribute('aria-label', (overview.course.registrationOpen ? 'Inscripciones abiertas. Cerrar' : 'Inscripciones cerradas. Abrir') + ' para ' + overview.course.name);
 }
@@ -543,9 +549,86 @@ $('#enter-room').addEventListener('click', () => {
 $('#back').addEventListener('click', () => run(loadCourses));
 $('#logout').addEventListener('click', () => {
   ++courseRequestGeneration; ++accountGeneration;
+  clearCourseRename();
   for(const id of ['#edit-topic-dialog','#move-student-dialog','#delete-student-dialog','#delete-course-dialog']) { if($(id).open)$(id).close(); }
   courseId = ''; overview = null;
   signOut(); show('login');
+});
+
+function clearCourseRename() {
+  renamingCourseTarget = null;
+  if ($('#rename-course-dialog').open) $('#rename-course-dialog').close();
+}
+function cancelCourseRename() {
+  if (renamingCourseTarget?.pending) return;
+  clearCourseRename();
+  $('#edit-course-name').focus();
+}
+$('#edit-course-name').addEventListener('click', () => {
+  if (!overview?.course || !signedIn()) return;
+  renamingCourseTarget = { id: courseId, generation: courseRequestGeneration,
+    account: accountGeneration, name: overview.course.name, pending: false };
+  $('#rename-course-name').value = overview.course.name;
+  $('#rename-course-name').disabled = false;
+  $('#rename-course-error').hidden = true;
+  $('#rename-course-form').setAttribute('aria-busy', 'false');
+  $('#save-course-name').disabled = false;
+  $('#save-course-name').textContent = 'Guardar nombre';
+  $('#cancel-course-rename').disabled = false;
+  $('#rename-course-dialog').showModal();
+  $('#rename-course-name').focus();
+  $('#rename-course-name').select?.();
+});
+$('#cancel-course-rename').addEventListener('click', cancelCourseRename);
+$('#rename-course-dialog').addEventListener('cancel', event => {
+  event.preventDefault(); cancelCourseRename();
+});
+$('#rename-course-name').addEventListener('input', () => { $('#rename-course-error').hidden = true; });
+$('#rename-course-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const target = renamingCourseTarget;
+  const current = () => renamingCourseTarget === target && target.account === accountGeneration &&
+    courseIsCurrent(target.id, target.generation);
+  if (!target || target.pending || !current()) return;
+  const name = $('#rename-course-name').value.trim();
+  if (Array.from(name).length < 2 || Array.from(name).length > 120) {
+    $('#rename-course-error').textContent = 'Escribe un nombre de entre 2 y 120 caracteres.';
+    $('#rename-course-error').hidden = false; $('#rename-course-name').focus(); return;
+  }
+  if (name === target.name) { cancelCourseRename(); return; }
+  target.pending = true;
+  $('#rename-course-error').hidden = true;
+  $('#rename-course-form').setAttribute('aria-busy', 'true');
+  $('#rename-course-name').disabled = true;
+  $('#save-course-name').disabled = true;
+  $('#save-course-name').textContent = 'Guardando…';
+  $('#cancel-course-rename').disabled = true;
+  try {
+    const saved = await rpc('teacher_rename_course', { p_course_id: target.id, p_name: name });
+    if (!current()) return;
+    if (saved?.id !== target.id || typeof saved.name !== 'string')
+      throw new Error('No se pudo verificar el nombre guardado. Vuelve a abrir la materia.');
+    overview.course.name = saved.name;
+    $('#course-title').textContent = saved.name;
+    renderRegistrationControl();
+    dashboardCourses = dashboardCourses.map(course => course.id === target.id ? { ...course, name: saved.name } : course);
+    clearCourseRename();
+    $('#edit-course-name').focus();
+    teacherSuccess('Nombre actualizado. El código de la materia sigue siendo el mismo.');
+  } catch (error) {
+    if (!current()) return;
+    $('#rename-course-error').textContent = error.message;
+    $('#rename-course-error').hidden = false;
+  } finally {
+    if (current()) {
+      target.pending = false;
+      $('#rename-course-form').setAttribute('aria-busy', 'false');
+      $('#rename-course-name').disabled = false;
+      $('#save-course-name').disabled = false;
+      $('#save-course-name').textContent = 'Guardar nombre';
+      $('#cancel-course-rename').disabled = false;
+    }
+  }
 });
 
 let movingStudentTarget = null, movingStudent = false;

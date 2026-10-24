@@ -1,6 +1,6 @@
 # AulaVirtualJv · Alcance vigente
 
-Estado: versión 0.8.1, 23 de octubre de 2026.
+Estado: versión 0.9.0, 23 de octubre de 2026.
 
 El aula se publica en GitHub Pages y utiliza Supabase para sesiones, materias,
 perfiles, equipos, presencia y chat. Todas las materias comparten las mismas
@@ -16,7 +16,7 @@ páginas, módulos y funciones; no existen copias independientes por materia.
 | Documento único | Cédula con guiones automáticos por prefijo/tomo/asiento, o pasaporte con país emisor. Una identidad documental y una inscripción por materia. Otro usuario debe recuperar la cuenta existente. El formato no acredita identidad oficial. |
 | Perfiles anteriores | Completan el documento al regresar. Se conservan avatar, equipo y conversaciones; no se borran ni fusionan datos. |
 | Contactos repetidos | No se crean dos inscripciones con el mismo correo o teléfono en una materia. Se pueden usar los mismos contactos en materias distintas. Los teléfonos se comparan sin espacios ni guiones y reconociendo +507 y 00507. Los duplicados históricos requieren identificación. |
-| Docente | Crear, configurar, deshabilitar, restaurar y eliminar materias; administrar grupos y estudiantes; asignar o mover inscritos y exportar a Excel. |
+| Docente | Renombrar sin cambiar código ni registros; crear, configurar, deshabilitar, restaurar y eliminar materias; administrar grupos y estudiantes; asignar o mover inscritos y exportar a Excel. |
 | Presencia | Conteos y posiciones recientes. Inscripción, pertenencia a equipo y conexión son estados independientes. |
 | Chat | Conversación y adjuntos privados por equipo. Correo visible para el propio equipo; teléfono voluntario. Envíos simultáneos bloqueados. |
 | ZombieAdmin | Simulación docente con datos y chat ficticios; no ocupa plazas ni modifica conversaciones reales. |
