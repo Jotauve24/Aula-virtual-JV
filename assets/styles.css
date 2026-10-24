@@ -73,34 +73,3 @@ input::placeholder{color:#5b6b5f}
 @media(max-width:800px){.login-layout{gap:25px}.login-content{max-width:470px}}
 @media(max-width:500px){.site-header{padding:18px}.login-layout{padding-inline:20px}.login-content h1{font-size:clamp(42px,12vw,50px)}.intro{font-size:15px}.entry-note p{font-size:12px}.site-footer{font-size:12px}.room-side p{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.button.primary{transition:none}.button.primary:not(:disabled):hover{transform:none}}
-
-/* Student entrance: restrained navy, teal and neutral surfaces. */
-body:has(.login-layout){background:#f5f7fa}
-body:has(.login-layout) .site-header{padding-bottom:10px}
-body:has(.login-layout) .brand-mark{color:#203b55}
-body:has(.login-layout) .brand{color:#243b50}
-body:has(.login-layout) .version-badge{background:#f0f7f4;border-color:#d0e4dc;color:#386251;font-weight:650}
-body:has(.login-layout) .status-dot{background:#3e8a70;box-shadow:none}
-body:has(.login-layout) .button.secondary{border-color:#cbd6df;color:#314d66}
-.login-layout{gap:clamp(26px,5vw,72px)}
-.login-content{max-width:445px;padding:22px 0}
-.login-content .eyebrow{color:#526e86;font-weight:700;letter-spacing:.13em}
-.login-content .eyebrow-line{background:#387d94}
-.login-content h1{font-family:ui-sans-serif,system-ui,sans-serif;font-weight:750;font-size:clamp(38px,4.1vw,56px);line-height:1.12;letter-spacing:-.04em;margin:18px 0 19px;color:#203b55}
-.login-content h1 em{font-style:normal;font-weight:750;color:#287b80}
-.login-content .intro{font-size:16px;line-height:1.7;color:#617184}
-.login-content label{color:#2a4359}
-.login-content .code-field{border:1px solid #b6c7d5;border-radius:10px;box-shadow:none}
-.login-content .code-field:focus-within{border-color:#286990;box-shadow:0 0 0 3px #28699020}
-.login-content .code-field svg{stroke:#648397}
-.login-content .button.primary{background:#235f8b;border-color:#235f8b;box-shadow:0 4px 12px #203b5519;color:#fff;font-weight:650}
-.login-content .button.primary:not(:disabled):hover{background:#194b6f;transform:translateY(-1px);box-shadow:0 5px 14px #203b5524}
-.login-content .help-button{color:#607586}
-.login-content .entry-note{background:#edf5f3;border:1px solid #d5e4df;border-left:3px solid #518e80;border-radius:10px;box-shadow:none}
-.login-content .entry-note p{color:#5e726c}
-.login-content .entry-note strong{color:#355b50}
-.login-content .entry-note-icon{background:#427e6c}
-@media(max-width:800px){.login-content{max-width:470px}}
-@media(max-width:500px){.login-content h1{font-size:clamp(36px,9.5vw,46px)}.login-content .intro{font-size:15px}}
-@media(forced-colors:active){
-.login-content .code-field{border:2px solid CanvasText}}

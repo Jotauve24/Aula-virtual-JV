@@ -1,8 +1,8 @@
-import { avatarXFrame, drawAvatarX } from './avatar-x.js?v=0.7.1';
-import { SKINS, SHIRTS } from './model.js?v=0.7.1';
-import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.7.1';
-import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.7.1';
-import { canWalkSegment } from './world-layout.js?v=0.7.1';
+import { avatarXFrame, drawAvatarX } from './avatar-x.js?v=0.8.0';
+import { SKINS, SHIRTS } from './model.js?v=0.8.0';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.8.0';
+import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.8.0';
+import { canWalkSegment } from './world-layout.js?v=0.8.0';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -10,10 +10,10 @@ export const WORLD_HEIGHT = 560;
 // The first ten have their own palette and workstation; later groups get a
 // fresh palette as well, since a course may have up to forty groups.
 export const ROOM_THEMES = [
-  { id: 'bosque', accent: '#27664f', floor: '#e0e8dc', tile: '#91ad9a', rug: '#769b80', surface: '#d7b889', edge: '#80664f', chair: '#357b5e', pop: '#d7aa58', card: '#f1f6f1' },
-  { id: 'oceano', accent: '#245f79', floor: '#deeaeb', tile: '#89afbb', rug: '#6e9eb1', surface: '#e4d4b0', edge: '#6d7576', chair: '#367e9b', pop: '#cca85e', card: '#eff6f8' },
-  { id: 'arte', accent: '#9a5b4e', floor: '#efe3d6', tile: '#bc9c87', rug: '#bb8d7c', surface: '#e9d1aa', edge: '#8a6960', chair: '#a06258', pop: '#deb260', card: '#faf3ed' },
-  { id: 'cosmos', accent: '#405570', floor: '#dfe5eb', tile: '#98a9bb', rug: '#7085a3', surface: '#435a74', edge: '#344657', chair: '#516f94', pop: '#d4b76e', card: '#eff3f8' },
+  { id: 'bosque', accent: '#4a7e4d', floor: '#e8efd9', tile: '#acc38d', rug: '#a3bf83', surface: '#eaca96', edge: '#8d7958', chair: '#6a985b', pop: '#edbc69', card: '#f2f7e9' },
+  { id: 'oceano', accent: '#4c8da6', floor: '#e6f1e9', tile: '#9cc7c2', rug: '#9bc9ce', surface: '#eddaad', edge: '#80948c', chair: '#6ba6b5', pop: '#ecc57f', card: '#eff8f5' },
+  { id: 'arte', accent: '#bb7d62', floor: '#f6ead8', tile: '#d8b797', rug: '#d8ad95', surface: '#f1d3a4', edge: '#a38367', chair: '#c18d72', pop: '#ebbe72', card: '#fcf4e8' },
+  { id: 'cosmos', accent: '#8c78b3', floor: '#eeebf4', tile: '#b4a8cc', rug: '#b6a9d2', surface: '#7e88a2', edge: '#626b83', chair: '#9a8bbd', pop: '#efcf87', card: '#f6f1fa' },
   { id: 'biblioteca', accent: '#805f36', floor: '#e9e2d3', tile: '#bba783', rug: '#ad9474', surface: '#dbc59f', edge: '#7a644b', chair: '#99754f', pop: '#c49d54', card: '#f8f4eb' },
   { id: 'laboratorio', accent: '#286e67', floor: '#dfece6', tile: '#8db5a8', rug: '#7aa79a', surface: '#e1eee3', edge: '#647f78', chair: '#408f83', pop: '#8ac9ba', card: '#eff7f3' },
   { id: 'musica', accent: '#735367', floor: '#e8e0e5', tile: '#aa92a3', rug: '#967c92', surface: '#564a60', edge: '#735c70', chair: '#876578', pop: '#c6a76c', card: '#f5f0f4' },
@@ -451,7 +451,10 @@ function sign(ctx, x, y, label, color) {
 function nameTag(ctx,x,y,text,color='#4d6551') {
   ctx.font='11px system-ui, sans-serif'; const width=ctx.measureText(text).width+15;
   x=Math.max(width/2+8,Math.min(WORLD_WIDTH-width/2-8,x));
-  rect(ctx,x-width/2,y,width,19,'#fcfcf4');ctx.fillStyle=color;ctx.textAlign='center';ctx.fillText(text,x,y+13);
+  if (ctx.roundRect) {
+    ctx.fillStyle='#fffef4';ctx.beginPath();ctx.roundRect(x-width/2,y,width,19,6);ctx.fill();
+  } else rect(ctx,x-width/2,y,width,19,'#fffef4');
+  ctx.fillStyle=color;ctx.textAlign='center';ctx.fillText(text,x,y+13);
 }
 export function drawWorld(canvas, options = {}) {
   if (options.layout) return drawRoomWorld(canvas, options);
@@ -776,13 +779,25 @@ function cornerFurnishing(ctx, x, y, theme) {
   }
 }
 
+function roomSunlight(ctx, room) {
+  // Light is painted on the floor only: furniture, routes and hit targets keep
+  // their real positions. Minimal non-browser drawing contexts can skip it.
+  if (!ctx.createLinearGradient || !ctx.moveTo) return;
+  const x = room.x + (room.center ? 176 : 153), y = room.y + 32;
+  const light = ctx.createLinearGradient(x + 40, y, x - 20, y + 160);
+  light.addColorStop(0, '#fffbd5a0');
+  light.addColorStop(1, '#fffbd500');
+  ctx.save();ctx.fillStyle=light;ctx.beginPath();
+  ctx.moveTo(x,y);ctx.lineTo(x+84,y);ctx.lineTo(x+39,y+157);ctx.lineTo(x-74,y+157);ctx.closePath();ctx.fill();ctx.restore();
+}
+
 function drawRoomWorld(canvas, options) {
   const { layout }=options;
   if(canvas.width!==layout.width)canvas.width=layout.width;
   if(canvas.height!==layout.height)canvas.height=layout.height;
   const ctx=canvas.getContext('2d');if(!ctx)return;
   ctx.imageSmoothingEnabled=false;
-  rect(ctx,0,0,layout.width,layout.height,'#4a626f');
+  rect(ctx,0,0,layout.width,layout.height,'#7e9275');
   plankFloor(ctx,18,18,layout.width-36,layout.height-36);
   rect(ctx,18,18,layout.width-36,5,'#f9f4e8');
   const layers=[],names=[];
@@ -803,12 +818,13 @@ function drawRoomWorld(canvas, options) {
       rect(ctx,x+6,y+6,room.w-12,room.h-12,'#e3eae5');
       for(let ry=8;ry<room.h-8;ry+=24){rect(ctx,x+6,y+ry,room.w-12,1,'#bfcdc6');
         for(let rx=8;rx<room.w-8;rx+=24)rect(ctx,x+rx,y+6,1,room.h-12,'#bfcdc644');}
-    }else plankFloor(ctx,x+6,y+6,room.w-12,room.h-12,'#e8ddca');
+    }else plankFloor(ctx,x+6,y+6,room.w-12,room.h-12,theme.floor);
     themedRug(ctx,room,theme);
+    roomSunlight(ctx,room);
     room.walls.forEach(w=>{
       rect(ctx,w.x+3,w.y+5,w.w,w.h,'#30485525');
-      rect(ctx,w.x,w.y,w.w,w.h,'#7c9096');rect(ctx,w.x,w.y-3,w.w,3,'#d6e0dc');
-      if(w.h<10)rect(ctx,w.x,w.y+w.h-2,w.w,2,'#58727c');
+      rect(ctx,w.x,w.y,w.w,w.h,'#8b9f83');rect(ctx,w.x,w.y-3,w.w,3,'#faf4df');
+      if(w.h<10)rect(ctx,w.x,w.y+w.h-2,w.w,2,'#70866b');
     });
     roomWindow(ctx,room,theme);
     rect(ctx,x+178,y+39,46,14,'#fffff01f');

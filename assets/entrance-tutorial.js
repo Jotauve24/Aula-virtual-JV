@@ -1,5 +1,5 @@
-import { drawWorld, avatarSVG } from './world.js?v=0.7.1';
-import { createRoomLayout, findPath } from './world-layout.js?v=0.7.1';
+import { drawWorld, avatarSVG } from './world.js?v=0.8.0';
+import { createRoomLayout, findPath } from './world-layout.js?v=0.8.0';
 
 export const TUTORIAL_STEPS = [
   { id: 'code', short: 'Código', title: 'Primero, el código de tu materia.', description: 'En la portada, escribe el código que te compartió tu docente y pulsa «Entrar a mi materia».', duration: 6000 },
@@ -138,7 +138,8 @@ export function mountEntranceTutorial(root) {
     if (renderedStep !== state.step) {
       renderedStep = state.step;
       cards.forEach(card => { card.hidden = card.dataset.tourCard !== step.id; });
-      buttons.forEach(button => {
+      buttons.forEach((button, index) => {
+        button.classList.toggle('is-complete', index < state.step);
         if (button.dataset.tourStep === step.id) button.setAttribute('aria-current', 'step');
         else button.removeAttribute('aria-current');
       });

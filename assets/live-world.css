@@ -286,80 +286,20 @@ html.is-embedded .site-header{padding:14px 18px}html.is-embedded #room.room-shel
 #topic-dialog .join-confirm-actions .button.danger:hover{background:#7c211d}
 @media(max-width:500px){.avatar-style-option{gap:5px;padding:4px;font-size:12px}.avatar-style-option svg{width:25px;height:38px}#topic-dialog .join-confirmation{padding:55px 13px 13px}#topic-dialog .join-confirm-icon{top:13px;left:13px}#topic-dialog .join-confirm-actions .button{flex:1 1 100%}}
 
-/* Student workspace: coherent navy UI with color reserved for team scenery. */
-body{background:#f4f7f9;--ink:#22384c;--muted:#617284;--green:#235e8b;--green-hover:#184869;--mint:#ecf3f7;--line:#d7e1e8;--focus:#2d719e}
-.site-header .brand-mark{color:#203b55}
-#room .room-header{
-  position:relative;align-items:center;min-height:126px;padding:24px clamp(20px,4vw,36px);
-  border:1px solid #27465f;border-radius:15px;background:#203b55;color:#fff;
-  box-shadow:0 7px 22px #203b5514;
-}
-#room .room-header:before{content:none}
-#room .room-header .eyebrow{color:#bcd3e3;font-weight:700;letter-spacing:.13em}
+/* Layout shared by the student room and the teacher simulator. */
+#room .room-header .eyebrow{font-weight:700;letter-spacing:.13em}
 #room .room-heading h1{font-family:ui-sans-serif,system-ui,sans-serif;font-weight:750;font-size:clamp(26px,3.1vw,38px);letter-spacing:-.03em;line-height:1.16;margin:8px 0;color:inherit}
-#room-intro{max-width:58ch;margin:0;color:#d2e0e9;font-size:14px;line-height:1.5}
-#room .room-header .group-badge{border:1px solid #668196;background:#304e68;color:#f1f6fa;font-weight:600;padding:9px 13px;box-shadow:none}
-#room .room-header .online-count{background:#edf6f1;border-color:#c9e3d6;color:#2c6650}
-#room .room-header #edit-avatar{background:#f5f9fc;color:#254961;border-color:#cfdee7;font-weight:650}
-#room .room-header #edit-avatar:hover{background:#e4edf3}
-#room[data-stage="registration"] .room-header,#room[data-stage="avatar"] .room-header{background:#fff;color:#203b55;border-color:#d6e0e8;box-shadow:0 4px 18px #203b5508}
-#room[data-stage="registration"] .room-header .eyebrow,#room[data-stage="avatar"] .room-header .eyebrow{color:#56768b}
-#room[data-stage="registration"] #room-intro,#room[data-stage="avatar"] #room-intro{color:#637a8a}
+#room-intro{max-width:58ch;margin:0;font-size:14px;line-height:1.5}
 #room[data-stage="registration"] .room-header-actions,#room[data-stage="avatar"] .room-header-actions{display:none}
-#room .room-map-container{border:2px solid #94a9b8;border-radius:13px;background:#edf2f4;box-shadow:0 8px 24px #203b5512}
-#room[data-stage="registration"] .room-map-container,#room[data-stage="avatar"] .room-map-container{border-color:#c4d1dc;background:#eef2f4;box-shadow:0 8px 24px #203b550f}
-#room[data-stage="registration"] .room-map canvas,#room[data-stage="avatar"] .room-map canvas{filter:none}
-#room[data-stage="room"] .room-tabs{background:#eaf0f5;border:1px solid #d0dde6;box-shadow:none}
-#room[data-stage="room"] .room-tabs [role="tab"]{color:#435e73;font-weight:650}
-#room[data-stage="room"] .room-tabs [aria-selected="true"]{background:#245e89;color:#fff;box-shadow:0 3px 10px #203b5520}
-#room[data-stage="room"] .room-tabs [role="tab"]:hover:not([aria-selected="true"]){background:#f7fafc}
-#room[data-stage="room"] .room-side{background:#fff;border:1px solid #d3dfe7;border-radius:14px;box-shadow:0 8px 24px #203b550b}
-#room[data-stage="room"] .room-side .eyebrow{color:#587c90}
-#room[data-stage="room"] .room-side h2{font-family:ui-sans-serif,system-ui,sans-serif;font-weight:700;letter-spacing:-.025em;color:#263f56}
-#room[data-stage="room"] .room-side p{color:#607487}
-#room[data-stage="room"] .topic-list .topic-link{border:1px solid #d2dde4;border-left:4px solid var(--table-accent);border-radius:9px;box-shadow:none;transition:background .15s,border-color .15s}
-#room[data-stage="room"] .topic-list .topic-link:hover{background:#fff;border-color:var(--table-accent);transform:none;box-shadow:0 3px 10px #203b550d}
-#room[data-stage="room"] .room-side .side-footer{border-top:1px solid #e0e7ed;padding-top:14px;color:#6a7e8c;font-size:12px}
-#room[data-stage="room"] .room-tools{background:#f5f8fa;border-top-color:#cad7e0}
-#room[data-stage="room"] .room-status{color:#4a657b;font-weight:600}
-#room .map-action{width:25%;border:1px solid #849eaa;border-left:4px solid var(--table-accent);border-radius:5px;background:#ffffffa6;color:#203b55;box-shadow:0 3px 7px #203b5526}
+#room .map-action{width:25%}
 #room .map-action strong{font-weight:700;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-#room .map-action:hover,#room .map-action:focus-visible{background:#ffffffd9;transform:translate(-50%,-50%)}
-#room .map-action small{color:#203b55}
-#room .map-action.is-mine{outline:2px solid #fff;box-shadow:0 0 0 3px var(--table-accent),0 3px 7px #203b5526}
-#room .dpad button{color:#315d7b;border-color:#c2d1dc}
-#room .dpad button:hover{background:#e6eff5}
-@media(max-width:650px){#room .map-action .map-place-word{display:none}}
-@media(forced-colors:active){#room .map-action,#room .map-action:hover,#room .map-action:focus-visible{background:Canvas;color:CanvasText;border-color:CanvasText}}
-
-/* The avatar editor uses a quiet studio background and clear selection. */
-#room[data-stage="registration"] .in-room-dialog,#room[data-stage="avatar"] .in-room-dialog{
-  border:1px solid #a9bdcc;outline:0;border-radius:14px;background:#fff;
-  box-shadow:0 12px 42px #203b5540;
-}
 #room[data-stage="registration"] .in-room-dialog{width:min(515px,93%)}
 #room[data-stage="avatar"] .in-room-dialog{width:min(735px,95%);padding:22px 26px}
-#room .dialog-teacher{color:#48667d;border-color:#dbe5ec;font-weight:600}
-#room .in-room-dialog .eyebrow{color:#4c728a;font-weight:750}
-#room[data-stage="registration"] #dialog-progress{display:inline-flex;padding:5px 10px;border-radius:99px;background:#edf3f7}
-#room .in-room-dialog h2{font-family:ui-sans-serif,system-ui,sans-serif;font-weight:700;letter-spacing:-.025em;color:#233f56}
-#room .in-room-dialog p{color:#5d7485}
-#room .in-room-dialog .button.primary{background:#235e8b;border-color:#235e8b;color:#fff;font-weight:650}
-#room .in-room-dialog .button.primary:hover{background:#194969}
-#room .in-room-dialog input:focus{border-color:#286c96;outline-color:#286c9630}
-#room .change-code{color:#386b8a}
 #room[data-stage="avatar"] .avatar-layout{grid-template-columns:minmax(150px,205px) minmax(0,1fr);gap:20px;align-items:stretch}
-#room[data-stage="avatar"] .avatar-preview{
-  min-height:260px;border:1px solid #ccdae4;border-radius:12px;
-  background:linear-gradient(#dbe6ed55 1px,transparent 1px),linear-gradient(90deg,#dbe6ed55 1px,transparent 1px),#edf3f6;
-  background-size:24px 24px;box-shadow:none;
-}
-#room[data-stage="avatar"] .avatar-preview:before{background:#6e8da033;bottom:38px;width:105px;height:20px}
-#room[data-stage="avatar"] .avatar-preview svg{width:95px;height:146px;filter:drop-shadow(3px 4px 2px #284b6526)}
-#room[data-stage="avatar"] .avatar-style-option{border-color:#c4d3de;background:#f7fafc;color:#314f65}
-#room[data-stage="avatar"] .avatar-style-option[aria-pressed="true"],#room[data-stage="avatar"] .avatar-style-option[data-presentation="mujer"][aria-pressed="true"]{border-color:#2a6c92;background:#e9f2f8;box-shadow:0 0 0 1px #2a6c9224}
-#room[data-stage="avatar"] .swatch[aria-pressed="true"]{box-shadow:0 0 0 3px #316b8d}
-#room[data-stage="avatar"] .hair-option[aria-pressed="true"]{border-color:#316b8d;background:#eaf2f7}
+#room[data-stage="avatar"] .avatar-preview{min-height:260px}
+#room[data-stage="avatar"] .avatar-preview:before{bottom:38px;width:105px;height:20px}
+#room[data-stage="avatar"] .avatar-preview svg{width:95px;height:146px}
+@media(max-width:650px){#room .map-action .map-place-word{display:none}}
 .room-legend{display:flex;flex-wrap:wrap;gap:5px 17px;margin:7px 0 0;font-size:11px;font-weight:600;color:#5d7485;line-height:1.4}
 .room-legend span{display:inline-flex;align-items:center;gap:5px}
 .room-legend i,.member-presence:before{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;background:#438c70;box-shadow:none;content:''}

@@ -3,44 +3,49 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#203b55">
+  <meta name="theme-color" content="#f7f6ee">
   <meta name="description" content="AulaVirtualJv: ingresa con el código de tu materia, crea tu avatar y encuentra tu equipo.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Ingreso de estudiantes · AulaVirtualJv</title>
   <link rel="icon" href="./assets/favicon.svg?v=20261014k" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/styles.css?v=0.7.1"><link rel="stylesheet" href="./assets/brand.css?v=0.7.1">
-  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.7.1">
-  <script src="./assets/app.js?v=0.7.1" type="module"></script>
+  <link rel="stylesheet" href="./assets/styles.css?v=0.8.0"><link rel="stylesheet" href="./assets/brand.css?v=0.8.0">
+  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.8.0">
+  <link rel="stylesheet" href="./assets/campus.css?v=0.8.0">
+  <script src="./assets/app.js?v=0.8.0" type="module"></script>
 </head>
-<body>
+<body class="campus-theme campus-entrance">
   <a class="skip-link" href="#main">Ir al contenido</a>
   <header class="site-header">
     <a class="brand" href="./" aria-label="AulaVirtualJv, volver al ingreso">
       <img class="brand-mark" src="./assets/favicon.svg?v=20261014k" width="40" height="40" alt="" aria-hidden="true">
       <span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=20261014l" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span>
     </a>
-    <div class="entry-tools"><span class="version-badge"><span class="status-dot"></span>AULA EN LÍNEA</span><button id="expand-aula" class="button secondary" type="button">Ampliar aula</button></div>
+    <nav class="entry-nav" aria-label="Navegación principal"><a href="#entrance-tutorial">Cómo funciona <span aria-hidden="true">↘</span></a></nav>
+    <div class="entry-tools"><span class="version-badge"><span class="status-dot"></span>AULA EN LÍNEA</span><button id="expand-aula" class="button secondary" type="button">Ampliar aula <span aria-hidden="true">↗</span></button></div>
   </header>
   <main id="main" tabindex="-1">
     <section class="login-layout" aria-labelledby="login-title">
       <div class="login-content">
-        <div class="eyebrow"><span class="eyebrow-line"></span>INGRESO DE ESTUDIANTES</div>
-        <h1 id="login-title">Tu aula,<br><em>un lugar para hacer equipo.</em></h1>
-        <p class="intro">Ingresa a tu materia, personaliza tu avatar y comparte un espacio de trabajo con tus compañeros.</p>
+        <div class="eyebrow"><span class="eyebrow-line"></span>UN AULA. MUCHAS POSIBILIDADES.</div>
+        <h1 id="login-title">Las grandes ideas<br>empiezan <em>en equipo.<svg viewBox="0 0 300 18" aria-hidden="true"><path d="M4 12Q145-5 293 8M49 16Q168 2 267 12"/></svg></em></h1>
+        <p class="intro">Un personaje a tu estilo. Un lugar junto a tus compañeros. Y todo un espacio para crear juntos.</p>
+        <div class="entry-community"><div class="entry-faces" aria-hidden="true"><span data-entry-avatar="0"></span><span data-entry-avatar="1"></span><span data-entry-avatar="2"></span></div><p>Distintas ideas.<br><strong>Un gran equipo.</strong></p><span class="entry-spark" aria-hidden="true">✳</span></div>
         <form id="course-form" novalidate>
-          <label for="course-code">Código de la materia</label>
-          <div class="code-field"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 7 21M17 3l-2 18M3 9h18M2 15h18"/></svg><input id="course-code" name="course-code" placeholder="Escribe tu código" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint code-error" required></div>
+          <div class="entry-form-heading"><label for="course-code">Código de la materia</label><span aria-hidden="true">↳</span></div>
+          <div class="code-field"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 7 21M17 3l-2 18M3 9h18M2 15h18"/></svg><input id="course-code" name="course-code" aria-label="Código de la materia" placeholder="Código de tu materia" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint code-error" required></div>
           <p class="field-hint" id="code-hint">Lo comparte tu docente con todos los de tu clase.</p>
           <p class="field-error" id="code-error" role="alert" hidden></p>
           <button class="button primary enter-button" id="enter-course" type="submit" disabled>Entrar a mi materia <span aria-hidden="true">↗</span></button>
         </form>
         <a class="text-button help-button" href="./live.html?login=1">¿Ya estabas inscrito? Recupera tu cuenta →</a><button class="text-button help-button" id="code-help" type="button"><span class="help-circle" aria-hidden="true">?</span>¿Dónde encuentro mi código?</button>
-        <div class="entry-note"><span class="entry-note-icon" aria-hidden="true">✓</span><p><strong>Tu espacio se guarda.</strong> Sigue entrando normalmente desde tu navegador habitual. Si quieres recuperar tu equipo desde otro dispositivo, protege tu cuenta con un correo verificado dentro del aula.</p></div>
+        <div class="entry-note"><span class="entry-note-icon" aria-hidden="true">✓</span><p><strong>Tu lugar te espera.</strong> Regresa desde tu navegador habitual. Para usar otro dispositivo, verifica tu correo dentro del aula y recupera tu cuenta.</p></div>
       </div>
       <section class="tour-panel" id="entrance-tutorial" aria-labelledby="tour-title" data-step="0" data-scene="code" data-playing="false" data-joined="false" data-choice="open">
-        <div class="tour-heading"><div><span class="eyebrow">UN VISTAZO A TU PRÓXIMA AULA</span><h2 id="tour-title">Así empieza tu equipo.</h2></div><span class="tour-demo-label">TUTORIAL · DEMO</span></div>
+        <div class="tour-heading"><div><span class="eyebrow">UN PEQUEÑO MUNDO PARA GRANDES IDEAS</span><h2 id="tour-title">Aquí pasa lo bueno.</h2></div><span class="tour-demo-label">GUÍA ANIMADA</span></div>
         <div class="tour-stage">
           <div class="tour-orbit" aria-hidden="true"></div>
+          <div class="tour-sun" aria-hidden="true"></div><div class="tour-cloud cloud-one" aria-hidden="true"></div><div class="tour-cloud cloud-two" aria-hidden="true"></div>
+          <span class="tour-greeting" aria-hidden="true">¡Hola, equipo! <i>✦</i></span>
           <div class="tour-map">
             <canvas id="preview-map" width="800" height="592" role="img" aria-label="Vista de ejemplo del aula actual, con cuatro equipos, avatares y animales recorriendo sus pasillos."></canvas>
             <div class="tour-room is-mine" data-tour-room aria-hidden="true"><strong>Equipo Bosque</strong><small id="tour-my-place">3/5 · Disponible</small></div>
@@ -80,7 +85,7 @@
             <div class="tour-card-top"><span>Chat · Equipo Bosque</span><span class="tour-chip">Privado</span></div>
             <div class="tour-card-body"><div class="tour-bubble"><small>Ana</small>¡Hola, equipo! ¿Empezamos?</div><div class="tour-bubble mine"><small>Tú</small>¡Sí! Les comparto la actividad.</div><div class="tour-file"><span class="tour-file-icon">PDF</span><div><strong>Actividad.pdf</strong><small>Archivo de ejemplo · 120 KB</small></div></div><div class="tour-composer"><span>Escribe a tu equipo…</span><b>↗</b></div></div>
           </div>
-          <span class="tour-scene-label"><i aria-hidden="true"></i>Escena y datos de ejemplo</span>
+          <span class="tour-scene-label"><i aria-hidden="true"></i>Un vistazo al aula · Datos de ejemplo</span>
         </div>
         <div class="tour-story"><span class="tour-counter" id="tour-counter">01 / 08</span><h3 id="tour-caption">Primero, el código de tu materia.</h3><p id="tour-description">En la portada, escribe el código que te compartió tu docente y pulsa «Entrar a mi materia».</p></div>
         <div class="tour-progress" aria-hidden="true"><span></span></div>
@@ -98,6 +103,7 @@
         <p class="screen-reader-only" id="tour-announcement" role="status" aria-live="polite"></p>
       </section>
     </section>
+    <section class="campus-values" aria-label="Lo que encontrarás en tu aula"><div><span class="campus-value-icon avatar-value" aria-hidden="true"><span data-entry-avatar="2"></span></span><p><strong>Hazlo tuyo.</strong><span>Crea un personaje a tu estilo.</span></p></div><div><span class="campus-value-icon team-value" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="10" cy="11" r="4"/><circle cx="22" cy="11" r="4"/><path d="M3 25v-3a7 7 0 0 1 14 0v3m-2-5a7 7 0 0 1 14 2v3"/></svg></span><p><strong>Encuentra tu lugar.</strong><span>Elige un equipo y comparte ideas.</span></p></div><div><span class="campus-value-icon chat-value" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 5h20a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H13l-7 5v-5a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Z"/><path d="M10 12h12m-12 6h8"/></svg></span><p><strong>Que siga la conversación.</strong><span>Tu equipo y su chat, siempre a mano.</span></p></div></section>
     <noscript><p class="notice">Activa JavaScript para entrar a tu materia.</p></noscript>
   </main>
   <footer class="site-footer"><span>AulaVirtualJv <span class="footer-separator">/</span> Aprender también es encontrarse.</span><span><a href="./docente.html">Acceso docente</a> · 2026</span></footer>
