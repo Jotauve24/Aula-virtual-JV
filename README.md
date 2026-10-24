@@ -2,9 +2,11 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
-## Paletas visuales elegidas (0.12.0)
+## Paletas visuales en todo el sitio (0.13.0)
 
-La portada y el panel docente combinan las dos paletas compartidas por el usuario:
+La portada, el acceso y panel docente, el registro, la recuperación, el estudio de
+avatares, el aula de estudiantes y la sala docente combinan las dos paletas
+compartidas por el usuario:
 petróleo, verde azulado, crema y salvia como base; coral y durazno en los detalles.
 Las cursivas y los subrayados se mantienen. Los textos pequeños y los botones
 usan variantes oscuras para conservar el contraste.
@@ -12,7 +14,11 @@ usan variantes oscuras para conservar el contraste.
 El formulario de código tiene prioridad, el acceso docente aparece en el
 encabezado y los controles poco frecuentes conservan un tamaño cómodo. El
 tutorial mantiene sus ocho pasos, pausa, repetición y selección manual. La sala
-conserva sus colores por equipo, avatares y comportamiento de ingreso.
+comparte la misma paleta en encabezados, pestañas, Mi equipo, privacidad del
+teléfono, chat y diálogos. `assets/palette.css` concentra los colores y sus roles
+para los cuatro puntos de entrada. Los muebles de cada equipo y los personajes
+conservan sus identidades; los muros y la entrada también adoptan los colores
+elegidos. Se mantienen las rutas, avatares y comportamiento de ingreso.
 
 ## Panel docente y guías de diseño (0.10.0)
 

@@ -1,51 +1,51 @@
 /* One visual language for the entrance, classroom and teacher workspace. */
 @font-face{font-family:AulaNunito;src:url('./fonts/nunito-latin.woff') format('woff');font-style:normal;font-weight:400 900;font-display:swap}
-.campus-theme{--paper:#f7f6ee;--ink:#253e35;--muted:#66756b;--green:#31664e;--green-hover:#254f3c;--mint:#e9f0e3;--line:#dce3d5;--focus:#b65d2d;font-family:AulaNunito,ui-rounded,'Segoe UI',sans-serif;background:var(--paper);color:var(--ink)}
+.campus-theme{min-width:0;font-family:AulaNunito,ui-rounded,'Segoe UI',sans-serif;background:var(--paper);color:var(--ink)}
 .campus-theme button,.campus-theme input,.campus-theme select{font-family:inherit}
-.campus-theme ::selection{background:#f7cd8b;color:#243e32}
+.campus-theme ::selection{background:var(--peach);color:var(--ink)}
 .campus-theme .brand{color:var(--ink);letter-spacing:-.7px}
-.campus-theme .brand-mark{filter:drop-shadow(0 3px 0 #243d3510)}
+.campus-theme .brand-mark{filter:none}
 .campus-theme .brand-name{font-weight:900}
 .campus-theme .brand-name .brand-light{font-weight:500}
 .campus-theme .brand small{color:var(--muted);font-size:11px}
 .campus-theme .button{border-radius:13px;font-weight:800;transition:background .18s,transform .18s,box-shadow .18s}
-.campus-theme .button.primary{background:var(--green);border:1px solid #29573f;box-shadow:0 4px 0 #214a36,0 7px 15px #214a3614;color:#fff}
-.campus-theme .button.primary:not(:disabled):hover{background:#3a785b;box-shadow:0 5px 0 #214a36,0 10px 18px #214a3620;transform:translateY(-1px)}
-.campus-theme .button.primary:not(:disabled):active{transform:translateY(3px);box-shadow:0 1px 0 #214a36}
-.campus-theme .button.primary:disabled{opacity:1;background:#dce6d7;border-color:#d2decc;color:#5c705b;box-shadow:0 3px 0 #cad6c4;cursor:not-allowed}
-.campus-theme .button.secondary{background:#fffef9;border-color:#d5dece;color:#3c5b48;box-shadow:0 2px 0 #dfe5d8}
-.campus-theme .button.secondary:hover{background:#eef3e8;border-color:#acbfa4;transform:translateY(-1px)}
+.campus-theme .button.primary{background:var(--accent);border:1px solid var(--accent);box-shadow:none;color:var(--surface)}
+.campus-theme .button.primary:not(:disabled):hover{background:var(--deep);box-shadow:none;transform:translateY(-1px)}
+.campus-theme .button.primary:not(:disabled):active{transform:translateY(3px);box-shadow:none}
+.campus-theme .button.primary:disabled{opacity:1;background:var(--accent-soft);border-color:var(--line);color:var(--muted);box-shadow:none;cursor:not-allowed}
+.campus-theme .button.secondary{background:var(--surface);border-color:var(--line);color:var(--muted);box-shadow:none}
+.campus-theme .button.secondary:hover{background:var(--accent-soft);border-color:var(--line);transform:translateY(-1px)}
 .campus-theme button:focus-visible,.campus-theme a:focus-visible,.campus-theme input:focus-visible,.campus-theme select:focus-visible{outline-color:var(--focus)}
-.campus-theme .site-footer{border-top:1px solid #dde3d4;color:#71806c;font-size:12px;padding-top:23px;padding-bottom:25px}
-.campus-theme .site-footer a{color:#43634f;font-weight:800;text-underline-offset:4px}
+.campus-theme .site-footer{border-top:1px solid var(--line);color:var(--muted);font-size:12px;padding-top:23px;padding-bottom:25px}
+.campus-theme .site-footer a{color:var(--muted);font-weight:800;text-underline-offset:4px}
 
 /* User-supplied palettes: petrol/teal/champagne with coral, peach and sage accents. */
-.campus-theme.campus-panel{--deep:#031926;--teal:#468189;--seafoam:#77aca2;--opal:#9dbebb;--champagne:#f4e9cd;--sage:#99b898;--peach:#fecea8;--salmon:#ff847c;--coral:#e84a5f;--charcoal:#2a363b;--paper:#fbf8ef;--ink:var(--charcoal);--muted:#53615f;--accent:#2f6b73;--accent-hover:var(--deep);--accent-soft:#e3ece8;--green:var(--accent);--green-hover:var(--accent-hover);--mint:var(--accent-soft);--line:#cddbd5;--focus:var(--teal);--red:#b73549}
-.campus-panel ::selection{background:#fecea8;color:#2a363b}
+
+.campus-panel ::selection{background:var(--peach);color:var(--charcoal)}
 .campus-panel .brand-mark{filter:none}
 .campus-panel .button.primary{background:var(--accent);border-color:var(--accent);box-shadow:none}
 .campus-panel .button.primary:not(:disabled):hover{background:var(--accent-hover);box-shadow:none;transform:translateY(-1px)}
 .campus-panel .button.primary:not(:disabled):active{transform:translateY(1px);box-shadow:none}
-.campus-panel .button.primary:disabled{background:#e5ebdf;border-color:#e5ebdf;color:#53615f;box-shadow:none}
-.campus-panel .button.secondary{background:#fff;border-color:var(--line);color:var(--ink);box-shadow:none}
-.campus-panel .button.secondary:hover{background:var(--accent-soft);border-color:#9dbebb}
+.campus-panel .button.primary:disabled{background:var(--accent-soft);border-color:var(--line);color:var(--muted);box-shadow:none}
+.campus-panel .button.secondary{background:var(--surface);border-color:var(--line);color:var(--ink);box-shadow:none}
+.campus-panel .button.secondary:hover{background:var(--accent-soft);border-color:var(--opal)}
 .campus-panel .site-footer{border:0;color:var(--muted);font-size:13px}
 .campus-panel .site-footer a{color:var(--accent)}
 
 /* Entrance: an access card beside the real, interactive classroom miniature. */
-.campus-theme.campus-entrance{--editorial-display:var(--coral);--editorial-ink:#b73549;--editorial-soft:#fbe5df;--warm-ink:#2a363b;--warm-soft:#f4e9cd;--warm-accent:#468189;--underline:#ff847c;--prose:#53615f;--accent-font:Georgia,'Times New Roman',serif;min-width:0;background:var(--paper)}
+.campus-theme.campus-entrance{--editorial-display:var(--coral);--editorial-ink:var(--red);--editorial-soft:var(--red-soft);--warm-ink:var(--ink);--warm-soft:var(--champagne);--warm-accent:var(--teal);--underline:var(--salmon);--prose:var(--muted);--accent-font:Georgia,'Times New Roman',serif;min-width:0;background:var(--paper)}
 .campus-entrance .site-header{max-width:none;min-height:92px;padding:20px max(32px,calc((100% - 1328px)/2));background:var(--deep);color:var(--champagne)}
 .campus-entrance .brand{color:#fff}
 .campus-entrance .brand-script{filter:brightness(0) invert(1)}
-.campus-entrance .brand small{color:#9dbebb;font-size:12px}
+.campus-entrance .brand small{color:var(--opal);font-size:12px}
 .campus-entrance #main{max-width:1440px}
 .entry-nav{margin-left:auto;margin-right:24px}
-.entry-nav a,.entry-teacher{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:8px 2px;font-size:14px;font-weight:750;text-decoration:none;color:#f4e9cd}
+.entry-nav a,.entry-teacher{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:8px 2px;font-size:14px;font-weight:750;text-decoration:none;color:var(--champagne)}
 .entry-nav a:hover,.entry-teacher:hover{color:#fff;text-decoration:underline;text-underline-offset:5px}
 .campus-entrance .entry-tools{gap:20px}
-.campus-entrance .entry-tools .entry-expand{width:44px;min-height:44px;padding:0;border-radius:50%;background:transparent;border-color:#468189;color:#fff}
-.campus-entrance .entry-tools .entry-expand:hover{background:#28555d;border-color:#77aca2;transform:none}
-.campus-entrance .site-header :is(a,button):focus-visible{outline-color:#f4e9cd}
+.campus-entrance .entry-tools .entry-expand{width:44px;min-height:44px;padding:0;border-radius:50%;background:transparent;border-color:var(--teal);color:#fff}
+.campus-entrance .entry-tools .entry-expand:hover{background:#28555d;border-color:var(--seafoam);transform:none}
+.campus-entrance .site-header :is(a,button):focus-visible{outline-color:var(--champagne)}
 .campus-entrance .login-layout{grid-template-columns:minmax(320px,.85fr) minmax(0,1.15fr);gap:clamp(32px,4vw,64px);padding:44px 56px 38px;align-items:start;min-height:0}
 .campus-entrance .login-content{max-width:440px;padding:14px 0 0}
 .campus-entrance .login-content h1{font-family:inherit;font-size:clamp(56px,5vw,72px);font-weight:900;line-height:1.02;letter-spacing:-.055em;color:var(--ink);margin:0 0 22px;text-wrap:balance}
@@ -55,13 +55,13 @@
 .campus-entrance #course-form{padding:24px;border:0;border-radius:20px;background:#fff;box-shadow:none}
 .entry-form-heading{margin-bottom:12px}
 .campus-entrance .entry-form-heading label{font-size:15px;font-weight:850;margin:0;color:var(--ink)}
-.campus-entrance .login-content .code-field{border:1.5px solid #468189;border-radius:10px;background:#fffdf8;box-shadow:none}
-.campus-entrance .login-content .code-field:hover{border-color:#2f6b73}
+.campus-entrance .login-content .code-field{border:1.5px solid var(--teal);border-radius:10px;background:#fffdf8;box-shadow:none}
+.campus-entrance .login-content .code-field:hover{border-color:var(--accent)}
 .campus-entrance .login-content .code-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px #46818926}
 .campus-entrance .login-content .code-field:has([aria-invalid=true]){border-color:var(--red)}
 .campus-entrance .code-field input{padding:16px 10px;font-size:16px;letter-spacing:.3px;font-weight:700}
-.campus-entrance .code-field input::placeholder{color:#53615f;font-size:14px;font-weight:600}
-.campus-entrance .login-content .code-field svg{stroke:#468189;width:19px;margin-left:12px}
+.campus-entrance .code-field input::placeholder{color:var(--muted);font-size:14px;font-weight:600}
+.campus-entrance .login-content .code-field svg{stroke:var(--teal);width:19px;margin-left:12px}
 .campus-entrance .login-content .field-hint{font-size:13px;line-height:1.5;margin-top:10px;color:var(--muted)}
 .campus-entrance .login-content .enter-button{margin-top:20px;min-height:52px;font-size:16px;border-radius:10px}
 .campus-entrance .login-content .help-button{justify-content:flex-start;min-height:44px;font-size:13px;color:var(--accent);padding:9px 0;margin:8px 0 0;text-align:left;text-underline-offset:4px}
@@ -81,7 +81,7 @@
 .campus-values p{margin:0;line-height:1.6}
 .campus-values strong{display:block;font-size:15px;font-weight:800;color:var(--ink)}
 .campus-values p>span{display:block;font-size:13px;margin-top:3px;color:var(--muted)}
-.campus-value-icon{display:grid;place-items:center;flex:none;width:40px;height:46px;color:#468189;overflow:hidden}
+.campus-value-icon{display:grid;place-items:center;flex:none;width:40px;height:46px;color:var(--teal);overflow:hidden}
 .avatar-value svg{width:30px;height:46px;transform:translateY(6px)}
 .team-value svg,.chat-value svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
 .campus-entrance #info-dialog{background:#fff;border:0;max-height:calc(100svh - 32px);overflow:auto;overscroll-behavior:contain}
@@ -90,101 +90,101 @@
 .campus-entrance #info-dialog .dialog-close{width:44px;height:44px;top:8px;right:8px}
 .campus-entrance #info-dialog p{font-size:16px}
 
-/* The same welcoming material and colors continue inside the live classroom. */
-.campus-theme #room .room-header{position:relative;isolation:isolate;overflow:hidden;background:#2c493b;color:#fffef4;border:1px solid #365b44;border-radius:24px;box-shadow:0 5px 0 #d6dfce,0 15px 30px #324b380c;padding:25px 30px}
-.campus-theme #room .room-header:after{content:'';position:absolute;z-index:-1;width:260px;height:260px;right:10%;top:-188px;border:36px solid #9cb77a13;border-radius:50%;box-shadow:0 0 0 28px #9cb77a06;pointer-events:none}
+/* The same user-selected palette continues inside both live classroom views. */
+.campus-theme #room .room-header{position:relative;isolation:isolate;overflow:hidden;background:var(--deep);color:var(--champagne);border:1px solid var(--deep);border-radius:24px;box-shadow:none;padding:25px 30px}
+.campus-theme #room .room-header:after{content:none;position:absolute;z-index:-1;width:260px;height:260px;right:10%;top:-188px;border:36px solid color-mix(in srgb,var(--deep) 7.45%,transparent);border-radius:50%;box-shadow:0 0 0 28px color-mix(in srgb,var(--deep) 2.35%,transparent);pointer-events:none}
 .campus-theme #room .room-heading h1{font-family:inherit;font-weight:900;letter-spacing:-.035em}
-.campus-theme #room .room-header .eyebrow{color:#c1d3a6;font-family:inherit;letter-spacing:.12em}
-.campus-theme #room-intro{color:#d4dfc9}
-.campus-theme #room .room-header .group-badge{background:#42634b;border-color:#779267;color:#f6f9eb;border-radius:12px;font-weight:800}
-.campus-theme #room .room-header .online-count{background:#e4eed8;border-color:#bbd3a3;color:#426b35;font-weight:800}
-.campus-theme #room .room-header #edit-avatar,.campus-theme #room .room-header #protect-account{background:#f4f4e5;color:#3c5c40;border-color:#d6dfc7}
-.campus-theme #room[data-stage="registration"] .room-header,.campus-theme #room[data-stage="avatar"] .room-header{background:#edf2e4;color:#304c39;border-color:#d7e0cb;box-shadow:0 4px 0 #e3e8d9}
-.campus-theme #room[data-stage="registration"] .room-header .eyebrow,.campus-theme #room[data-stage="avatar"] .room-header .eyebrow{color:#698253}
-.campus-theme #room[data-stage="registration"] #room-intro,.campus-theme #room[data-stage="avatar"] #room-intro{color:#6a7c5d}
-.campus-theme #room[data-stage="room"] .room-tabs{margin-top:24px;padding:6px;gap:6px;border:1px solid #d9e2ce;border-radius:16px;background:#eaf0e1;box-shadow:none}
-.campus-theme #room[data-stage="room"] .room-tabs [role="tab"]{min-height:47px;border-radius:11px;color:#61734f;font-family:inherit;font-size:14px;font-weight:900}
-.campus-theme #room[data-stage="room"] .room-tabs [role="tab"][aria-selected="true"]{background:#3a6a4c;color:#fff;box-shadow:0 3px 0 #2b5139,0 6px 12px #34563812}
-.campus-theme #room[data-stage="room"] .room-tabs [role="tab"]:hover:not([aria-selected="true"]){background:#fafbf4;color:#456642}
+.campus-theme #room .room-header .eyebrow{color:var(--opal);font-family:inherit;letter-spacing:.12em}
+.campus-theme #room-intro{color:var(--champagne)}
+.campus-theme #room .room-header .group-badge{background:var(--accent);border-color:var(--seafoam);color:var(--champagne);border-radius:12px;font-weight:800}
+.campus-theme #room .room-header .online-count{background:var(--sage);border-color:var(--sage);color:var(--deep);font-weight:800}
+.campus-theme #room .room-header #edit-avatar,.campus-theme #room .room-header #protect-account{background:var(--champagne);color:var(--deep);border-color:var(--champagne)}
+.campus-theme #room[data-stage="registration"] .room-header,.campus-theme #room[data-stage="avatar"] .room-header{background:var(--accent-soft);color:var(--ink);border-color:var(--line);box-shadow:none}
+.campus-theme #room[data-stage="registration"] .room-header .eyebrow,.campus-theme #room[data-stage="avatar"] .room-header .eyebrow{color:var(--muted)}
+.campus-theme #room[data-stage="registration"] #room-intro,.campus-theme #room[data-stage="avatar"] #room-intro{color:var(--muted)}
+.campus-theme #room[data-stage="room"] .room-tabs{margin-top:24px;padding:6px;gap:6px;border:1px solid var(--line);border-radius:16px;background:var(--accent-soft);box-shadow:none}
+.campus-theme #room[data-stage="room"] .room-tabs [role="tab"]{min-height:47px;border-radius:11px;color:var(--muted);font-family:inherit;font-size:14px;font-weight:900}
+.campus-theme #room[data-stage="room"] .room-tabs [role="tab"][aria-selected="true"]{background:var(--accent);color:var(--surface);box-shadow:none}
+.campus-theme #room[data-stage="room"] .room-tabs [role="tab"]:hover:not([aria-selected="true"]){background:var(--surface);color:var(--muted)}
 .campus-theme #room .room-layout{gap:22px}
-.campus-theme #room .room-map-container{border:6px solid #fffef7;border-radius:23px;background:#e9efdf;box-shadow:0 5px 0 #d7e0cc,0 14px 28px #3b57391a;overflow:hidden}
-.campus-theme #room .room-map{background:#f1ead5}
-.campus-theme #room[data-stage="room"] .room-tools{padding:15px 17px;background:#f8f9f0;border-color:#dce4d0}
-.campus-theme #room .movement-hint,.campus-theme .room-legend{color:#647653}
-.campus-theme #room .movement-hint strong{display:inline-block;min-width:19px;text-align:center;color:#4d6c43}
-.campus-theme #room .room-status{font-size:12px;color:#69825b;font-weight:800;margin-top:14px}
-.campus-theme #room .room-side{border:1px solid #d8e1cc;border-radius:23px;background:#fffef7;box-shadow:0 4px 0 #e5e9dc,0 12px 26px #3b573909;padding:24px}
-.campus-theme #room .room-side .eyebrow{color:#627a46;font-weight:900}
-.campus-theme #room .room-side h2{font-family:inherit;font-weight:900;color:#3d5d3d;font-size:25px;letter-spacing:-.025em}
-.campus-theme #room .room-side p{color:#647653}
-.campus-theme #room .room-side .side-footer{border-color:#e1e7d6;color:#6f815b;font-size:11px}
-.campus-theme #room[data-stage="room"] .topic-list .topic-link{border:1px solid #dbe3d0;border-left:4px solid var(--table-accent);border-radius:13px;box-shadow:0 2px 0 #dfe5d9;padding:13px 12px;font-family:inherit}
-.campus-theme #room[data-stage="room"] .topic-list .topic-link:hover{transform:translateY(-2px);border-color:var(--table-accent);box-shadow:0 4px 0 #dfe5d9}
-.campus-theme #room .map-action{border:1px solid #c2d0b8;border-left:4px solid var(--table-accent);border-radius:9px;background:#fffef5f0;box-shadow:0 3px 0 #41533c25,0 5px 12px #33472e18;font-family:inherit;backdrop-filter:blur(3px)}
-.campus-theme #room .map-action strong{font-weight:900;color:#3a513a}
-.campus-theme #room .map-action small{color:#6b815c}
-.campus-theme #room .map-action:hover,.campus-theme #room .map-action:focus-visible{background:#fffef7;border-color:var(--table-accent);transform:translate(-50%,-53%)}
-.campus-theme #room .map-action.is-mine{background:#fff4c8;border:2px solid #4c7b4b;border-left:5px solid #4c7b4b;outline:2px solid #f7d67a;box-shadow:0 0 0 4px #4c7b4b,0 5px 12px #33472e28}
-.campus-theme #room .map-action.is-mine small.team-selected-marker{background:#426d42;color:#fff9db;border-radius:5px;padding:3px 6px}
-.campus-theme #room[data-stage="room"] .topic-list .topic-link.is-mine{background:#f4edce;border-color:#618b53;border-left:5px solid #618b53;box-shadow:0 3px 0 #d7dfbb}
-.campus-theme #room[data-stage="room"] .topic-list .topic-link.is-mine span{background:#e3ebce;color:#476c37}
-.campus-theme #room .dpad button{background:#fffef8;border-color:#d3dfc8;color:#587c48;border-radius:9px;box-shadow:0 3px 0 #cbd8bf;font-weight:900}
-.campus-theme #room .dpad button:hover{background:#eaf2df}
-.campus-theme #room .dpad button:active{transform:translateY(2px);box-shadow:0 1px 0 #cbd8bf}
+.campus-theme #room .room-map-container{border:6px solid var(--champagne);border-radius:23px;background:var(--accent-soft);box-shadow:none;overflow:hidden}
+.campus-theme #room .room-map{background:var(--warning-soft)}
+.campus-theme #room[data-stage="room"] .room-tools{padding:15px 17px;background:var(--accent-soft);border-color:var(--line)}
+.campus-theme #room .movement-hint,.campus-theme .room-legend{color:var(--muted)}
+.campus-theme #room .movement-hint strong{display:inline-block;min-width:19px;text-align:center;color:var(--ink)}
+.campus-theme #room .room-status{font-size:12px;color:var(--muted);font-weight:800;margin-top:14px}
+.campus-theme #room .room-side{border:1px solid var(--line);border-radius:23px;background:var(--surface);box-shadow:none;padding:24px}
+.campus-theme #room .room-side .eyebrow{color:var(--muted);font-weight:900}
+.campus-theme #room .room-side h2{font-family:inherit;font-weight:900;color:var(--ink);font-size:25px;letter-spacing:-.025em}
+.campus-theme #room .room-side p{color:var(--muted)}
+.campus-theme #room .room-side .side-footer{border-color:var(--line);color:var(--muted);font-size:11px}
+.campus-theme #room[data-stage="room"] .topic-list .topic-link{border:1px solid var(--line);border-left:4px solid var(--table-accent);border-radius:13px;box-shadow:none;padding:13px 12px;font-family:inherit}
+.campus-theme #room[data-stage="room"] .topic-list .topic-link:hover{transform:translateY(-2px);border-color:var(--table-accent);box-shadow:0 4px 0 var(--deep)}
+.campus-theme #room .map-action{border:1px solid var(--line);border-left:4px solid var(--table-accent);border-radius:9px;background:var(--surface);box-shadow:0 3px 0 color-mix(in srgb,var(--deep) 14.51%,transparent),0 5px 12px color-mix(in srgb,var(--deep) 9.41%,transparent);font-family:inherit;backdrop-filter:none}
+.campus-theme #room .map-action strong{font-weight:900;color:var(--ink)}
+.campus-theme #room .map-action small{color:var(--muted)}
+.campus-theme #room .map-action:hover,.campus-theme #room .map-action:focus-visible{background:var(--surface);border-color:var(--table-accent);transform:translate(-50%,-53%)}
+.campus-theme #room .map-action.is-mine{background:var(--champagne);border:2px solid var(--accent);border-left:5px solid var(--accent);outline:2px solid var(--salmon);box-shadow:0 0 0 4px var(--accent)}
+.campus-theme #room .map-action.is-mine small.team-selected-marker{background:var(--accent);color:var(--surface);border-radius:5px;padding:3px 6px}
+.campus-theme #room[data-stage="room"] .topic-list .topic-link.is-mine{background:var(--champagne);border-color:var(--accent);border-left:5px solid var(--accent);box-shadow:none}
+.campus-theme #room[data-stage="room"] .topic-list .topic-link.is-mine span{background:var(--peach);color:var(--deep)}
+.campus-theme #room .dpad button{background:var(--surface);border-color:var(--line);color:var(--muted);border-radius:9px;box-shadow:none;font-weight:900}
+.campus-theme #room .dpad button:hover{background:var(--accent-soft)}
+.campus-theme #room .dpad button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--deep)}
 
 /* Registration and avatar studio retain their actual step-by-step behavior. */
-.campus-theme #room[data-stage="registration"] .in-room-dialog,.campus-theme #room[data-stage="avatar"] .in-room-dialog{background:#fffef8;border:1px solid #c9d8bd;outline:0;border-radius:23px;box-shadow:0 7px 0 #617a4c35,0 24px 56px #2d462d35}
-.campus-theme #room .dialog-teacher{font-family:inherit;color:#647e4c;border-color:#e2e8d8}
-.campus-theme #room .in-room-dialog .eyebrow{font-family:inherit;color:#6c8a53}
-.campus-theme #room[data-stage="registration"] #dialog-progress{background:#ecf2e2;border-radius:8px;color:#6b8852;font-size:10px;letter-spacing:.06em;font-weight:900}
-.campus-theme #room .in-room-dialog h2{font-family:inherit;font-weight:900;color:#3b573a;line-height:1.2}
-.campus-theme #room .in-room-dialog p{color:#657851;line-height:1.6}
-.campus-theme #room .in-room-dialog input,.campus-theme #room .in-room-dialog select{border:1.5px solid #d2dfc6;border-radius:10px;background:#fbfcf5;color:#425c3d}
-.campus-theme #room .in-room-dialog input:focus{border-color:#799867;outline-color:#79986730}
-.campus-theme #room .in-room-dialog .button.primary{background:#3a6c4c;border-color:#315c40;box-shadow:0 3px 0 #274b34;color:white;font-weight:900}
-.campus-theme #room[data-stage="avatar"] .avatar-preview{position:relative;isolation:isolate;overflow:hidden;border:1px solid #d2dfbe;border-radius:19px;background:radial-gradient(circle at 50% 44%,#f7fae9 0 26%,transparent 27%),#e5edd6;box-shadow:inset 0 -12px 0 #dfe8cb}
-.campus-theme #room[data-stage="avatar"] .avatar-preview:before{bottom:34px;background:#9eb98355;box-shadow:0 6px 0 #859d7240;filter:none}
-.campus-theme #room[data-stage="avatar"] .avatar-preview svg{filter:drop-shadow(4px 6px 0 #6b85532e)}
-.campus-theme #room[data-stage="avatar"] .avatar-style-option{border-color:#d1dec3;background:#f7f9ef;color:#567644;border-radius:12px}
-.campus-theme #room[data-stage="avatar"] .avatar-style-option[aria-pressed="true"],.campus-theme #room[data-stage="avatar"] .avatar-style-option[data-presentation="mujer"][aria-pressed="true"]{border-color:#6b8e52;background:#e9f0db;box-shadow:0 3px 0 #bacda5}
-.campus-theme #room[data-stage="avatar"] .swatch[aria-pressed="true"]{box-shadow:0 0 0 3px #789759,0 4px 0 #c6d5b4}
-.campus-theme #room[data-stage="avatar"] .hair-option[aria-pressed="true"]{border-color:#789759;background:#eaf1df;box-shadow:0 2px 0 #c6d5b4}
-.campus-theme #room .change-code{color:#69874f}
-.campus-theme #topic-dialog.topic-dialog{border:2px solid #718e5a;outline:0;border-radius:21px;background:#fffef5;color:#3a5236;box-shadow:0 6px 0 #728d5940,0 20px 44px #31453040;font-family:inherit}
+.campus-theme #room[data-stage="registration"] .in-room-dialog,.campus-theme #room[data-stage="avatar"] .in-room-dialog{background:var(--surface);border:1px solid var(--line);outline:0;border-radius:23px;box-shadow:0 7px 0 color-mix(in srgb,var(--deep) 20.78%,transparent),0 24px 56px color-mix(in srgb,var(--deep) 20.78%,transparent)}
+.campus-theme #room .dialog-teacher{font-family:inherit;color:var(--muted);border-color:var(--line)}
+.campus-theme #room .in-room-dialog .eyebrow{font-family:inherit;color:var(--muted)}
+.campus-theme #room[data-stage="registration"] #dialog-progress{background:var(--accent-soft);border-radius:8px;color:var(--muted);font-size:10px;letter-spacing:.06em;font-weight:900}
+.campus-theme #room .in-room-dialog h2{font-family:inherit;font-weight:900;color:var(--ink);line-height:1.2}
+.campus-theme #room .in-room-dialog p{color:var(--muted);line-height:1.6}
+.campus-theme #room .in-room-dialog input,.campus-theme #room .in-room-dialog select{border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--muted)}
+.campus-theme #room .in-room-dialog input:focus{border-color:var(--accent);outline-color:color-mix(in srgb,var(--deep) 18.82%,transparent)}
+.campus-theme #room .in-room-dialog .button.primary{background:var(--accent);border-color:var(--accent);box-shadow:none;color:white;font-weight:900}
+.campus-theme #room[data-stage="avatar"] .avatar-preview{position:relative;isolation:isolate;overflow:hidden;border:1px solid var(--line);border-radius:19px;background:var(--accent-soft);box-shadow:none}
+.campus-theme #room[data-stage="avatar"] .avatar-preview:before{bottom:34px;background:color-mix(in srgb,var(--deep) 33.33%,transparent);box-shadow:0 6px 0 color-mix(in srgb,var(--deep) 25.10%,transparent);filter:none}
+.campus-theme #room[data-stage="avatar"] .avatar-preview svg{filter:drop-shadow(4px 6px 0 color-mix(in srgb,var(--deep) 18.04%,transparent))}
+.campus-theme #room[data-stage="avatar"] .avatar-style-option{border-color:var(--line);background:var(--accent-soft);color:var(--muted);border-radius:12px}
+.campus-theme #room[data-stage="avatar"] .avatar-style-option[aria-pressed="true"],.campus-theme #room[data-stage="avatar"] .avatar-style-option[data-presentation="mujer"][aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 3px 0 var(--deep)}
+.campus-theme #room[data-stage="avatar"] .swatch[aria-pressed="true"]{box-shadow:0 0 0 3px var(--deep),0 4px 0 var(--deep)}
+.campus-theme #room[data-stage="avatar"] .hair-option[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:none}
+.campus-theme #room .change-code{color:var(--muted)}
+.campus-theme #topic-dialog.topic-dialog{border:2px solid var(--accent);outline:0;border-radius:21px;background:var(--surface);color:var(--muted);box-shadow:0 6px 0 color-mix(in srgb,var(--deep) 25.10%,transparent),0 20px 44px color-mix(in srgb,var(--deep) 25.10%,transparent);font-family:inherit}
 .campus-theme #topic-dialog h2{font-family:inherit;font-size:24px;font-weight:900;letter-spacing:-.02em}
-.campus-theme #topic-dialog .eyebrow{font-family:inherit;font-weight:900;color:#7c945a}
+.campus-theme #topic-dialog .eyebrow{font-family:inherit;font-weight:900;color:var(--muted)}
 .campus-theme #topic-dialog .button{border-radius:11px;font-size:13px;min-height:42px;font-weight:900}
-.campus-theme .team-open-button{box-shadow:0 3px 0 #274b34,0 0 0 4px #e3ecd7}
-.campus-theme #room .team-roster-panel{background:#fffef8;border:1px solid #d9e2cd;border-radius:22px;padding:27px;box-shadow:0 4px 0 #e4e9d9}
-.campus-theme #room .team-roster-panel h3{font-family:inherit;font-weight:900;font-size:27px;color:#3c5d38}
+.campus-theme .team-open-button{box-shadow:0 3px 0 var(--deep),0 0 0 4px var(--deep)}
+.campus-theme #room .team-roster-panel{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:27px;box-shadow:none}
+.campus-theme #room .team-roster-panel h3{font-family:inherit;font-weight:900;font-size:27px;color:var(--ink)}
 .campus-theme #room .team-roster{grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:13px;max-height:none}
 .campus-theme #room .team-member{padding:17px;border-radius:15px}
 .campus-theme #room .team-member strong{font-size:14px;font-weight:900}
-.campus-theme #room .team-chat{border:1px solid #d6e0c9;border-radius:24px;box-shadow:0 4px 0 #e3e9d8;background:#fffef8;font-family:inherit}
-.campus-theme #room .team-chat h2{font-family:inherit;font-weight:900;color:#3d5939}
-.campus-theme #room .team-chat-icon{background:#e8efdb;color:#62854d;box-shadow:0 3px 0 #d3dfc2}
-.campus-theme #room .chat-private-badge{background:#eff4e7;border-color:#d9e4cc;color:#70895b}
-.campus-theme #room .team-chat .chat-messages{background:#f1f4e9;border-color:#dfe6d4;border-radius:19px}
-.campus-theme #room .chat-bubble{border-radius:16px 16px 16px 4px;box-shadow:0 3px 0 #435c3c09}
+.campus-theme #room .team-chat{border:1px solid var(--line);border-radius:24px;box-shadow:none;background:var(--surface);font-family:inherit}
+.campus-theme #room .team-chat h2{font-family:inherit;font-weight:900;color:var(--ink)}
+.campus-theme #room .team-chat-icon{background:var(--accent-soft);color:var(--muted);box-shadow:none}
+.campus-theme #room .chat-private-badge{background:var(--accent-soft);border-color:var(--line);color:var(--muted)}
+.campus-theme #room .team-chat .chat-messages{background:var(--accent-soft);border-color:var(--line);border-radius:19px}
+.campus-theme #room .chat-bubble{border-radius:16px 16px 16px 4px;box-shadow:0 3px 0 color-mix(in srgb,var(--deep) 3.53%,transparent)}
 .campus-theme #room .chat-message.mine .chat-bubble{border-radius:16px 16px 4px 16px}
-.campus-theme #room .team-chat .chat-form input{border-color:#cddbbf;background:#fffef9;border-radius:12px}
-.campus-theme #room .chat-avatar{border-radius:12px;font-weight:900;box-shadow:0 2px 0 #5d755b12}
+.campus-theme #room .team-chat .chat-form input{border-color:var(--line);background:var(--surface);border-radius:12px}
+.campus-theme #room .chat-avatar{border-radius:12px;font-weight:900;box-shadow:0 2px 0 color-mix(in srgb,var(--deep) 7.06%,transparent)}
 .campus-theme #room .team-chat-host{max-width:1100px;margin-inline:auto}
 .campus-theme .teacher-header{font-family:inherit}
 .campus-theme .teacher-main h1,.campus-theme .teacher-main h2,.campus-theme .teacher-main h3{font-family:inherit;font-weight:900}
 
 /* Optional phone sharing has its own warm, readable choice panel. */
-.campus-theme #room .team-roster-panel .share-contact-card{border:1px solid #dfcb9f;border-radius:18px;background:#f8edcf;box-shadow:0 3px 0 #ebdfbd}
-.campus-theme #room .team-roster-panel .share-contact-icon{background:#c99e58;color:#fffdf1;border-radius:12px;box-shadow:0 3px 0 #b28b45}
-.campus-theme #room .team-roster-panel .share-contact-title{color:#735b32;font-weight:900}
-.campus-theme #room .team-roster-panel .share-contact-eyebrow{color:#97773e;font-weight:900}
-.campus-theme #room .team-roster-panel .share-contact-description{color:#826c48}
-.campus-theme #room .team-roster-panel .share-contact{background:#fffdf5;border-color:#ddcca8;border-radius:11px;color:#755f3a}
-.campus-theme #room .team-roster-panel .share-contact input{accent-color:#5f8348}
-.campus-theme #room .team-roster-panel .share-contact-status{background:#fff9e8;color:#8b744b;border-radius:7px}
-.campus-theme #room .team-roster-panel .share-contact-card[data-sharing="true"]{background:#edf3df;border-color:#c5d6aa;box-shadow:0 3px 0 #dce7ca}
-.campus-theme #room .team-roster-panel .share-contact-card[data-sharing="true"] .share-contact-status{background:#e1eccb;color:#58723b}
-.campus-theme #topic-dialog .topic-close{border:1px solid #d6e0c7;border-radius:10px;background:#eef3e3;color:#6f8656}
+.campus-theme #room .team-roster-panel .share-contact-card{border:1px solid var(--peach);border-radius:18px;background:var(--warning-soft);box-shadow:none}
+.campus-theme #room .team-roster-panel .share-contact-icon{background:var(--peach);color:var(--deep);border-radius:12px;box-shadow:none}
+.campus-theme #room .team-roster-panel .share-contact-title{color:var(--warning-ink);font-weight:900}
+.campus-theme #room .team-roster-panel .share-contact-eyebrow{color:var(--warning-ink);font-weight:900}
+.campus-theme #room .team-roster-panel .share-contact-description{color:var(--warning-ink)}
+.campus-theme #room .team-roster-panel .share-contact{background:var(--surface);border-color:var(--peach);border-radius:11px;color:var(--warning-ink)}
+.campus-theme #room .team-roster-panel .share-contact input{accent-color:var(--muted)}
+.campus-theme #room .team-roster-panel .share-contact-status{background:var(--warning-soft);color:var(--warning-ink);border-radius:7px}
+.campus-theme #room .team-roster-panel .share-contact-card[data-sharing="true"]{background:var(--positive-soft);border-color:var(--sage);box-shadow:none}
+.campus-theme #room .team-roster-panel .share-contact-card[data-sharing="true"] .share-contact-status{background:var(--positive-soft);color:var(--positive)}
+.campus-theme #topic-dialog .topic-close{border:1px solid var(--line);border-radius:10px;background:var(--accent-soft);color:var(--muted)}
 .campus-theme #topic-dialog #join-confirm-title{font-family:inherit;font-weight:900}
 
 @media(max-width:1100px){
@@ -224,3 +224,7 @@
 @media(max-width:360px){.campus-entrance .site-header{padding-inline:14px}.campus-entrance .brand{font-size:15px;gap:6px}.campus-entrance .brand-mark{width:28px;height:28px}}
 @media(prefers-reduced-motion:reduce){.campus-theme .button,.campus-theme #room .topic-list .topic-link{transition:none}.campus-theme .button:not(:disabled):hover,.campus-theme .button:not(:disabled):active,.campus-theme #room .topic-list .topic-link:hover{transform:none}}
 @media(forced-colors:active){.campus-theme #room .room-header,.campus-theme #room .map-action,.campus-theme #course-form,.campus-theme .button{border:1px solid CanvasText;box-shadow:none}.campus-theme #room .map-action.is-mine{outline:2px solid Highlight}.campus-theme #room .room-tabs [aria-selected="true"]{outline:2px solid Highlight}.campus-entrance .site-header{background:Canvas;color:CanvasText}.campus-entrance .site-header :is(.brand,a,button){color:CanvasText}}
+
+/* Shared classroom interaction states consume the same semantic tokens. */
+.campus-theme #room .in-room-dialog .button.primary:not(:disabled):hover{background:var(--deep);border-color:var(--deep)}
+.campus-theme #room .online-count[data-state="reconnecting"]{background:var(--accent-soft);color:var(--muted);border-color:var(--line)}
