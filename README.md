@@ -24,6 +24,23 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Pantalla completa durante la navegación (0.15.0)
+
+Al pulsar **Ampliar aula**, la portada, el aula estudiantil, el panel docente y
+la sala docente comparten un contenedor que permanece abierto. Los enlaces
+internos cambian su contenido y actualizan la dirección y el título sin
+reemplazar el documento que mantiene la pantalla completa. **Reducir aula**
+y **Esc** permiten salir; el panel docente también incluye este control.
+
+Las rutas públicas y los enlaces de recuperación conservan sus direcciones.
+Google se abre en el documento principal para permitir su autorización. Salir
+a un servicio externo, recargar o cerrar la pestaña depende de las reglas de
+pantalla completa del navegador; no se fuerza su reactivación.
+
+Los módulos se inicializan únicamente dentro del contenido. El contenedor
+sincroniza la dirección tras limpiar los tokens de acceso y mantiene el
+historial de navegación. Véase `docs/fullscreen-navigation-review.md`.
+
 ## Acceso y tutorial más claros (0.14.0)
 
 El código y la recuperación comparten una tarjeta. La ayuda se abre desde el
