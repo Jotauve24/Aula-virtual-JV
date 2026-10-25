@@ -2,6 +2,28 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
+<div align="center">
+  <img src="./assets/aula-activa.svg" height="54" alt="AulaVirtualJv — proyecto público activo" />
+  <br /><br />
+  <a href="https://jotauve24.github.io/Aula-virtual-JV/">
+    <img src="https://img.shields.io/badge/ENTRAR_AL_AULA-468189?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Entrar a AulaVirtualJv" />
+  </a>
+  <a href="https://jotauve24.github.io/Aula-virtual-JV/docente.html">
+    <img src="https://img.shields.io/badge/PANEL_DOCENTE-2A363B?style=for-the-badge&logo=bookstack&logoColor=white" alt="Abrir panel docente" />
+  </a>
+</div>
+
+## Vista rápida
+
+- Perfiles y avatares para estudiantes.
+- Equipos con cupos, mapa interactivo y espacios visuales por tema.
+- Chat privado por grupo y archivos adjuntos en almacenamiento protegido.
+- Panel docente para materias, grupos, inscripciones y presencia reciente.
+- Recuperación voluntaria mediante correo verificado.
+- Interfaz accesible, adaptable y con movimiento reducido.
+
+> La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
+
 ## Acceso y tutorial más claros (0.14.0)
 
 El código y la recuperación comparten una tarjeta. La ayuda se abre desde el
