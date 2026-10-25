@@ -1,8 +1,8 @@
-import './embed.js?v=0.13.0';
-import { normalizeCode } from './model.js?v=0.13.0';
-import { mountEntranceTutorial } from './entrance-tutorial.js?v=0.13.0';
-import { configured } from './supabase-client.js?v=0.13.0';
-import { avatarSVG } from './world.js?v=0.13.0';
+import './embed.js?v=0.14.0';
+import { normalizeCode } from './model.js?v=0.14.0';
+import { mountEntranceTutorial } from './entrance-tutorial.js?v=0.14.0';
+import { configured } from './supabase-client.js?v=0.14.0';
+import { avatarSVG } from './world.js?v=0.14.0';
 
 // Decorative classmates use the same characters as the real classroom.
 const entranceLooks = [
@@ -52,8 +52,8 @@ form.addEventListener('submit', event => {
 });
 
 document.querySelector('#code-help').addEventListener('click', () => {
-  document.querySelector('#dialog-title').textContent = 'Un código para cada materia.';
-  document.querySelector('#dialog-text').textContent = 'Tu docente comparte el mismo código con toda la clase. Escríbelo aquí para registrar tu perfil y entrar al aula. Si regresas desde este navegador, tu sesión se conserva. Para entrar desde otro dispositivo, usa «Recuperar tu cuenta» y verifica tu correo. No vuelvas a inscribirte si ya tienes perfil.';
+  document.querySelector('#dialog-title').textContent = '¿Dónde está el código?';
+  document.querySelector('#dialog-text').textContent = 'Pídeselo a tu docente: es el mismo para toda la clase. Cópialo completo, incluidos los guiones. Si ya tienes un perfil, usa «Recupera tu cuenta» para conservar tu avatar y equipo.';
   dialog.showModal();
 });
 dialog.querySelector('.dialog-close').addEventListener('click', () => dialog.close());

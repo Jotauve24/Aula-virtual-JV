@@ -1,15 +1,15 @@
-import { drawWorld, avatarSVG } from './world.js?v=0.13.0';
-import { createRoomLayout, findPath } from './world-layout.js?v=0.13.0';
+import { drawWorld, avatarSVG } from './world.js?v=0.14.0';
+import { createRoomLayout, findPath } from './world-layout.js?v=0.14.0';
 
 export const TUTORIAL_STEPS = [
-  { id: 'code', short: 'Código', title: 'Primero, el código de tu materia.', emphasis: 'código', description: 'En la portada, escribe el código que te compartió tu docente y pulsa «Entrar a mi materia».', duration: 6000 },
-  { id: 'registration', short: 'Registro', title: 'Luego, completa tu registro.', emphasis: 'tu registro', description: 'Responde en orden: nombre, apellido, cédula o pasaporte, correo y teléfono. Al terminar, pulsa «Crear mi personaje». Si ya tienes perfil, utiliza la recuperación.', duration: 11000 },
-  { id: 'avatar', short: 'Avatar', title: 'Después, personaliza tu avatar.', emphasis: 'tu avatar', description: 'Elige tu avatar, tono de piel, color de ropa y cabello. Pulsa «Guardar y explorar el aula» para entrar a la sala.', duration: 6500 },
-  { id: 'movement', short: 'Mover', title: 'Ahora sí: entra y mueve tu personaje.', emphasis: 'tu personaje', description: 'Toca el suelo o usa las flechas y W A S D para caminar. Acércate a una mesa y pulsa E, o toca su rótulo, para ver el tema.', duration: 6500 },
-  { id: 'capacity', short: 'Cupos', title: 'Revisa los cupos antes de elegir.', emphasis: 'los cupos', description: 'Un equipo con 5 de 5 lugares está completo. Explora otra mesa con cupos disponibles; todavía no has elegido tu equipo.', duration: 6500 },
-  { id: 'choose', short: 'Elegir', title: 'Elige un equipo y confirma tu lugar.', emphasis: 'tu lugar', description: 'Abre un equipo disponible, pulsa «Quiero este equipo» y después «Sí, unirme al equipo». Tu lugar se guarda al confirmar.', duration: 7500 },
-  { id: 'team', short: 'Mi equipo', title: 'Tu equipo, siempre a mano.', emphasis: 'Tu equipo', description: 'Busca la marca «✓ Tu equipo» o pulsa «Ver mi equipo». Aquí ves a tus compañeros y sus correos. Compartir tu teléfono es opcional.', duration: 6500 },
-  { id: 'chat', short: 'Chat', title: 'La conversación continúa aquí.', emphasis: 'La conversación', description: 'Abre Chat para conversar y compartir archivos de hasta 10 MB. Solo los integrantes del equipo pueden participar en esta conversación.', duration: 6500 }
+  { id: 'code', short: 'Código', title: 'Primero, el código de tu materia.', emphasis: 'código', description: 'Escribe el código de tu docente y pulsa «Entrar a mi materia».', duration: 6000 },
+  { id: 'registration', short: 'Registro', title: 'Luego, completa tu registro.', emphasis: 'tu registro', description: 'Completa tus datos y tu documento. Si ya tienes un perfil, recupéralo.', duration: 11000 },
+  { id: 'avatar', short: 'Avatar', title: 'Después, personaliza tu avatar.', emphasis: 'tu avatar', description: 'Elige tu personaje y su apariencia. Después, pulsa «Guardar y explorar el aula».', duration: 6500 },
+  { id: 'movement', short: 'Mover', title: 'Ahora, explora el aula.', emphasis: 'el aula', description: 'Toca el suelo o usa las flechas para caminar. Abre una mesa con E o su rótulo.', duration: 6500 },
+  { id: 'capacity', short: 'Cupos', title: 'Revisa los cupos antes de elegir.', emphasis: 'los cupos', description: 'Si un equipo está completo, busca otra mesa con lugares disponibles.', duration: 6500 },
+  { id: 'choose', short: 'Elegir', title: 'Elige un equipo y confirma tu lugar.', emphasis: 'tu lugar', description: 'Pulsa «Quiero este equipo» y confirma tu elección. Tu lugar se guarda al confirmar.', duration: 7500 },
+  { id: 'team', short: 'Mi equipo', title: 'Tu equipo, siempre a mano.', emphasis: 'Tu equipo', description: 'Consulta tus compañeros y correos en «Mi equipo». Compartir tu teléfono es opcional.', duration: 6500 },
+  { id: 'chat', short: 'Chat', title: 'La conversación continúa aquí.', emphasis: 'La conversación', description: 'Conversa con tu equipo y comparte archivos de hasta 10 MB desde «Chat».', duration: 6500 }
 ];
 
 export const TUTORIAL_REGISTRATION_FIELDS = [
@@ -107,7 +107,7 @@ export function mountEntranceTutorial(root) {
   const cards = [...root.querySelectorAll('[data-tour-card]')];
   const buttons = [...root.querySelectorAll('[data-tour-step]')];
   const labels = [...root.querySelectorAll('[data-tour-room]')];
-  let frame = 0, lastPaint = -Infinity, renderedStep = -1, renderedJoined = null, renderedField = -1;
+  let frame = 0, lastPaint = -Infinity, renderedStep = -1, renderedJoined = null, renderedField = -1, renderedPaused = null;
   let inView = true, motionOverride = false;
   const seated = scene.layout.rooms.flatMap((room, roomIndex) =>
     Array.from({ length: [3, 5, 2, 2][roomIndex] }, (_, seatIndex) => ({
@@ -132,9 +132,12 @@ export function mountEntranceTutorial(root) {
     root.dataset.scene = step.id;
     root.dataset.choice = example.choice;
     root.style.setProperty('--tour-progress', state.progress);
-    $('#tour-toggle').textContent = state.paused ? '▶ Reproducir' : 'Ⅱ Pausar';
-    $('#tour-toggle').setAttribute('aria-label', state.paused ? 'Reproducir tutorial' : 'Pausar tutorial');
-    $('#tour-toggle').setAttribute('aria-pressed', String(!state.paused));
+    if (renderedPaused !== state.paused) {
+      renderedPaused = state.paused;
+      $('#tour-toggle-label').textContent = state.paused ? 'Reproducir' : 'Pausar';
+      $('#tour-toggle').setAttribute('aria-label', state.paused ? 'Reproducir tutorial' : 'Pausar tutorial');
+      $('#tour-toggle').setAttribute('aria-pressed', String(!state.paused));
+    }
     if (renderedStep !== state.step) {
       renderedStep = state.step;
       cards.forEach(card => { card.hidden = card.dataset.tourCard !== step.id; });

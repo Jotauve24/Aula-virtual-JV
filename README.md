@@ -2,6 +2,18 @@
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
+## Acceso y tutorial más claros (0.14.0)
+
+El código y la recuperación comparten una tarjeta. La ayuda se abre desde el
+icono junto a la etiqueta del código; se mantienen su nombre accesible, el
+teclado y la validación del formulario. El recordatorio del perfil es más breve.
+
+Las instrucciones, el progreso, los ocho pasos y la reproducción del tutorial
+forman un solo bloque. El paso actual tiene un resaltado completo y los controles
+usan iconos SVG con etiquetas accesibles. La reproducción conserva sus iconos
+al alternar pausa/reproducción. En la escena de elección se muestra solamente
+la acción de la fase actual: elegir, confirmar o lugar guardado.
+
 ## Paletas visuales en todo el sitio (0.13.0)
 
 La portada, el acceso y panel docente, el registro, la recuperación, el estudio de

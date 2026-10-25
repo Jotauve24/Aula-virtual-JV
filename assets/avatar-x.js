@@ -1,4 +1,4 @@
-import { findPath, isWalkable, canWalkSegment } from './world-layout.js?v=0.13.0';
+import { findPath, isWalkable, canWalkSegment } from './world-layout.js?v=0.14.0';
 
 // Decorative guest: floor-only route, no student identity or database access.
 export const AVATAR_X_HEIGHT = 26;
