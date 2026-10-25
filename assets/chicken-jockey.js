@@ -1,4 +1,4 @@
-import { findPath, isWalkable, canWalkSegment } from './world-layout.js?v=0.14.0';
+import { findPath, isWalkable, canWalkSegment } from './world-layout.js?v=0.15.0';
 
 // One ambient character with two independent silhouettes: chicken + baby zombie.
 // It does not join a team, use Supabase, or change the room collision map.

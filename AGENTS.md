@@ -13,6 +13,7 @@
 ## Validation and publication
 
 - Run the checks appropriate to the change. The current commands are `npm test` and `npm run check`.
+- Preserve the persistent document in `assets/page-shell.js`: the four HTML pages declare application entry points with `link[rel="modulepreload"][data-aula-module]` and load the shell as a blocking classic script. Only the marked content frame imports the application modules. Internal navigation must keep that frame and the fullscreen-owning outer document mounted; OAuth authorization must leave the frame.
 - Keep all shared HTML/CSS/JavaScript release query parameters equal to `package.json`'s version.
 - Preserve GitHub Pages hosting. Use the actual remote main commit as the publication base; local materialized history may differ.
 - Do not publish credentials or private keys. Keep course ownership and access-code behavior intact.

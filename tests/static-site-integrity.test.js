@@ -14,6 +14,7 @@ const walk=directory=>readdirSync(directory).flatMap(name=>{
 const files=walk(assetRoot).filter(path=>extname(path)==='.js');
 const stripQuery=path=>path.split(/[?#]/)[0];
 const version=JSON.parse(readFileSync(join(root,'package.json'),'utf8')).version;
+const pageModules=source=>[...source.matchAll(/<(?:script|link)\b[^>]*>/g)].filter(m=>/^<script\b/.test(m[0])||/\bdata-aula-module\b/.test(m[0])).map(m=>m[0].match(/(?:src|href)="([^"]+)"/)?.[1]).filter(Boolean);
 const moduleImports=source=>[...source.matchAll(/(?:^|\n)\s*(?:import\s+(?:[^'";]*?\s+from\s+)?|export\s+\{[^}]*\}\s+from\s+)['"]([^'"]+)['"];?/g)].map(match=>match[1]);
 test('one release loads one version of each shared module, including re-exports',()=>{
   const references=[];
@@ -41,8 +42,8 @@ test('every production JavaScript module is reachable from a published page',()=
     for(const reference of moduleImports(readFileSync(file,'utf8')))
       if(reference.startsWith('.'))visit(resolve(dirname(file),stripQuery(reference)));
   };
-  for(const html of htmlPages) for(const match of readFileSync(join(root,html),'utf8').matchAll(/<script\b[^>]*src="([^"]+)"/g))
-    if(match[1].startsWith('.'))visit(resolve(root,stripQuery(match[1])));
+  for(const html of htmlPages) for(const reference of pageModules(readFileSync(join(root,html),'utf8')))
+    if(reference.startsWith('.'))visit(resolve(root,stripQuery(reference)));
   assert.deepEqual(files.filter(file=>!visited.has(file)),[],'Unreferenced production modules');
 });
 test('all relative imports in production modules resolve to existing assets',()=>{
@@ -92,4 +93,21 @@ test('student, teacher and ZombieAdmin pages retain independent entry points',()
   assert.match(simulator,/assets\/teacher-view\.js/);
   assert.doesNotMatch(student,/src="[^"]*teacher\.js/);
   assert.doesNotMatch(simulator,/src="[^"]*live\.js/);
+});
+
+
+test('each persistent host declares the original application modules in page order',()=>{
+  const expected={
+    'index.html':['app.js'],
+    'live.html':['live.js','student-recovery.js','retro-audio.js'],
+    'docente.html':['teacher.js'],
+    'docente-sala.html':['teacher-view.js','retro-audio.js']
+  };
+  for(const html of htmlPages){
+    const source=readFileSync(join(root,html),'utf8');
+    const entries=pageModules(source).map(path=>stripQuery(path).split('/').at(-1));
+    assert.deepEqual(entries,['page-shell.js',...expected[html]],html);
+    assert.equal((source.match(/id="expand-aula"/g)||[]).length,1,html+' needs an exit control');
+    assert.match(source,/assets\/page-shell\.css\?v=/);
+  }
 });

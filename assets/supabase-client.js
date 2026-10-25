@@ -1,4 +1,5 @@
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.14.0';
+import { openAuthPage } from './embed.js?v=0.15.0';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.15.0';
 
 const sessionKey = 'aula-supabase-session';
 const studentSessionKey = 'aula-student-session';
@@ -74,7 +75,7 @@ export async function googleAvailable() {
 }
 export function signInWithGoogle() {
   const redirect = location.origin + location.pathname;
-  location.assign(endpoint(`/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirect)}`));
+  openAuthPage(endpoint(`/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirect)}`));
 }
 // Student magic links are scoped to /live.html and never replace teacher sessions.
 function studentRedirect(mode) {
