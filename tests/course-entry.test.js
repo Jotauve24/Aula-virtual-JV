@@ -1022,3 +1022,29 @@ test('a room refresh keeps a team-name draft instead of silently replacing its o
   assert.equal(form.children[3].hidden,false);
   assert.equal(page.state('topics[0].name'),'Propuesta de un compañero');
 });
+
+
+test('locked groups cannot be selected even while under capacity, and reopen without removing members',async()=>{
+ const page=await boot({submitted:NEW});
+ page.state('profile.topicId=null;profile.registrationOpen=true;courseId="course-fixture";');
+ const topic={id:'locked',name:'Equipo Coral',capacity:5,locked:true,members:[{id:'peer',name:'Compañera Prueba'}]};
+ page.state('topicPanel('+JSON.stringify(topic)+',true)');
+ assert.match(page.get('#topic-dialog').textContent,/bloqueó el ingreso/);
+ assert.doesNotMatch(page.get('#topic-dialog').textContent,/Sí, unirme|Quiero este equipo/);
+ assert.equal(page.calls.some(call=>call.name==='choose_topic'),false);
+ page.state('profile.topicId="locked";topicPanel('+JSON.stringify(topic)+')');
+ assert.match(page.get('#topic-dialog').textContent,/Tu lugar está guardado/);
+ assert.ok(page.get('#view-my-team'));
+ topic.locked=false;page.state('profile.topicId=null;topicPanel('+JSON.stringify(topic)+')');
+ assert.match(page.get('#topic-dialog').textContent,/Quiero este equipo/);
+});
+test('student cannot join an overfull group and sees its real occupancy',async()=>{
+ const page=await boot({submitted:NEW});
+ page.state('profile.topicId=null;profile.registrationOpen=true;courseId="course-fixture";');
+ const topic={id:'full',name:'Equipo Coral',capacity:5,locked:false,
+ members:Array.from({length:6},(_,i)=>({id:'peer-'+i,name:'Persona Prueba '+i}))};
+ page.state('topicPanel('+JSON.stringify(topic)+',true)');
+ assert.match(page.get('#topic-dialog').textContent,/6 de 5 integrantes/);
+ assert.match(page.get('#topic-dialog').textContent,/equipo está completo/);
+ assert.doesNotMatch(page.get('#topic-dialog').textContent,/Sí, unirme|Quiero este equipo/);
+});

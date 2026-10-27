@@ -1,7 +1,7 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.16.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.16.0';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.16.0';
-import { createTeamNameControl } from './team-ui.js?v=0.16.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.17.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.17.0';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.17.0';
+import { createTeamNameControl } from './team-ui.js?v=0.17.0';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);
@@ -148,6 +148,7 @@ export function inspectTopic(topic,confirmation=false){
     nodes.push(viewTeam);
   }
   else if(chosen) nodes.push(el('p','Ya perteneces a otro equipo. Puedes consultar este tema y sus integrantes.'));
+  else if(topic.locked) nodes.push(el('p','El docente bloqueó el ingreso a este equipo. Puedes consultar el tema; comunícate con él si necesitas una asignación.'));
   else if(full) nodes.push(el('p','Este equipo está completo.'));
   else if(confirmation){
     const box=el('div','','join-confirmation');

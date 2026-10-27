@@ -25,7 +25,7 @@ class Element {
 }
 
 async function boot({ files = [], fileError = null, students = [], topics = [], extraCourses = [],
-  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null } = {}) {
+  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null, operationError = {} } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (!nodes.has(selector)) nodes.set(selector, new Element());
@@ -40,6 +40,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
   const rpc = async (name, body = {}) => {
     calls.push([name, body]);
     if(delays[name]) await delays[name](body);
+    if(operationError[name]?.()) throw new Error('Error de conexión de prueba');
     if (name === 'my_courses') return [...(course?.active ? [courseRow()] : []), ...extraCourses];
     if (name === 'teacher_disabled_courses') return [...(course && !course.active ? [courseRow()] : []), ...disabledCourses];
     if (name === 'teacher_student_recovery_requests') return recoveryRequests;
@@ -50,7 +51,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
       return;
     }
     if (name === 'teacher_overview') return body.p_course_id === course?.id
-      ? { course: { ...course }, topics, students: [...students] } : overviewById[body.p_course_id];
+      ? { course: { ...course }, topics:topics.map(row=>({...row})), students: [...students] } : overviewById[body.p_course_id];
     if (name === 'teacher_rename_course') {
       assert.equal(body.p_course_id, course.id);
       const failure = typeof renameError === 'function' ? renameError() : renameError;
@@ -59,13 +60,17 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
       return { id: course.id, name: course.name };
     }
     if (name === 'teacher_release_student') {students.find(s=>s.id===body.p_student_id).topicId=null;return;}
-    if (name === 'teacher_move_student') {
+    if (name === 'teacher_set_topic_locked') {
+      const topic=topics.find(row=>row.id===body.p_topic_id);
+      topic.locked=body.p_locked;return {id:topic.id,locked:topic.locked};
+    }
+    if (name === 'teacher_assign_student') {
       assert.equal(body.p_course_id, course.id);
       assert.equal(course.active, true);
       const student = students.find(row => row.id === body.p_student_id);
       const target = topics.find(topic => topic.id === body.p_topic_id);
       if (!student || !target) throw new Error('Estudiante o grupo no encontrado');
-      if (students.filter(row => row.topicId === target.id).length >= target.capacity)
+      if (students.filter(row => row.topicId === target.id).length >= target.capacity && !body.p_allow_over_capacity)
         throw new Error('El equipo está completo');
       student.topicId = target.id;
       student.sharing = false;
@@ -333,9 +338,9 @@ test('docente asigna a estudiante sin grupo conservando su perfil', async () => 
   assert.equal(page.get('#move-student-destination').value,'g1');
   page.get('#move-student-destination').value='g2';
   await page.get('#move-student-form').dispatch('submit');
-  assert.deepEqual(page.calls.filter(([name]) => name==='teacher_move_student')
+  assert.deepEqual(page.calls.filter(([name]) => name==='teacher_assign_student')
     .map(([,body])=>JSON.parse(JSON.stringify(body))),
-    [{p_course_id:'course-1',p_student_id:'a',p_topic_id:'g2'}]);
+    [{p_course_id:'course-1',p_student_id:'a',p_topic_id:'g2',p_allow_over_capacity:false}]);
   assert.equal(students[0].topicId,'g2');
   assert.deepEqual(students[0].avatar,{hair:'short'});
   assert.equal(students[0].email,'rosa@ejemplo.com');
@@ -363,7 +368,7 @@ test('docente traslada estudiantes con grupo, sin borrar registros ni conversaci
   assert.equal(students.length,2);
   assert.ok(!page.calls.some(([name]) => name==='teacher_release_student'));
 });
-test('grupos llenos no se presentan como destinos disponibles',async()=>{
+test('grupo lleno exige autorización antes de asignar un integrante adicional',async()=>{
   const students=[
     {id:'a',firstName:'Carlos',lastName:'Pérez',phone:'555-1',topicId:null},
     {id:'b',firstName:'Elena',lastName:'Mora',phone:'555-2',topicId:'g1'}
@@ -372,12 +377,20 @@ test('grupos llenos no se presentan como destinos disponibles',async()=>{
   const page=await boot({students,topics});
   await page.get('#courses').children[0].click();
   await page.get('#student-list').children[1].children[1].children[3].click();
-  assert.equal(page.get('#move-student-destination').disabled,true);
+  assert.equal(page.get('#move-student-destination').disabled,false);
   assert.equal(page.get('#confirm-student-move').disabled,true);
-  assert.match(page.get('#move-student-help').textContent,/No hay otro grupo/);
-  await page.get('#cancel-student-move').click();
+  assert.equal(page.get('#move-capacity-exception').hidden,false);
+  assert.match(page.get('#move-capacity-summary').textContent,/2 de 1/);
+  await page.get('#move-student-form').dispatch('submit');
+  assert.equal(page.calls.some(([name])=>name==='teacher_assign_student'),false);
+  page.get('#move-over-capacity').checked=true;
+  await page.get('#move-over-capacity').dispatch('change');
+  assert.equal(page.get('#confirm-student-move').disabled,false);
+  await page.get('#move-student-form').dispatch('submit');
   assert.equal(page.get('#move-student-dialog').open,false);
-  assert.equal(page.calls.some(([name]) => name==='teacher_move_student'),false);
+  assert.equal(students[0].topicId,'g1');
+  assert.equal(topics[0].capacity,1);
+  assert.equal(page.calls.find(([name])=>name==='teacher_assign_student')[1].p_allow_over_capacity,true);
 });
 
 test('el docente ve y puede usar tanto Eliminar como Asignar a grupo en Sin equipo', async () => {
@@ -550,4 +563,112 @@ test('a disabled course can be renamed while its code and disabled state remain 
   await page.get('#rename-course-form').dispatch('submit');
   assert.equal(page.current().name,'Materia corregida');assert.equal(page.current().active,false);
   assert.equal(page.current().accessCode,'MAT-AAAAA-BBBBB-CCCCC');
+});
+
+
+test('candado docente bloquea y reabre un grupo sin alterar integrantes o cupos',async()=>{
+ const topics=[{id:'g1',name:'Grupo Coral',position:0,capacity:5,locked:false}];
+ const students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:'g1'}];
+ const page=await boot({topics,students});await page.openCourse('course-1');
+ const lock=()=>page.get('#topic-list').children[0].children.at(-1);
+ assert.equal(lock()['aria-pressed'],'false');await lock().click();
+ assert.equal(topics[0].locked,true);assert.equal(lock()['aria-pressed'],'true');
+ assert.match(page.get('#topic-list').children[0].children[1].textContent,/1 de 5.*bloqueado/);
+ assert.equal(students[0].topicId,'g1');assert.equal(topics[0].capacity,5);
+ await lock().click();assert.equal(topics[0].locked,false);
+ assert.equal(page.calls.filter(([name])=>name==='teacher_set_topic_locked').length,2);
+});
+test('traslado a grupo bloqueado y ya excedido exige permiso que se reinicia al cambiar destino',async()=>{
+ const topics=[{id:'g1',name:'Cerrado',position:0,capacity:1,locked:true},
+ {id:'g2',name:'Disponible',position:1,capacity:5},{id:'g3',name:'Origen',position:2,capacity:5}];
+ const students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:'g3',avatar:{skin:1}},
+ {id:'b',firstName:'Bea',lastName:'Prueba',topicId:'g1'},{id:'c',firstName:'Ceci',lastName:'Prueba',topicId:'g1'}];
+ const page=await boot({topics,students});await page.openCourse('course-1');
+ await page.get('#student-list').children[2].children[1].children[3].click();
+ const select=page.get('#move-student-destination'),permission=page.get('#move-over-capacity');
+ select.value='g1';await select.dispatch('change');assert.match(page.get('#move-student-help').textContent,/bloqueado/);
+ assert.match(page.get('#move-capacity-summary').textContent,/3 de 1/);
+ permission.checked=true;await permission.dispatch('change');
+ select.value='g2';await select.dispatch('change');assert.equal(permission.checked,false);
+ select.value='g1';await select.dispatch('change');assert.equal(page.get('#confirm-student-move').disabled,true);
+ permission.checked=true;await permission.dispatch('change');await page.get('#move-student-form').dispatch('submit');
+ assert.equal(students[0].topicId,'g1');assert.deepEqual(students[0].avatar,{skin:1});
+ assert.equal(topics[0].locked,true);assert.equal(topics[0].capacity,1);
+});
+test('asignación sin otro grupo permanece vacía y no envía solicitudes',async()=>{
+ const page=await boot({topics:[],students:[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null}]});
+ await page.openCourse('course-1');await page.get('#student-list').children[0].children[1].children[3].click();
+ assert.equal(page.get('#move-student-destination').disabled,true);
+ assert.equal(page.get('#confirm-student-move').disabled,true);
+ assert.equal(page.get('#move-capacity-exception').hidden,true);
+ await page.get('#move-student-form').dispatch('submit');assert.equal(page.calls.some(([n])=>n==='teacher_assign_student'),false);
+});
+test('error de asignación conserva permiso y permite reintentar sin duplicar un envío pendiente',async()=>{
+ let attempts=0,release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({topics:[{id:'g1',name:'Coral',capacity:1}],
+ students:[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null}],
+ operationError:{teacher_assign_student:()=>++attempts===1},delays:{teacher_assign_student:()=>gate}});
+ await page.openCourse('course-1');await page.get('#student-list').children[1].children[1].children[3].click();
+ const pending=page.get('#move-student-form').dispatch('submit');
+ await page.get('#move-student-form').dispatch('submit');await page.get('#cancel-student-move').click();
+ assert.equal(page.calls.filter(([n])=>n==='teacher_assign_student').length,1);
+ assert.equal(page.get('#move-student-dialog').open,true);assert.equal(page.get('#move-over-capacity').disabled,true);
+ release();await pending;assert.equal(page.get('#move-student-error').hidden,false);
+ assert.equal(page.get('#confirm-student-move').disabled,false);
+ await page.get('#move-student-form').dispatch('submit');assert.equal(page.get('#move-student-dialog').open,false);
+});
+test('cerrar sesión o cambiar de materia impide que un traslado pendiente reabra datos antiguos',async()=>{
+ for(const logout of [true,false]){
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({topics:[{id:'g1',name:'Coral',capacity:5}],
+ students:[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null}],delays:{teacher_assign_student:()=>gate},
+ overviewById:{'course-2':{course:{id:'course-2',name:'Otra materia',active:true},topics:[],students:[]}}});
+ await page.openCourse('course-1');await page.get('#student-list').children[1].children[1].children[3].click();
+ const pending=page.get('#move-student-form').dispatch('submit');
+ if(logout)await page.get('#logout').click();else await page.openCourse('course-2');
+ release();await pending;assert.equal(page.get('#move-student-dialog').open,false);
+ if(logout)assert.equal(page.get('#login').hidden,false);else assert.equal(page.get('#course-title').textContent,'Otra materia');
+ assert.doesNotMatch(page.get('#teacher-success').textContent,/Equipo actualizado/);
+ }
+});
+test('un candado pendiente no muestra éxito ni recupera la materia tras salir',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({topics:[{id:'g1',name:'Coral',capacity:5}],delays:{teacher_set_topic_locked:()=>gate}});
+ await page.openCourse('course-1');const lock=page.get('#topic-list').children[0].children.at(-1);
+ const pending=lock.click();await lock.click();assert.equal(page.calls.filter(([n])=>n==='teacher_set_topic_locked').length,1);
+ await page.get('#logout').click();release();await pending;
+ assert.equal(page.get('#login').hidden,false);assert.doesNotMatch(page.get('#teacher-success').textContent,/Ingreso bloqueado/);
+});
+
+
+test('un grupo que se llena mientras el diálogo está abierto muestra el permiso al reintentar',async()=>{
+ const students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null}];
+ const topics=[{id:'g1',name:'Coral',capacity:1}];
+ const page=await boot({students,topics});await page.openCourse('course-1');
+ await page.get('#student-list').children[1].children[1].children[3].click();
+ assert.equal(page.get('#move-capacity-exception').hidden,true);
+ students.push({id:'b',firstName:'Bea',lastName:'Prueba',topicId:'g1'});
+ await page.get('#move-student-form').dispatch('submit');
+ assert.equal(page.get('#move-capacity-exception').hidden,false);
+ assert.equal(page.get('#move-student-error').hidden,false);
+ assert.equal(page.get('#confirm-student-move').disabled,true);
+ page.get('#move-over-capacity').checked=true;await page.get('#move-over-capacity').dispatch('change');
+ await page.get('#move-student-form').dispatch('submit');
+ assert.equal(students[0].topicId,'g1');assert.equal(topics[0].capacity,1);
+});
+
+
+test('una lectura fallida tras guardar un candado o traslado informa al docente sin reenviar cambios',async()=>{
+ for(const lockAction of [true,false]){
+ let reads=0;
+ const topics=[{id:'g1',name:'Coral',capacity:5}],students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null}];
+ const page=await boot({topics,students,operationError:{teacher_overview:()=>++reads>1}});
+ await page.openCourse('course-1');
+ if(lockAction)await page.get('#topic-list').children[0].children.at(-1).click();
+ else {await page.get('#student-list').children[1].children[1].children[3].click();await page.get('#move-student-form').dispatch('submit');}
+ assert.equal(page.get('#error').hidden,false);
+ assert.equal(page.calls.filter(([n])=>n===(lockAction?'teacher_set_topic_locked':'teacher_assign_student')).length,1);
+ if(lockAction)assert.equal(topics[0].locked,true);
+ else {assert.equal(students[0].topicId,'g1');assert.match(page.get('#error').textContent,/asignación se guardó/);}
+ }
 });

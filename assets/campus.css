@@ -249,3 +249,5 @@
 @media(max-width:650px){.campus-theme #room .map-action .map-team-word{display:none}}
 
 .campus-theme #room .team-name-row h3{font-size:clamp(20px,2vw,26px);line-height:1.25}
+.map-action.is-join-locked strong{padding-inline-end:12px}
+.map-action .team-lock-icon{position:absolute;inset-block-start:5px;inset-inline-end:5px;display:inline-flex;color:inherit;pointer-events:none}

@@ -1,4 +1,4 @@
-import { normalizeTeamName } from './team-ui.js?v=0.16.0';
+import { normalizeTeamName } from './team-ui.js?v=0.17.0';
 // Local-only classroom simulation. It never calls Supabase or changes students.
 export const DEMO_STUDENT = Object.freeze({
   id:'zombieadmin-demo',
@@ -35,7 +35,7 @@ export function createDemoExperience() {
     },
     choose(topic) {
       if(chosenId)return false;
-      if(!topic || topic.members.length>=topic.capacity)return false;
+      if(!topic || topic.locked || topic.members.length>=topic.capacity)return false;
       chosenId=topic.id;
       getMessages(chosenId);
       return true;
