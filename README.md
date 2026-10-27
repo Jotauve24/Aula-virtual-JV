@@ -24,6 +24,23 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Equipo iluminado y nombre compartido (0.16.0)
+
+El equipo elegido se reconoce por una luz suave sobre todo su espacio. Los
+rótulos del mapa son más pequeños y transparentes; conservan el nombre, la
+ocupación, el estado seleccionado y el acceso por teclado sin tapar los muebles.
+En teléfono, la marca se resume a ✓ y la ocupación para mantener 44 px de altura.
+
+En **Mi equipo → lápiz junto al nombre**, cualquier integrante puede guardar un
+nombre de 2 a 80 caracteres. El cambio aparece en el mapa, la lista, Mi equipo,
+el chat y las lecturas del docente. Los demás integrantes lo reciben al
+actualizarse el aula, sin modificar su inscripción, avatar, cupos o mensajes.
+El servidor comprueba la pertenencia actual al equipo, la materia activa y la
+versión del nombre para evitar que dos cambios se sobrescriban. Rechaza nombres
+repetidos en la misma materia. El docente conserva su edición de tema y cupos.
+La sala docente permite ensayar el mismo cambio de forma local; reiniciar la
+demostración restaura sus nombres sin modificar grupos reales.
+
 ## Pantalla completa durante la navegación (0.15.0)
 
 Al pulsar **Ampliar aula**, la portada, el aula estudiantil, el panel docente y

@@ -1,3 +1,4 @@
+import { normalizeTeamName } from './team-ui.js?v=0.16.0';
 // Local-only classroom simulation. It never calls Supabase or changes students.
 export const DEMO_STUDENT = Object.freeze({
   id:'zombieadmin-demo',
@@ -11,7 +12,8 @@ const sampleMessage = (text, minutes=0) => ({
 });
 export function createDemoExperience() {
   let chosenId=null, sharing=false, counter=0;
-  const messages=new Map(), files=new Map();
+  const messages=new Map(), files=new Map(), names=new Map();
+  const nameOf=topic=>names.get(topic.id) ?? topic.name;
   const getMessages=topicId=>{
     if(!messages.has(topicId))messages.set(topicId,[
       sampleMessage('¡Hola! ¿Cómo nos organizaremos para realizar la actividad?',10),
@@ -22,6 +24,15 @@ export function createDemoExperience() {
   return {
     get chosenId(){return chosenId;},
     get sharing(){return sharing;},
+    nameOf,
+    rename(topic,name,expectedName,topics=[]) {
+      if(topic.id!==chosenId)throw new Error('Solo puedes cambiar el nombre de tu equipo.');
+      const value=normalizeTeamName(name);
+      if(nameOf(topic)!==expectedName)throw new Error('El nombre cambió. Cancela y vuelve a abrir el lápiz.');
+      if(topics.some(other=>other.id!==topic.id && nameOf(other).toLocaleLowerCase()===value.toLocaleLowerCase()))
+        throw new Error('Ya existe un equipo con ese nombre. Elige otro.');
+      names.set(topic.id,value);return value;
+    },
     choose(topic) {
       if(chosenId)return false;
       if(!topic || topic.members.length>=topic.capacity)return false;
@@ -58,6 +69,6 @@ export function createDemoExperience() {
       return true;
     },
     file(path){return files.get(path)||null;},
-    reset() {chosenId=null;sharing=false;counter=0;messages.clear();files.clear();}
+    reset() {chosenId=null;sharing=false;counter=0;messages.clear();files.clear();names.clear();}
   };
 }

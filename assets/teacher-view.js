@@ -1,8 +1,9 @@
-import './embed.js?v=0.15.0';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam } from './teacher-inspector.js?v=0.15.0';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.15.0';
-import { drawWorld, roomTheme } from './world.js?v=0.15.0';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.15.0';
+import './embed.js?v=0.16.0';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.16.0';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.16.0';
+import { drawWorld, roomTheme } from './world.js?v=0.16.0';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.16.0';
+import { renderTeamLight } from './team-ui.js?v=0.16.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -78,6 +79,7 @@ function renderPresenceSummary() {
 }
 function renderTopicButtons() {
   const host = $('#topic-buttons');
+  renderTeamLight($('#team-room-light'),layout,topics.findIndex(topic=>isDemoTeam(topic.id)));
   host.replaceChildren(...topics.map((topic, index) => {
     const room = layout.rooms[index], button = document.createElement('button'), theme = roomTheme(index);
     button.type = 'button'; button.className = 'map-action'+(isDemoTeam(topic.id)?' is-mine':'');
@@ -86,11 +88,14 @@ function renderTopicButtons() {
     button.style.setProperty('--table-accent',theme.accent);
     button.style.setProperty('--table-soft',theme.card);
     const occupancy = (topic.members.length + Number(isDemoTeam(topic.id))) + '/' + topic.capacity;
-    button.title = (isDemoTeam(topic.id)?'Tu equipo seleccionado. ':'') + `${topic.name}: ${occupancy} estudiantes. Abrir el grupo.`;
+    button.title = (isDemoTeam(topic.id)?'Tu equipo seleccionado. ':'') + `${demoTopicName(topic)}: ${occupancy} estudiantes. Abrir el grupo.`;
     button.setAttribute('aria-label',button.title);
-    const name = document.createElement('strong'); name.textContent = topic.name;
+    const name = document.createElement('strong'); name.textContent = demoTopicName(topic);
     const capacity = document.createElement('small');
-    capacity.textContent = isDemoTeam(topic.id) ? '✓ Tu equipo · ' + occupancy : occupancy + ' lugares';
+    capacity.textContent = isDemoTeam(topic.id) ? '' : occupancy + ' lugares';
+    if(isDemoTeam(topic.id))for(const [text,css] of [['✓ ',''],['Tu equipo · ','map-team-word'],[occupancy,'']]){
+      const part=document.createElement('span');part.textContent=text;part.className=css;capacity.append(part);
+    }
     if(isDemoTeam(topic.id)){capacity.className='team-selected-marker';button.setAttribute('aria-current','true');}
     button.append(name,capacity);
     button.addEventListener('click',() => inspectTopic(topic));

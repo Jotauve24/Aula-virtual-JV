@@ -16,6 +16,7 @@ const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', 
 // Canvas, DOM and timers are doubles; no production accounts or data are used.
 const source = readFileSync(new URL('../assets/live.js', import.meta.url), 'utf8')
   .replace(/^import .*;\r?\n/gm, '');
+const teamUiSource = readFileSync(new URL('../assets/team-ui.js', import.meta.url), 'utf8').replace(/^export /gm, '');
 const OLD = 'MAT-AAAAA-BBBBB-CCCCC';
 const NEW = 'MAT-DDDDD-EEEEE-FFFFF';
 const LAST_CODE = 'aula-student-course-code';
@@ -32,6 +33,8 @@ function storage(entries = {}) {
 }
 
 class Element {
+  get textContent() { return (this._textContent || '') + (this.children || []).map(node => node.textContent).join(''); }
+  set textContent(value) { this._textContent = value; this.children = []; }
   constructor() {
     this.value = ''; this.className=''; this.textContent = ''; this.hidden = false;
     this.dataset = {}; this.style = { setProperty(name, value) { this[name] = value; } };
@@ -42,6 +45,7 @@ class Element {
   setAttribute(name, value) { this[name] = value; }
   removeAttribute(name) { delete this[name]; }
   append(...nodes) { this.children.push(...nodes); }
+  contains(node) { return this === node || this.children.some(child => child.contains(node)); }
   replaceChildren(...nodes) { this.children = nodes; }
   querySelector(selector) {
     const id = selector.startsWith('#') ? selector.slice(1) : '';
@@ -61,7 +65,7 @@ class Element {
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
-  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, documentRequired = false, setDocument, uploadFile, sendMessage, search = '' } = {}) {
+  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, documentRequired = false, setDocument, uploadFile, sendMessage, renameTeam, search = '' } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -119,7 +123,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     findPath: realLayout ? findPath : (_from, to) => [to], canWalkSegment: realLayout ? canWalkSegment : () => true,
     memberSeat,
     createRoomLayout: realLayout ? createRoomLayout : count => ({ rooms: Array.from({ length: count }, (_, i) => ({
-      x: 40 + i * 10, y: 40 + i * 25,
+      x: 40 + i * 10, y: 40 + i * 25, w: 300, h: 220,
       arrival: { x: 400, y: 140 + i * 30 }, label: { x: 400, y: 100 + i * 30 }
     })), width: 800, height: 560, spawn: { x: 400, y: 300 } }),
     studentSignedIn: () => !!localStorage.getItem(SESSION),
@@ -153,6 +157,11 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       }
       if (name === 'course_room' && roomError) throw new Error(roomError);
       if (name === 'course_room') return JSON.parse(JSON.stringify(roomFixture));
+      if (name === 'team_rename') {
+        if (renameTeam) await renameTeam(body);
+        const team = roomFixture.find(row => row.id === body.p_topic_id);
+        team.name = body.p_name; return { id: team.id, name: team.name };
+      }
       if (name === 'team_chat_send' || name === 'team_chat_send_file') { if(sendMessage) await sendMessage(body);return; }
       if (name === 'team_chat_read') { if (chatFailure?.()) throw new Error('Conexión temporalmente no disponible'); return messages; }
       if (name === 'classroom_presence_ping') {
@@ -164,6 +173,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       throw new Error('Unexpected RPC: ' + name);
     }
   });
+  vm.runInContext(teamUiSource, context, { filename: 'assets/team-ui.js' });
   vm.runInContext(source, context, { filename: 'assets/live.js' });
   const settle = () => new Promise(resolve => setImmediate(resolve));
   await settle();
@@ -968,4 +978,47 @@ test('reopening a restored subject rebuilds a usable chat for the saved team',as
  await form.dispatch('submit');
  assert.equal(page.calls.filter(c=>c.name==='team_chat_send').length,1);
  assert.equal(page.get('#room').dataset.stage,'room');
+});
+
+test('renaming the saved team updates map, badge and chat without recreating membership or conversation', async () => {
+  const topic={id:'team-a',name:'Grupo 1',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true}]};
+  const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:topic.id,avatar:{skin:1}},roomFixture:[topic]});
+  const chat=page.get('#team-chat-host').children[0];
+  const control=page.get('#team-roster-host').children[0].children[1];
+  const [row,form]=control.children; await row.children[1].click();
+  form.children[1].value='  Equipo   Coral '; await form.dispatch('submit');
+  assert.equal(page.calls.filter(c=>c.name==='team_rename').length,1);
+  assert.deepEqual(page.calls.find(c=>c.name==='team_rename').body,{p_course_id:'course-fixture',p_topic_id:'team-a',p_name:'Equipo Coral',p_expected_name:'Grupo 1'});
+  assert.equal(page.get('#group-badge').textContent,'Tu equipo: Equipo Coral');
+  assert.equal(page.get('#topic-buttons').children[0].children[0].textContent,'Equipo Coral');
+  assert.equal(page.get('#team-chat-title').textContent,'Equipo Coral');
+  assert.equal(page.get('#team-chat-host').children[0],chat);
+  assert.equal(page.state('profile.topicId'),'team-a');
+  assert.equal(page.state('profile.avatar.skin'),1);
+  assert.equal(page.get('#team-room-light').hidden,false);
+});
+test('a late team rename response after logout cannot restore names, a light or the old room', async () => {
+  let finish;
+  const topic={id:'team-a',name:'Grupo 1',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true}]};
+  const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:topic.id,avatar:{skin:1}},roomFixture:[topic],renameTeam:()=>new Promise(resolve=>{finish=resolve;})});
+  const [row,form]=page.get('#team-roster-host').children[0].children[1].children;
+  await row.children[1].click();form.children[1].value='Nombre tardío';
+  const pending=form.dispatch('submit');await page.get('#logout').click();finish();await pending;
+  assert.equal(page.state('courseId'),'');assert.equal(page.state('profile'),null);
+  assert.equal(page.get('#group-badge').textContent,'Elige tu espacio');
+  assert.equal(page.get('#team-room-light').hidden,true);
+  assert.equal(page.get('#room').dataset.stage,'registration');
+});
+test('a room refresh keeps a team-name draft instead of silently replacing its original version', async () => {
+  const topic={id:'team-a',name:'Grupo 1',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true}]};
+  const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:topic.id,avatar:{skin:1}},roomFixture:[topic],renameTeam:()=>{throw Error('El nombre cambió mientras editabas.');}});
+  const oldControl=page.get('#team-roster-host').children[0].children[1];
+  const [row,form]=oldControl.children;await row.children[1].click();form.children[1].value='Mi propuesta';
+  topic.name='Propuesta de un compañero';await page.state('refreshRoom()');
+  assert.equal(page.get('#team-roster-host').children[0].children[1],oldControl);
+  assert.equal(form.children[1].value,'Mi propuesta');assert.equal(form.hidden,false);
+  await form.dispatch('submit');
+  assert.equal(page.calls.find(c=>c.name==='team_rename').body.p_expected_name,'Grupo 1');
+  assert.equal(form.children[3].hidden,false);
+  assert.equal(page.state('topics[0].name'),'Propuesta de un compañero');
 });
