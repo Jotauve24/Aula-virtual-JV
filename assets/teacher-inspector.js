@@ -1,6 +1,7 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.15.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.15.0';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.15.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.16.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.16.0';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.16.0';
+import { createTeamNameControl } from './team-ui.js?v=0.16.0';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);
@@ -12,10 +13,12 @@ const el=(tag,value='',css='')=>{
 };
 const demo=createDemoExperience();
 let context=()=>({}), activeTab='aula', demoUnread=0;
-let demoChatPaint=null, noticeTimer=0;
-const selectedTeam=()=>context().topics.find(t=>t.id===demo.chosenId)||null;
+let demoChatPaint=null, noticeTimer=0, nameControl=null, nameControlKey='';
+const namedTopic=topic=>topic?{...topic,name:demo.nameOf(topic)}:null;
+const selectedTeam=()=>namedTopic(context().topics.find(t=>t.id===demo.chosenId));
 
 export const isDemoTeam=id=>demo.chosenId===id;
+export const demoTopicName=topic=>demo.nameOf(topic);
 export function configureTeacherInspector(getContext) {
   context=getContext;
   $('#restart-demo')?.addEventListener('click',resetDemonstration);
@@ -99,6 +102,7 @@ function refreshDemo() {
 }
 export function resetDemonstration(){
   demo.reset();
+  nameControl=null;nameControlKey='';
   demoUnread=0;
   demoChatPaint=null;
   clearTimeout(noticeTimer);
@@ -123,6 +127,7 @@ function memberList(topic){
   return ul;
 }
 export function inspectTopic(topic,confirmation=false){
+  topic=namedTopic(topic);
   changeTab('aula');
   const dialog=$('#topic-dialog');
   const mine=isDemoTeam(topic.id),chosen=!!demo.chosenId;
@@ -186,7 +191,16 @@ $('#topic-dialog').addEventListener('cancel',event=>{event.preventDefault();clos
 function teamRosterPanel(topic){
   const members=demo.members(topic);
   const section=el('section','','team-roster-panel');
-  section.append(el('span','TU EQUIPO','eyebrow'),el('h3',topic.name));
+  if(nameControlKey!==topic.id){
+    nameControlKey=topic.id;
+    nameControl=createTeamNameControl({name:topic.name,onSave:(name,expectedName)=>{
+      const saved=demo.rename(topic,name,expectedName,context().topics);
+      refreshDemo();context().status('Nombre de ejemplo guardado: '+saved+'. Solo cambia esta demostración.');
+      return saved;
+    }});
+  }
+  nameControl.update(topic.name);
+  section.append(el('span','TU EQUIPO','eyebrow'),nameControl.element);
   const sharingCard=el('div','','share-contact-card');
   sharingCard.dataset.sharing=String(demo.sharing);
   const heading=el('div','','share-contact-heading');
@@ -359,9 +373,13 @@ export function renderSelectedTeam(){
     demoChatPaint=null;
     return;
   }
+  const editorFocus=nameControl?.element.contains(document.activeElement)?document.activeElement:null;
   roster.replaceChildren(teamRosterPanel(topic));
+  if(editorFocus?.isConnected)editorFocus.focus({preventScroll:true});
   if(chat.dataset.topicId!==topic.id){
     chat.dataset.topicId=topic.id;
     chat.replaceChildren(demoChatPanel(topic));
   }
+  const chatTitle=chat.querySelector('h2');
+  if(chatTitle)chatTitle.textContent=topic.name;
 }

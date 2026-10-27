@@ -1,12 +1,13 @@
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.15.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.15.0';
-import './embed.js?v=0.15.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.15.0';
-import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.15.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.15.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.15.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.15.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.15.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.16.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.16.0';
+import './embed.js?v=0.16.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.16.0';
+import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.16.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.16.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.16.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.16.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.16.0';
+import { createTeamNameControl, renderTeamLight } from './team-ui.js?v=0.16.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -24,6 +25,7 @@ let presenceTimer = 0, presenceLoading = false, peers = [], courseName = '';
 let presenceVerifiedAt = 0, presenceState = 'pending', avatarReturn = null;
 let assignedSeats = [];
 let ambientAnimation = 0, ambientLastFrame = 0;
+let teamNameControl = null, teamNameKey = '';
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
 function stopAmbientAnimation() {
   cancelAnimationFrame(ambientAnimation); ambientAnimation = 0; ambientLastFrame = 0;
@@ -45,6 +47,7 @@ function show(stage) {
   stopAnimation();
   stopAmbientAnimation();
   const onboarding = stage !== 'room';
+  if (onboarding) $('#team-room-light').hidden = true;
   $('#in-room-dialog').hidden = !onboarding;
   closeTopic();
   $('#registration').hidden = stage !== 'registration';
@@ -547,6 +550,7 @@ function renderTopics() {
   $('#room-map').style.aspectRatio = layout.width + ' / ' + layout.height;
   draw();
   const mine = topics.find(t => t.id === profile.topicId);
+  renderTeamLight($('#team-room-light'), layout, topics.indexOf(mine));
   $('#group-badge').textContent = mine ? 'Tu equipo: ' + mine.name : 'Tu equipo: sin asignar';
   const locations = layout.rooms.map(room => [room.label.x, room.label.y, room.arrival.x, room.arrival.y]);
   $('#topic-buttons').replaceChildren(...topics.map((topic, i) => {
@@ -560,8 +564,10 @@ function renderTopics() {
     const details = (topic.id === profile.topicId ? 'Tu equipo seleccionado. ' : '') + topic.name + ', ' + topic.members.length + ' de ' + topic.capacity + ' lugares ocupados. Abrir el tema.';
     button.title = details; button.setAttribute('aria-label', details);
     const count = topic.id === profile.topicId
-      ? element('small', '✓ Tu equipo · ' + occupancy, 'team-selected-marker')
+      ? element('small', '', 'team-selected-marker')
       : element('small', occupancy + ' ');
+    if (topic.id === profile.topicId)
+      count.append(element('span', '✓ '), element('span', 'Tu equipo · ', 'map-team-word'), element('span', occupancy));
     if (topic.id === profile.topicId) button.setAttribute('aria-current','true');
     else count.append(element('span', 'lugares', 'map-place-word'));
     button.append(element('strong', topic.name), count);
@@ -637,14 +643,41 @@ function homePanel() {
     nodes.push(shortcut);
   }
   nodes.push(list);
+  const editorFocus = teamNameControl?.element.contains(document.activeElement) ? document.activeElement : null;
   $('#team-roster-host').replaceChildren(team ? teamRosterPanel(team) : element('p', 'Elige un grupo en «Aula y temas» para ver aquí a tus compañeros.', 'empty-team'));
+  if (editorFocus?.isConnected) editorFocus.focus({ preventScroll: true });
   updateTeamPresence();
   nodes.push(element('p', 'Consulta tus compañeros en Mi equipo y comparte mensajes y archivos en Chat.', 'field-hint'));
   side(...nodes);
 }
 function teamRosterPanel(team) {
   const section = element('section', '', 'team-roster-panel');
-  section.append(element('span', 'TU EQUIPO', 'eyebrow'), element('h3', team.name));
+  const key = courseId + '/' + profile.id + '/' + team.id;
+  if (teamNameKey !== key) {
+    teamNameKey = key;
+    const generation = courseEntryGeneration, id = courseId, studentId = profile.id;
+    teamNameControl = createTeamNameControl({ name: team.name, onSave: async (name, expectedName) => {
+      const current = () => entryCurrent(generation) && courseId === id && profile?.id === studentId &&
+        profile?.topicId === team.id && teamNameKey === key;
+      if (!current()) throw new Error('Abre de nuevo «Mi equipo» para cambiar su nombre.');
+      let saved;
+      try { saved = await studentRpc('team_rename', {
+        p_course_id: id, p_topic_id: team.id, p_name: name, p_expected_name: expectedName
+      }); } catch (error) {
+        if (current()) await refreshRoom();
+        throw error;
+      }
+      if (!current()) return;
+      const active = topics.find(topic => topic.id === team.id);
+      if (!active || saved?.id !== team.id || typeof saved.name !== 'string')
+        throw new Error('No se pudo confirmar el nombre. Vuelve a abrir «Mi equipo».');
+      active.name = saved.name; renderTopics();
+      status('El nombre de tu equipo se guardó: ' + saved.name + '.');
+      return saved.name;
+    } });
+  }
+  teamNameControl.update(team.name);
+  section.append(element('span', 'TU EQUIPO', 'eyebrow'), teamNameControl.element);
   const mine = team.members.find(member => member.mine);
   const sharingCard = element('div', '', 'share-contact-card');
   sharingCard.dataset.sharing = String(!!mine?.sharing);
@@ -1065,6 +1098,8 @@ reducedMotion.addEventListener('change', () => {
   draw(); updateAmbientAnimation();
 });
 function stopRoomPolling() {
+  teamNameControl = null; teamNameKey = '';
+  $('#team-room-light').hidden = true;
   stopAmbientAnimation();
   chatTeamId = '';
   $('#team-chat-host').hidden = true;

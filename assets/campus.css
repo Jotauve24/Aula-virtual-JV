@@ -120,12 +120,28 @@
 .campus-theme #room .room-side .side-footer{border-color:var(--line);color:var(--muted);font-size:11px}
 .campus-theme #room[data-stage="room"] .topic-list .topic-link{border:1px solid var(--line);border-left:4px solid var(--table-accent);border-radius:13px;box-shadow:none;padding:13px 12px;font-family:inherit}
 .campus-theme #room[data-stage="room"] .topic-list .topic-link:hover{transform:translateY(-2px);border-color:var(--table-accent);box-shadow:0 4px 0 var(--deep)}
-.campus-theme #room .map-action{border:1px solid var(--line);border-left:4px solid var(--table-accent);border-radius:9px;background:var(--surface);box-shadow:0 3px 0 color-mix(in srgb,var(--deep) 14.51%,transparent),0 5px 12px color-mix(in srgb,var(--deep) 9.41%,transparent);font-family:inherit;backdrop-filter:none}
-.campus-theme #room .map-action strong{font-weight:900;color:var(--ink)}
-.campus-theme #room .map-action small{color:var(--muted)}
-.campus-theme #room .map-action:hover,.campus-theme #room .map-action:focus-visible{background:var(--surface);border-color:var(--table-accent);transform:translate(-50%,-53%)}
-.campus-theme #room .map-action.is-mine{background:var(--champagne);border:2px solid var(--accent);border-left:5px solid var(--accent);outline:2px solid var(--salmon);box-shadow:0 0 0 4px var(--accent)}
-.campus-theme #room .map-action.is-mine small.team-selected-marker{background:var(--accent);color:var(--surface);border-radius:5px;padding:3px 6px}
+.campus-theme #room .map-action{z-index:2;width:23%;min-height:44px;padding:5px 8px;border:1px solid color-mix(in srgb,var(--table-accent) 45%,transparent);border-radius:8px;background:color-mix(in srgb,var(--paper) 64%,transparent);box-shadow:none;outline:none;font:inherit;font-size:13px;line-height:1.25;backdrop-filter:none;transition:background .16s,border-color .16s}
+.campus-theme #room .map-action strong{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:800;color:var(--ink);-webkit-line-clamp:unset}
+.campus-theme #room .map-action small{display:block;margin-top:2px;font-size:11px;white-space:nowrap;color:var(--ink)}
+.campus-theme #room .map-action:hover{background:color-mix(in srgb,var(--paper) 82%,transparent);border-color:var(--table-accent);transform:translate(-50%,-50%)}
+.campus-theme #room .map-action:focus-visible{outline:3px solid var(--accent);outline-offset:3px;background:var(--paper);transform:translate(-50%,-50%)}
+.campus-theme #room .map-action.is-mine{background:color-mix(in srgb,var(--paper) 56%,transparent);border:1px solid var(--accent);outline:none;box-shadow:none}
+.campus-theme #room .map-action.is-mine:focus-visible{outline:3px solid var(--accent);outline-offset:3px;background:var(--paper)}
+.campus-theme #room .map-action.is-mine small.team-selected-marker{background:transparent;color:var(--accent);font-weight:900;padding:0;border-radius:0}
+.team-room-light{position:absolute;z-index:1;box-sizing:border-box;pointer-events:none;border:2px solid color-mix(in srgb,var(--accent) 72%,transparent);border-radius:8px;background:color-mix(in srgb,var(--champagne) 6%,transparent);box-shadow:inset 0 0 25px color-mix(in srgb,var(--champagne) 66%,transparent),0 0 20px color-mix(in srgb,var(--opal) 78%,transparent)}
+.team-name-control{margin:8px 0 20px;min-width:0}
+.team-name-row{display:flex;align-items:flex-start;gap:10px}
+.team-name-row h3{margin:0;min-width:0;overflow-wrap:anywhere}
+.team-name-row .team-name-edit{display:inline-grid;place-items:center;flex:none;width:44px;min-height:44px;padding:0;border-radius:50%;background:var(--surface);color:var(--accent);border:1px solid var(--line);box-shadow:none}
+.team-name-row .team-name-edit:hover{background:var(--accent-soft)}
+.team-name-form{max-width:540px;min-width:0}
+.team-name-form label{display:block;margin-bottom:8px;font-weight:800}
+.team-name-form input{box-sizing:border-box;display:block;width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
+.team-name-form input[aria-invalid=true]{border-color:var(--red)}
+.team-name-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.team-name-actions .button{min-height:44px}
+@media(forced-colors:active){.team-room-light{border:3px solid Highlight;box-shadow:none;background:transparent}.team-name-row .team-name-edit,.team-name-form input{border:1px solid CanvasText}}
+
 .campus-theme #room[data-stage="room"] .topic-list .topic-link.is-mine{background:var(--champagne);border-color:var(--accent);border-left:5px solid var(--accent);box-shadow:none}
 .campus-theme #room[data-stage="room"] .topic-list .topic-link.is-mine span{background:var(--peach);color:var(--deep)}
 .campus-theme #room .dpad button{background:var(--surface);border-color:var(--line);color:var(--muted);border-radius:9px;box-shadow:none;font-weight:900}
@@ -229,3 +245,7 @@
 /* Shared classroom interaction states consume the same semantic tokens. */
 .campus-theme #room .in-room-dialog .button.primary:not(:disabled):hover{background:var(--deep);border-color:var(--deep)}
 .campus-theme #room .online-count[data-state="reconnecting"]{background:var(--accent-soft);color:var(--muted);border-color:var(--line)}
+
+@media(max-width:650px){.campus-theme #room .map-action .map-team-word{display:none}}
+
+.campus-theme #room .team-name-row h3{font-size:clamp(20px,2vw,26px);line-height:1.25}

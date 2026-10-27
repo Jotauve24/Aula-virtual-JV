@@ -28,8 +28,6 @@
 .topic-dialog .eyebrow{color:var(--muted);font-size:10px}.topic-dialog h2{font-size:20px;line-height:1.2;letter-spacing:0;margin:8px 0 10px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-weight:800}
 .topic-dialog p{font-size:12px;line-height:1.45;margin:8px 0}.topic-dialog .member-list{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;margin:10px 0}.topic-dialog .member-list li{font-size:11px;padding:6px 0}
 .topic-dialog .button{min-height:34px;border-radius:2px;padding:7px 12px;font-size:11px;margin:7px 8px 0 0}.topic-dialog .side-tag{background:var(--accent-soft);border:1px solid var(--line)}
-#room .map-action{border-radius:3px;border:2px solid var(--accent);background:var(--warning-soft);box-shadow:4px 4px 0 color-mix(in srgb,var(--deep) 45.88%,transparent);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
-#room .map-action:hover,#room .map-action:focus-visible{background:var(--accent-soft);transform:translate(-50%,-55%)}
 #room .teacher-spot span{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;border:2px solid var(--accent);border-radius:2px;box-shadow:3px 3px 0 color-mix(in srgb,var(--deep) 50.20%,transparent)}
 #room .in-room-dialog{border-radius:3px;border:4px solid var(--accent);outline:3px solid var(--peach);box-shadow:8px 9px 0 color-mix(in srgb,var(--deep) 53.33%,transparent),0 25px 48px color-mix(in srgb,var(--deep) 33.33%,transparent)}
 #room .in-room-dialog .eyebrow,#room .dialog-teacher{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
@@ -261,10 +259,6 @@ html.is-embedded .site-header{padding:14px 18px}html.is-embedded #room.room-shel
 @media(prefers-reduced-motion:reduce){.room-tabs [role="tab"]{transition:none}}
 
 /* Each sign uses the palette of its illustrated workstation. */
-#room .map-action{border-color:var(--table-accent,var(--accent));background:var(--table-soft,var(--warning-soft));color:var(--table-accent,var(--accent));box-shadow:4px 4px 0 color-mix(in srgb,var(--deep) 40.00%,transparent)}
-#room .map-action small{color:var(--muted)}
-#room .map-action:hover,#room .map-action:focus-visible{background:var(--surface);border-color:var(--table-accent,var(--accent))}
-#room .map-action.is-mine{outline:3px solid var(--line);box-shadow:0 0 0 5px var(--table-accent,var(--deep)),4px 4px 0 color-mix(in srgb,var(--deep) 40.00%,transparent)}
 #room .topic-list .topic-link{border-left:5px solid var(--table-accent,var(--accent));background:var(--table-soft,var(--warning-soft));color:var(--table-accent,var(--accent))}
 #room .topic-list .topic-link span{color:var(--table-accent,var(--accent))}
 #room .topic-list .topic-link:hover,#room .topic-list .topic-link:focus-visible{background:var(--surface);border-color:var(--table-accent,var(--accent))}
@@ -291,8 +285,6 @@ html.is-embedded .site-header{padding:14px 18px}html.is-embedded #room.room-shel
 #room .room-heading h1{font-family:ui-sans-serif,system-ui,sans-serif;font-weight:750;font-size:clamp(26px,3.1vw,38px);letter-spacing:-.03em;line-height:1.16;margin:8px 0;color:inherit}
 #room-intro{max-width:58ch;margin:0;font-size:14px;line-height:1.5}
 #room[data-stage="registration"] .room-header-actions,#room[data-stage="avatar"] .room-header-actions{display:none}
-#room .map-action{width:25%}
-#room .map-action strong{font-weight:700;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 #room[data-stage="registration"] .in-room-dialog{width:min(515px,93%)}
 #room[data-stage="avatar"] .in-room-dialog{width:min(735px,95%);padding:22px 26px}
 #room[data-stage="avatar"] .avatar-layout{grid-template-columns:minmax(150px,205px) minmax(0,1fr);gap:20px;align-items:stretch}
@@ -341,8 +333,6 @@ html.is-embedded .site-header{padding:14px 18px}html.is-embedded #room.room-shel
 @media(prefers-reduced-motion:reduce){.team-open-button{animation:none}}
 
 /* Persistently distinguish the saved team from every room theme. */
-#room .map-action.is-mine{background:color-mix(in srgb,var(--surface) 96.08%,transparent);border:2px solid var(--accent);border-left:6px solid var(--accent);outline:2px solid var(--peach);box-shadow:0 0 0 5px var(--deep),0 5px 12px color-mix(in srgb,var(--deep) 18.82%,transparent);color:var(--ink)}
-#room .map-action.is-mine small.team-selected-marker{color:var(--ink);font-weight:800;display:inline-block;background:var(--warning-soft);border-radius:3px;padding:2px 5px;margin-top:3px}
 #room[data-stage="room"] .topic-list .topic-link.is-mine{background:var(--accent-soft);border:2px solid var(--accent);border-left:6px solid var(--accent);box-shadow:0 0 0 2px var(--deep);color:var(--ink);font-weight:800}
 #room[data-stage="room"] .topic-list .topic-link.is-mine span{color:var(--ink);background:var(--warning-soft);border-radius:4px;padding:3px 6px;white-space:nowrap}
 @media(forced-colors:active){#room .map-action.is-mine,#room[data-stage="room"] .topic-list .topic-link.is-mine{border:3px solid Highlight;outline:2px solid Highlight;color:CanvasText;background:Canvas}}
