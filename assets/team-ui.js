@@ -5,6 +5,13 @@ export function normalizeTeamName(value) {
   return name;
 }
 
+export function teamLockIcon() {
+  const icon = document.createElement('span');
+  icon.className = 'team-lock-icon'; icon.setAttribute('aria-hidden','true');
+  icon.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M12 14v3"/></svg>';
+  return icon;
+}
+
 // The light follows the room, while the canvas and its hit targets stay intact.
 export function renderTeamLight(node, layout, index) {
   const room = layout.rooms[index];

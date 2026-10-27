@@ -80,3 +80,11 @@ test('ZombieAdmin can demonstrate an incoming message without touching student c
   assert.equal(demo.chosenId,null);
   assert.equal(demo.messages(topic.id).length,2);
 });
+
+
+test('simulation respects a locked group without consuming or releasing any real membership',()=>{
+ const demo=createDemoExperience(),topic={...group('locked',5,[{id:'a'}]),locked:true};
+ assert.equal(demo.choose(topic),false);assert.equal(demo.chosenId,null);
+ topic.locked=false;assert.equal(demo.choose(topic),true);
+ topic.locked=true;assert.equal(demo.chosenId,topic.id);assert.equal(topic.members.length,1);
+});

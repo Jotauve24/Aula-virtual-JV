@@ -1,11 +1,12 @@
-import './embed.js?v=0.16.0';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.16.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.16.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.16.0';
+import './embed.js?v=0.17.0';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.17.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.17.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.17.0';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
 let renamingCourseTarget = null;
+let movingStudentTarget = null, movingStudent = false;
 const courseIsCurrent = (id,generation) => id === courseId && generation === courseRequestGeneration && signedIn();
 let dashboardCourses = [], liveTimer = 0, liveGeneration = 0, liveRefreshing = false;
 let liveRosterSnapshot = null, lastLiveFetch = 0;
@@ -39,6 +40,7 @@ $('#login').addEventListener('submit', event => { event.preventDefault(); run(as
 }); });
 async function loadCourses() {
   clearCourseRename();
+  clearStudentMove();
   // An older dashboard fetch must not hide a more recently opened course.
   const requestId = ++courseRequestGeneration;
   const [courses, disabled] = await Promise.all([rpc('my_courses'), rpc('teacher_disabled_courses')]);
@@ -370,6 +372,7 @@ async function refreshStudentRecoveryRequests(id) {
 }
 async function openCourse(id) {
   clearCourseRename();
+  clearStudentMove();
   const keepToolsOpen = id === courseId && $('#course-tools').open;
   // Commit only the latest response: slow connections can finish out of order.
   const requestId = ++courseRequestGeneration;
@@ -417,7 +420,9 @@ async function openCourse(id) {
   } else $('#topic-list').replaceChildren(...overview.topics.map(topic => {
     const card = document.createElement('article'); card.className = 'topic-card';
     const title = document.createElement('h3'); title.textContent = topic.name;
-    const capacity = document.createElement('small'); capacity.textContent = `${topic.capacity} cupos`;
+    const used = overview.students.filter(student => student.topicId === topic.id).length;
+    const capacity = document.createElement('small');
+    capacity.textContent = `${used} de ${topic.capacity} integrantes` + (topic.locked ? ' · Ingreso bloqueado' : '');
     const instructions = document.createElement('p'); instructions.textContent = topic.instructions || 'Sin indicaciones todavía.';
     const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'secondary teacher-icon-button topic-edit-trigger';
     edit.setAttribute('aria-label', 'Editar tema y cupos de ' + topic.name);
@@ -425,9 +430,36 @@ async function openCourse(id) {
     edit.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 3 5 5-13 13H3v-5L16 3Z"/><path d="m14 5 5 5"/></svg>';
     edit.addEventListener('click', () => editTopic(topic));
     edit.hidden = !active;
-    card.append(title, capacity, instructions, edit); return card;
+    const lock = document.createElement('button'); lock.type = 'button';
+    lock.id = 'topic-lock-' + topic.id; lock.className = 'secondary teacher-icon-button topic-lock-trigger';
+    const action = topic.locked ? 'Desbloquear ingreso' : 'Bloquear ingreso';
+    lock.setAttribute('aria-label', action + ' a ' + topic.name);
+    lock.setAttribute('title', action); lock.setAttribute('aria-pressed', String(!!topic.locked));
+    lock.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+      (topic.locked ? '<path d="M7 10V7a5 5 0 0 1 10 0v3"/>' : '<path d="M7 10V7a5 5 0 0 1 9-3"/>') +
+      '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M12 14v3"/></svg>';
+    lock.hidden = !active;
+    lock.addEventListener('click', async () => {
+      if (lock.disabled) return;
+      let generation = courseRequestGeneration;
+      lock.disabled = true; lock.setAttribute('aria-busy', 'true');
+      try {
+        const saved = await rpc('teacher_set_topic_locked', {p_course_id:id,p_topic_id:topic.id,p_locked:!topic.locked});
+        if (!courseIsCurrent(id,generation)) return;
+        if (saved?.id !== topic.id || saved.locked !== !topic.locked)
+          throw new Error('No se pudo verificar el bloqueo. Vuelve a abrir la materia.');
+        const refresh = openCourse(id); generation = courseRequestGeneration;
+        await refresh;
+        if (!courseIsCurrent(id,generation)) return;
+        $('#topic-lock-' + topic.id)?.focus();
+        teacherSuccess(saved.locked ? 'Ingreso bloqueado a ' + topic.name + '. Sus integrantes conservan su lugar y tú puedes asignar estudiantes.'
+          : 'Ingreso desbloqueado a ' + topic.name + '. Podrán elegirlo si quedan cupos y la elección está abierta.');
+      } catch (error) { if (courseIsCurrent(id,generation)) alertError(error.message); }
+      finally { lock.disabled = false; lock.setAttribute('aria-busy', 'false'); }
+    });
+    card.append(title, capacity, instructions, edit, lock); return card;
   }));
-  const groups = [...overview.topics.map(topic => ({ id: topic.id, name: topic.name, capacity: topic.capacity })),
+  const groups = [...overview.topics.map(topic => ({ id: topic.id, name: topic.name, capacity: topic.capacity, locked: topic.locked })),
     { id: null, name: 'Sin equipo', capacity: null }];
   $('#student-list').replaceChildren(...groups.map(group => {
     const students = overview.students.filter(student => student.topicId === group.id)
@@ -436,7 +468,7 @@ async function openCourse(id) {
     const heading = document.createElement('div'); heading.className = 'teacher-group-heading';
     const title = document.createElement('h4'); title.textContent = group.name;
     const count = document.createElement('span'); count.textContent = group.capacity === null
-      ? `${students.length} pendientes` : `${students.length} de ${group.capacity} integrantes`;
+      ? `${students.length} pendiente${students.length === 1 ? '' : 's'}` : `${students.length} de ${group.capacity} integrantes` + (group.locked ? ' · Ingreso bloqueado' : '');
     heading.append(title, count); card.append(heading);
     if (!students.length) {
       const empty = document.createElement('p'); empty.textContent = group.id ? 'Aún no hay estudiantes en este grupo.' : 'Todos eligieron un equipo.';
@@ -558,6 +590,7 @@ $('#back').addEventListener('click', () => run(loadCourses));
 $('#logout').addEventListener('click', () => {
   ++courseRequestGeneration; ++accountGeneration;
   clearCourseRename();
+  clearStudentMove();
   for(const id of ['#edit-topic-dialog','#move-student-dialog','#delete-student-dialog','#delete-course-dialog']) { if($(id).open)$(id).close(); }
   courseId = ''; overview = null;
   signOut(); show('login');
@@ -639,78 +672,130 @@ $('#rename-course-form').addEventListener('submit', async event => {
   }
 });
 
-let movingStudentTarget = null, movingStudent = false;
+function clearStudentMove() {
+  movingStudentTarget = null;
+  if ($('#move-student-dialog').open) $('#move-student-dialog').close();
+}
+function moveDestination() {
+  return movingStudentTarget?.destinations.find(topic => topic.id === $('#move-student-destination').value);
+}
+function updateMoveDestination(resetPermission = false) {
+  if (resetPermission) $('#move-over-capacity').checked = false;
+  const topic = moveDestination(), full = topic && topic.used >= topic.capacity;
+  $('#move-capacity-exception').hidden = !full;
+  $('#move-over-capacity').required = !!full;
+  $('#move-capacity-summary').textContent = full
+    ? 'El grupo tiene ' + topic.used + ' de ' + topic.capacity + ' integrantes. Con esta asignación quedará en ' + (topic.used + 1) + ' de ' + topic.capacity + '. El cupo establecido se conserva.' : '';
+  $('#move-student-help').textContent = topic
+    ? (topic.locked ? 'El ingreso a este grupo está bloqueado para estudiantes. Como docente puedes asignarlo aquí. ' : '') +
+      'Se conservarán el perfil y el avatar. Los mensajes del equipo anterior permanecen en su grupo de origen; el estudiante accederá al chat del equipo nuevo.'
+    : 'No hay otro grupo. Añade un grupo para poder asignar o trasladar al estudiante.';
+  $('#confirm-student-move').disabled = movingStudent || !topic || (full && !$('#move-over-capacity').checked);
+}
+function renderMoveDestinations(preferredId = '') {
+  const destinations = movingStudentTarget.destinations, choice = $('#move-student-destination');
+  choice.replaceChildren(...destinations.map(topic => {
+    const item = document.createElement('option'); item.value = topic.id;
+    item.textContent = topic.name + ' · ' + topic.used + ' de ' + topic.capacity + ' integrantes' +
+      (topic.used >= topic.capacity ? ' · Completo' : '') + (topic.locked ? ' · Ingreso bloqueado' : '');
+    return item;
+  }));
+  choice.value = (destinations.find(topic => topic.id === preferredId) || destinations.find(topic => !topic.locked && topic.used < topic.capacity) || destinations[0])?.id || '';
+  choice.disabled = !destinations.length;
+}
 function openMoveStudent(student) {
-  if (!overview?.course?.active || !overview.students.some(row => row.id === student.id)) return;
-  movingStudentTarget = { courseId, id: student.id, name: student.firstName + ' ' + student.lastName };
+  if (movingStudent || !overview?.course?.active || !overview.students.some(row => row.id === student.id)) return;
+  const destinations = overview.topics.filter(topic => topic.id !== student.topicId).map(topic => ({
+    ...topic, used: overview.students.filter(member => member.topicId === topic.id).length
+  }));
+  movingStudentTarget = { courseId, generation:courseRequestGeneration, id:student.id,
+    name:student.firstName + ' ' + student.lastName, destinations };
   $('#move-student-title').textContent = student.topicId ? 'Cambiar estudiante de grupo' : 'Asignar estudiante a un grupo';
   $('#move-student-name').textContent = movingStudentTarget.name;
   const previous = overview.topics.find(topic => topic.id === student.topicId);
   $('#move-student-current').textContent = 'Grupo actual: ' + (previous?.name || 'Sin equipo');
+  renderMoveDestinations();
   const choice = $('#move-student-destination');
-  const available = overview.topics.filter(topic => topic.id !== student.topicId).map(topic => ({
-    ...topic, remaining: topic.capacity - overview.students.filter(member => member.topicId === topic.id).length
-  }));
-  const options = available.map(topic => {
-    const item = document.createElement('option');
-    item.value = topic.id;
-    item.textContent = topic.name + ' · ' + topic.remaining + ' de ' + topic.capacity + ' cupos libres';
-    item.disabled = topic.remaining <= 0;
-    return item;
-  });
-  choice.replaceChildren(...options);
-  const first = available.find(topic => topic.remaining > 0);
-  choice.value = first?.id || '';
-  choice.disabled = !first;
-  $('#move-student-help').textContent = first
-    ? 'Se conservarán el perfil y el avatar. El historial del chat anterior seguirá en su grupo de origen; el estudiante accederá al chat del equipo nuevo.'
-    : 'No hay otro grupo con cupos disponibles. Puedes crear una mesa o ampliar los cupos de una existente.';
   $('#confirm-student-move').textContent = student.topicId ? 'Confirmar cambio de grupo' : 'Asignar estudiante';
-  $('#confirm-student-move').disabled = !first;
-  $('#move-student-error').hidden = true;
-  $('#move-student-error').textContent = '';
+  $('#cancel-student-move').disabled = false;
+  $('#move-over-capacity').disabled = false;
+  $('#move-student-form').setAttribute('aria-busy','false');
+  $('#move-student-error').hidden = true; $('#move-student-error').textContent = '';
+  updateMoveDestination(true);
   $('#move-student-dialog').showModal();
-  if(first)choice.focus();
+  if (destinations.length) choice.focus();
 }
 function closeMoveStudent() {
-  if(movingStudent)return;
-  $('#move-student-dialog').close();
-  movingStudentTarget = null;
+  if (movingStudent) return;
+  clearStudentMove();
 }
 $('#cancel-student-move').addEventListener('click', closeMoveStudent);
 $('#move-student-dialog').addEventListener('cancel', event => {
-  if(movingStudent)event.preventDefault();
-  else movingStudentTarget=null;
+  if (movingStudent) event.preventDefault();
+  else movingStudentTarget = null;
 });
-$('#move-student-destination').addEventListener('change', () => {
-  $('#confirm-student-move').disabled = movingStudent || !$('#move-student-destination').value;
-});
+$('#move-student-destination').addEventListener('change', () => updateMoveDestination(true));
+$('#move-over-capacity').addEventListener('change', () => updateMoveDestination());
 $('#move-student-form').addEventListener('submit', async event => {
   event.preventDefault();
-  if(movingStudent || !movingStudentTarget)return;
-  const destination = $('#move-student-destination').value;
-  if(!destination)return;
-  const target = movingStudentTarget, generation = courseRequestGeneration;
-  const submit = $('#confirm-student-move');
-  const cancel = $('#cancel-student-move');
-  const select = $('#move-student-destination');
-  movingStudent = true; submit.disabled = true; cancel.disabled = true; select.disabled = true;
+  const target = movingStudentTarget, topic = moveDestination();
+  if (movingStudent || !target || !topic || !courseIsCurrent(target.courseId,target.generation)) return;
+  const allowOverCapacity = topic.used >= topic.capacity && $('#move-over-capacity').checked;
+  if (topic.used >= topic.capacity && !allowOverCapacity) {
+    $('#move-student-error').textContent = 'Marca la autorización para asignar a este estudiante aunque se supere el cupo.';
+    $('#move-student-error').hidden = false; $('#move-over-capacity').focus(); return;
+  }
+  const current = () => movingStudentTarget === target && courseIsCurrent(target.courseId,target.generation);
+  const submit = $('#confirm-student-move'), cancel = $('#cancel-student-move');
+  const select = $('#move-student-destination'), permission = $('#move-over-capacity');
+  movingStudent = true; submit.disabled = true; cancel.disabled = true; select.disabled = true; permission.disabled = true;
+  $('#move-student-form').setAttribute('aria-busy','true');
+  const submitLabel = submit.textContent; submit.textContent = 'Guardando…';
   $('#move-student-error').hidden = true;
   try {
-    await rpc('teacher_move_student', {
-      p_course_id: target.courseId, p_student_id: target.id, p_topic_id: destination
+    await rpc('teacher_assign_student', {
+      p_course_id:target.courseId,p_student_id:target.id,p_topic_id:topic.id,
+      p_allow_over_capacity:!!allowOverCapacity
     });
-    if(!courseIsCurrent(target.courseId,generation))return;
-    $('#move-student-dialog').close();
-    movingStudentTarget = null;
-    await openCourse(target.courseId);
+    if (!current()) return;
+    clearStudentMove();
+    const refresh = openCourse(target.courseId), generation = courseRequestGeneration;
+    try { await refresh; } catch {
+      if (courseIsCurrent(target.courseId,generation)) alertError('La asignación se guardó. No se pudo actualizar el listado; vuelve a abrir la materia para verlo.');
+      return;
+    }
+    if (!courseIsCurrent(target.courseId,generation)) return;
     teacherSuccess('Equipo actualizado para ' + target.name + '. Su perfil y avatar se conservan; el cambio aparecerá en el aula automáticamente.');
   } catch (error) {
-    $('#move-student-error').textContent = error.message || 'No se pudo cambiar el equipo. Inténtalo de nuevo.';
+    if (!current()) return;
+    if (/equipo está completo/i.test(error.message || '')) {
+      // Another assignment may have taken the last seat while this dialog was open.
+      // Refresh the counts and expose the permission instead of leaving it hidden.
+      try {
+        const fresh = await rpc('teacher_overview',{p_course_id:target.courseId});
+        if (!current()) return;
+        const student = fresh.students.find(row => row.id === target.id);
+        if (student) {
+          target.destinations = fresh.topics.filter(row => row.id !== student.topicId).map(row => ({
+            ...row,used:fresh.students.filter(member => member.topicId === row.id).length
+          }));
+          const previous = fresh.topics.find(row => row.id === student.topicId);
+          $('#move-student-current').textContent = 'Grupo actual: ' + (previous?.name || 'Sin equipo');
+          renderMoveDestinations(topic.id); updateMoveDestination(true);
+        }
+      } catch { /* Keep the original server error, with a way to reload below. */ }
+    }
+    if (!current()) return;
+    $('#move-student-error').textContent = (error.message || 'No se pudo cambiar el equipo. Inténtalo de nuevo.') +
+      ' Si los datos cambiaron, cancela y vuelve a abrir la asignación.';
     $('#move-student-error').hidden = false;
   } finally {
-    movingStudent = false;cancel.disabled = false;select.disabled = !movingStudentTarget;
-    submit.disabled = !movingStudentTarget || !select.value;
+    movingStudent = false;
+    if (movingStudentTarget === target) {
+      cancel.disabled = false; select.disabled = !target.destinations.length; permission.disabled = false;
+      submit.textContent = submitLabel; $('#move-student-form').setAttribute('aria-busy','false');
+      updateMoveDestination();
+    }
   }
 });
 

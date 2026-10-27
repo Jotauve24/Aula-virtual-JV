@@ -1,9 +1,9 @@
-import './embed.js?v=0.16.0';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.16.0';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.16.0';
-import { drawWorld, roomTheme } from './world.js?v=0.16.0';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.16.0';
-import { renderTeamLight } from './team-ui.js?v=0.16.0';
+import './embed.js?v=0.17.0';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.17.0';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.17.0';
+import { drawWorld, roomTheme } from './world.js?v=0.17.0';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.17.0';
+import { renderTeamLight, teamLockIcon } from './team-ui.js?v=0.17.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -34,7 +34,7 @@ function renderRoster() {
     details.dataset.topicId = topic.id;
     const summary = document.createElement('summary');
     const title = document.createElement('span'); title.textContent = topic.name;
-    const count = document.createElement('small'); count.textContent = topic.members.length + '/' + topic.capacity + ' cupos';
+    const count = document.createElement('small'); count.textContent = topic.members.length + '/' + topic.capacity + ' cupos' + (topic.locked ? ' · Ingreso bloqueado' : '');
     summary.append(title, count); details.append(summary);
     const instructions = document.createElement('p'); instructions.className = 'teacher-view-topic-summary';
     instructions.textContent = topic.instructions || 'Sin indicaciones todavía.';
@@ -88,7 +88,7 @@ function renderTopicButtons() {
     button.style.setProperty('--table-accent',theme.accent);
     button.style.setProperty('--table-soft',theme.card);
     const occupancy = (topic.members.length + Number(isDemoTeam(topic.id))) + '/' + topic.capacity;
-    button.title = (isDemoTeam(topic.id)?'Tu equipo seleccionado. ':'') + `${demoTopicName(topic)}: ${occupancy} estudiantes. Abrir el grupo.`;
+    button.title = (isDemoTeam(topic.id)?'Tu equipo seleccionado. ':'') + `${demoTopicName(topic)}: ${occupancy} estudiantes. Abrir el grupo.` + (topic.locked ? ' Ingreso bloqueado por el docente.' : '');
     button.setAttribute('aria-label',button.title);
     const name = document.createElement('strong'); name.textContent = demoTopicName(topic);
     const capacity = document.createElement('small');
@@ -98,6 +98,7 @@ function renderTopicButtons() {
     }
     if(isDemoTeam(topic.id)){capacity.className='team-selected-marker';button.setAttribute('aria-current','true');}
     button.append(name,capacity);
+    if(topic.locked){button.classList.add('is-join-locked');button.append(teamLockIcon());}
     button.addEventListener('click',() => inspectTopic(topic));
     return button;
   }));

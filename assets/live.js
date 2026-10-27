@@ -1,13 +1,13 @@
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.16.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.16.0';
-import './embed.js?v=0.16.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.16.0';
-import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.16.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.16.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.16.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.16.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.16.0';
-import { createTeamNameControl, renderTeamLight } from './team-ui.js?v=0.16.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.17.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.17.0';
+import './embed.js?v=0.17.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.17.0';
+import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.17.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.17.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.17.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.17.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.17.0';
+import { createTeamNameControl, renderTeamLight, teamLockIcon } from './team-ui.js?v=0.17.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -562,7 +562,7 @@ function renderTopics() {
     button.style.left = locations[i][0] / 8 + '%'; button.style.top = locations[i][1] / layout.height * 100 + '%';
     const occupancy = topic.members.length + '/' + topic.capacity;
     const details = (topic.id === profile.topicId ? 'Tu equipo seleccionado. ' : '') + topic.name + ', ' + topic.members.length + ' de ' + topic.capacity + ' lugares ocupados. Abrir el tema.';
-    button.title = details; button.setAttribute('aria-label', details);
+    button.title = details + (topic.locked ? ' Ingreso bloqueado por el docente.' : ''); button.setAttribute('aria-label', button.title);
     const count = topic.id === profile.topicId
       ? element('small', '', 'team-selected-marker')
       : element('small', occupancy + ' ');
@@ -571,6 +571,7 @@ function renderTopics() {
     if (topic.id === profile.topicId) button.setAttribute('aria-current','true');
     else count.append(element('span', 'lugares', 'map-place-word'));
     button.append(element('strong', topic.name), count);
+    if (topic.locked) { button.classList.add('is-join-locked'); button.append(teamLockIcon()); }
     button.addEventListener('click', () => openTopic(topic, { x: locations[i][2], y: locations[i][3] }));
     return button;
   }));
@@ -624,7 +625,7 @@ function homePanel() {
     button.style.setProperty('--table-accent', theme.accent);
     button.style.setProperty('--table-soft', theme.card);
     const label = topic.id === profile.topicId ? '✓ Tu equipo' : topic.members.length + '/' + topic.capacity + ' lugares';
-    button.append(element('span', label));
+    button.append(element('span', label + (topic.locked ? ' · Ingreso bloqueado' : '')));
     if(topic.id === profile.topicId)button.setAttribute('aria-current','true');
     button.addEventListener('click', () => { const i = topics.indexOf(topic);
       openTopic(topic, { x: locationsForTopics[i][0], y: locationsForTopics[i][1] });
@@ -923,6 +924,7 @@ function topicPanel(topic, confirmJoin = false) {
     nodes.push(viewTeam);
   }
   else if (profile.topicId) nodes.push(element('p', 'Ya perteneces a otro equipo. Puedes consultar este tema y sus integrantes.'));
+  else if (topic.locked) nodes.push(element('p', 'El docente bloqueó el ingreso a este equipo. Puedes consultar el tema; comunícate con él si necesitas una asignación.'));
   else if (full) nodes.push(element('p', 'Este equipo está completo.'));
   else if (!profile.registrationOpen) nodes.push(element('p', 'La elección de equipos está cerrada.'));
   else if (confirmJoin) {

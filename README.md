@@ -24,6 +24,25 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Bloqueo de grupos y asignaciones excepcionales (0.17.0)
+
+El candado junto a cada tema permite bloquear o reabrir su ingreso. El bloqueo
+no expulsa integrantes ni desactiva el chat. Los estudiantes pueden consultar
+el grupo, pero solo el docente puede asignar a alguien a un grupo bloqueado.
+
+En **Estudiantes y equipos → Asignar a grupo / Cambiar de grupo**, el docente
+puede elegir también grupos completos. Si el destino ya alcanzó su cupo, debe
+marcar la autorización que muestra el resultado: por ejemplo, de 5/5 a 6/5.
+La capacidad configurada se conserva. La autorización se reinicia al cambiar
+de destino. Si otro ingreso llena la última plaza durante la asignación,
+se actualizan los cupos y aparece la misma autorización antes de reintentar.
+
+El servidor valida el propietario de la materia y mantiene el bloqueo y los
+cupos para la elección estudiantil. Conserva perfil, documento, avatar y
+mensajes; al trasladar reinicia únicamente el permiso voluntario de compartir
+el teléfono con el nuevo equipo. Es posible editar el nombre y las indicaciones
+manteniendo el cupo original incluso si el grupo tiene integrantes adicionales.
+
 ## Equipo iluminado y nombre compartido (0.16.0)
 
 El equipo elegido se reconoce por una luz suave sobre todo su espacio. Los
