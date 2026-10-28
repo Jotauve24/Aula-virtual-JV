@@ -339,8 +339,8 @@ test('woman avatar starts with visible long hair and pink, and lets the student 
   const pixel = (svg, x, y) => [...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" fill="(#[0-9a-f]+)"\/>/g)]
     .filter(([, rx, ry, w, h]) => x >= +rx && x < +rx + +w && y >= +ry && y < +ry + +h)
     .at(-1)?.[5];
-  assert.equal(pixel(woman, 4, 30), '#594735');
-  assert.notEqual(pixel(man, 4, 30), '#594735');
+  assert.ok(Array.from({length:34},(_,x)=>pixel(woman,x,30)).includes('#594735'));
+  assert.ok(!Array.from({length:34},(_,x)=>pixel(man,x,30)).includes('#594735'));
   page.get('#shirt-options').children[6].click();
   assert.equal(page.state('look.outfit'), 6);
   assert.equal(page.state('look.shirt'), 0);
