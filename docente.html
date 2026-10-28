@@ -7,18 +7,18 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
-  <title>Panel docente · AulaVirtualJv</title><script src="./assets/page-shell.js?v=0.17.0"></script>
-  <link rel="icon" href="./assets/favicon.svg?v=0.17.0" type="image/svg+xml">
+  <title>Panel docente · AulaVirtualJv</title><script src="./assets/page-shell.js?v=0.18.0"></script>
+  <link rel="icon" href="./assets/favicon.svg?v=0.18.0" type="image/svg+xml">
   <link rel="preload" as="font" href="./assets/fonts/nunito-latin.woff" type="font/woff" crossorigin>
-  <link rel="stylesheet" href="./assets/palette.css?v=0.17.0"><link rel="stylesheet" href="./assets/live.css?v=0.17.0"><link rel="stylesheet" href="./assets/brand.css?v=0.17.0"><link rel="stylesheet" href="./assets/teacher-live.css?v=0.17.0"><link rel="stylesheet" href="./assets/student-account.css?v=0.17.0">
-  <link rel="modulepreload" data-aula-module href="./assets/teacher.js?v=0.17.0">
-<link rel="stylesheet" href="./assets/campus.css?v=0.17.0">
-<link rel="stylesheet" href="./assets/page-shell.css?v=0.17.0">
+  <link rel="stylesheet" href="./assets/palette.css?v=0.18.0"><link rel="stylesheet" href="./assets/live.css?v=0.18.0"><link rel="stylesheet" href="./assets/brand.css?v=0.18.0"><link rel="stylesheet" href="./assets/teacher-live.css?v=0.18.0"><link rel="stylesheet" href="./assets/student-account.css?v=0.18.0">
+  <link rel="modulepreload" data-aula-module href="./assets/teacher.js?v=0.18.0">
+<link rel="stylesheet" href="./assets/campus.css?v=0.18.0">
+<link rel="stylesheet" href="./assets/page-shell.css?v=0.18.0">
 </head>
 <body class="campus-theme campus-panel">
   <a class="skip-link" href="#main">Ir al contenido</a>
   <header class="teacher-header">
-    <a class="brand" href="./" aria-label="AulaVirtualJv, volver al ingreso"><img class="brand-mark" src="./assets/favicon.svg?v=0.17.0" width="40" height="40" alt="" aria-hidden="true"><span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.17.0" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span></a>
+    <a class="brand" href="./" aria-label="AulaVirtualJv, volver al ingreso"><img class="brand-mark" src="./assets/favicon.svg?v=0.18.0" width="40" height="40" alt="" aria-hidden="true"><span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.18.0" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span></a>
     <div class="teacher-header-tools"><span class="header-label">PANEL DOCENTE</span><button id="expand-aula" class="secondary aula-expand-icon" type="button" aria-label="Ampliar aula" title="Ampliar aula"><svg data-fullscreen-icon viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button></div>
   </header>
   <main id="main" class="teacher-main">
@@ -41,7 +41,7 @@
           <div class="teacher-activity-metric teacher-activity-online"><span>Conectados ahora</span><strong id="summary-online">—</strong><small>Estudiantes dentro del aula</small></div>
         </section>
         <div id="courses" class="course-list"></div>
-        <p id="live-error" class="teacher-live-error" role="status" hidden></p><section class="roster-export-panel" aria-label="Descarga general de estudiantes"><div><span class="eyebrow">REGISTRO GENERAL</span><h3>Estudiantes de todas las materias</h3><p>Materia, nombre, apellido, correo, teléfono y equipo en un archivo para Excel.</p></div><button id="export-all" class="secondary" type="button">↓ Descargar listado</button></section></div></div>
+        <p id="live-error" class="teacher-live-error" role="status" hidden></p><section class="roster-export-panel" aria-label="Descarga general de estudiantes"><div><span class="eyebrow">REGISTRO GENERAL</span><h3>Estudiantes de todas las materias</h3><p>Materia, nombres, contactos, documento, edad y equipo en un archivo para Excel.</p></div><button id="export-all" class="secondary" type="button">↓ Descargar listado</button></section></div></div>
       <section id="disabled-area" class="disabled-area" hidden><div class="area-heading"><h2>Materias deshabilitadas</h2><span>Sus códigos no permiten ingresar. Puedes restaurarlas o eliminarlas.</span></div><div id="disabled-courses" class="course-list"></div></section>
     </section>
     <section id="detail" class="teacher-course-detail" hidden>

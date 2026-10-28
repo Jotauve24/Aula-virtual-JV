@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { SKINS, SHIRTS, normalizeCode } from '../assets/model.js';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from '../assets/model.js';
 import { memberSeat, createRoomLayout, isWalkable, findPath, canWalkSegment } from '../assets/world-layout.js';
 import { createIncomingMessageTracker } from '../assets/chat-notification.js';
 
@@ -77,9 +77,9 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     if (!nodes.has(selector)) nodes.set(selector, new Element());
     return nodes.get(selector);
   };
-  const fields = Object.fromEntries(['code', 'firstName', 'lastName', 'documentNumber', 'documentType', 'documentCountry', 'documentPrefix', 'documentTome', 'documentEntry', 'email', 'phone']
+  const fields = Object.fromEntries(['code', 'firstName', 'lastName', 'age', 'documentNumber', 'documentType', 'documentCountry', 'documentPrefix', 'documentTome', 'documentEntry', 'email', 'phone']
     .map(key => [key, new Element()]));
-  fields.documentType.value='cedula'; fields.documentPrefix.value='8'; fields.documentTome.value='123'; fields.documentEntry.value='45';
+  fields.age.value='21'; fields.documentType.value='cedula'; fields.documentPrefix.value='8'; fields.documentTome.value='123'; fields.documentEntry.value='45';
   get('#registration-form').elements = { namedItem: key => fields[key] };
   get('#registration-form').reset = () => Object.values(fields).forEach(field=>{field.value='';});
   const steps = Object.keys(fields).map(key => Object.assign(new Element(), { dataset: { step: key } }));
@@ -94,7 +94,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   const motionPreference = Object.assign(new Element(), { matches: motionReduced });
   let signOutCount = 0;
   let clock = Date.now();
-  const profileData = profileFixture || { firstName: 'Ana', lastName: 'Prueba', topicId: 'existing-team', avatar: {} };
+  const profileData = { age:21, ...(profileFixture || { firstName:'Ana', lastName:'Prueba', topicId:'existing-team', avatar:{} }) };
   const descendants = node => [node, ...node.children.flatMap(descendants)];
   const presenceNodes = () => [...new Set([...nodes.values()].flatMap(descendants))]
     .filter(node => Object.hasOwn(node.dataset, 'memberPresence'));
@@ -105,7 +105,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       addEventListener: (name, handler) => documentListeners.set(name, handler), dispatchEvent() {} },
     window: { addEventListener: (name, handler) => windowListeners.set(name, handler) }, localStorage, sessionStorage, Date: PageDate,
     location:{search,pathname:'/Aula-virtual-JV/live.html'},history:{replaceState(){}},confirm:()=>true,URLSearchParams,
-    configured: true, SKINS, SHIRTS, normalizeCode, ATTACHMENT_ACCEPT: '.pdf',
+    configured: true, SKINS, SHIRTS, normalizeCode, normalizeStudentAge, ATTACHMENT_ACCEPT: '.pdf',
     matchMedia: () => motionPreference,
     cancelAnimationFrame: id => pendingFrames.delete(id),
     requestAnimationFrame: handler => { pendingFrames.set(++frameId, handler); return frameId; },
@@ -133,12 +133,12 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       calls.push({ name, body: JSON.parse(JSON.stringify(body)) });
       if (name === 'student_registration_email_hint') return emailHint;
       if (name === 'student_registration_phone_hint') { if(phoneHintError) throw Error('Servicio no disponible'); return typeof phoneHint==='function'?phoneHint(body):phoneHint; }
-      if (name === 'enroll_student_document') {
+      if (name === 'enroll_student_profile') {
         if (enroll) await enroll(body);
         return { course_id: 'course-fixture', course_name: 'Materia de prueba' };
       }
       if (name === 'student_document_status') return {required:documentRequired};
-      if (name === 'student_set_document') {if(setDocument) await setDocument(body); documentRequired=false; return;}
+      if (name === 'student_complete_registration') {if(setDocument) await setDocument(body); documentRequired=false; if(body.p_age!==undefined)profileData.age=body.p_age; return;}
       if (name === 'my_profile') return profileData;
       if (name === 'save_student_avatar') { profileData.avatar = body.p_avatar; return; }
       if (name === 'team_contact_setting') {
@@ -244,7 +244,7 @@ test('a student entering a different subject can register with the submitted cod
   Object.assign(page.fields.phone, { value: '6000-0000' });
   page.get('#registration-form').dispatch('submit');
   await page.settle();
-  assert.equal(page.calls.filter(call => call.name === 'enroll_student_document').at(-1).body.p_code, NEW);
+  assert.equal(page.calls.filter(call => call.name === 'enroll_student_profile').at(-1).body.p_code, NEW);
   assert.equal(page.localStorage.getItem(LAST_CODE), NEW);
   assert.equal(page.get('#room').dataset.stage, 'avatar');
 });
@@ -625,7 +625,7 @@ test('a delayed room response cannot restore a profile after leaving its course'
 test('new students see first-time steps and returning students have a separate recovery action', async () => {
   const page = await boot({ submitted: NEW, signedIn: false });
   assert.equal(page.state('questions[questionIndex]'), 'firstName');
-  assert.equal(page.get('#dialog-progress').textContent, 'PASO 1 DE 5 · REGISTRO POR PRIMERA VEZ');
+  assert.equal(page.get('#dialog-progress').textContent, 'PASO 1 DE 6 · REGISTRO POR PRIMERA VEZ');
   assert.equal(page.get('#dialog-description').textContent,
     'Escribe tus nombres para comenzar a crear tu perfil.');
   assert.equal(page.get('#next-question').hidden, false);
@@ -641,6 +641,7 @@ test('si el correo ya está inscrito con los mismos nombres aparece recuperar an
   page.fields.email.value='ana@ejemplo.com';page.fields.code.value=NEW;
   await page.get('#next-question').click(); // nombre
   await page.get('#next-question').click(); // apellido
+  await page.get('#next-question').click(); // edad
   await page.get('#next-question').click(); // documento
   assert.equal(page.state("questions[questionIndex]"),'email');
   await page.get('#next-question').click();
@@ -648,7 +649,7 @@ test('si el correo ya está inscrito con los mismos nombres aparece recuperar an
   assert.equal(page.get('#email-duplicate-notice').hidden,false);
   assert.equal(page.get('#next-question').disabled,true);
   assert.ok(page.calls.some(x=>x.name==='student_registration_email_hint'));
-  assert.equal(page.calls.some(x=>x.name==='enroll_student_document'),false);
+  assert.equal(page.calls.some(x=>x.name==='enroll_student_profile'),false);
   await page.get('#email-duplicate-recover').click();
   assert.equal(page.localStorage.getItem('aula-student-recovery-code'),NEW);
   assert.equal(page.signOutCount(),0,'nunca cerrar la sesión sin permiso');
@@ -664,6 +665,7 @@ test('un correo nuevo no muestra el aviso y permite completar el registro',async
   await page.get('#next-question').click();
   await page.get('#next-question').click();
   await page.get('#next-question').click();
+  await page.get('#next-question').click(); // documento
   await page.get('#next-question').click(); // correo, después del documento
   assert.equal(page.state("questions[questionIndex]"),'phone');
   assert.equal(page.get('#email-duplicate-notice').hidden,true);
@@ -692,7 +694,7 @@ test('a repeated phone with a new email stops before enrollment and offers recov
   assert.equal(page.get('#email-duplicate-notice').hidden,false);
   assert.match(page.get('#registration-duplicate-title').textContent,/teléfono/);
   assert.equal(page.get('#finish-registration').disabled,true);
-  assert.equal(page.calls.some(call=>call.name==='enroll_student_document'),false);
+  assert.equal(page.calls.some(call=>call.name==='enroll_student_profile'),false);
   await page.get('#email-duplicate-recover').click();
   assert.equal(page.localStorage.getItem('aula-student-recovery-code'),NEW);
   assert.equal(page.signOutCount(),0);
@@ -715,7 +717,7 @@ test('a failed preliminary phone check still reaches the authoritative server gu
   page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';
   page.fields.email.value='nuevo@ejemplo.invalid';page.fields.phone.value='6000-0001';
   await page.get('#registration-form').dispatch('submit');await page.settle();
-  assert.ok(page.calls.some(call=>call.name==='enroll_student_document'));
+  assert.ok(page.calls.some(call=>call.name==='enroll_student_profile'));
   assert.equal(page.get('#finish-registration').disabled,true);
 });
 test('correcting a repeated phone clears its warning and permits another attempt',async()=>{
@@ -742,7 +744,7 @@ test('editing a phone while its check is pending discards the stale result',asyn
   page.fields.phone.value='6000-0002';page.fields.phone.dispatch('input');
   assert.equal(page.get('#finish-registration').disabled,true);
   release(true);await page.settle();
-  assert.equal(page.calls.some(call=>call.name==='enroll_student_document'),false);
+  assert.equal(page.calls.some(call=>call.name==='enroll_student_profile'),false);
   assert.equal(page.get('#email-duplicate-notice').hidden,true);
   assert.equal(page.get('#finish-registration').disabled,false);
 });
@@ -755,7 +757,7 @@ test('a second submit cannot create another pending registration request',async(
   await page.get('#registration-form').dispatch('submit');await page.settle();
   assert.equal(page.calls.filter(call=>call.name==='student_registration_phone_hint').length,1);
   release(false);await page.settle();
-  assert.equal(page.calls.filter(call=>call.name==='enroll_student_document').length,1);
+  assert.equal(page.calls.filter(call=>call.name==='enroll_student_profile').length,1);
 });
 
 test('document fields add cedula dashes and switch cleanly to passport',async()=>{
@@ -792,13 +794,13 @@ test('duplicate document with a changed email and phone offers recovery instead 
 test('legacy students add a document without another enrollment or losing avatar and team',async()=>{
  const profileFixture={id:'legacy-a',firstName:'Ana',lastName:'Prueba',topicId:'team-a',avatar:{skin:2}};
  const page=await boot({submitted:NEW,documentRequired:true,profileFixture});
- assert.equal(page.state('completingDocument'),true);
+ assert.equal(page.state('completingProfile'),true);
  assert.equal(page.get('#room').dataset.stage,'registration');
  assert.equal(page.get('#edit-avatar').hidden,true);
- const enrollments=page.calls.filter(c=>c.name==='enroll_student_document').length;
+ const enrollments=page.calls.filter(c=>c.name==='enroll_student_profile').length;
  await page.get('#registration-form').dispatch('submit');await page.settle();
- assert.equal(page.calls.filter(c=>c.name==='enroll_student_document').length,enrollments);
- assert.equal(page.calls.filter(c=>c.name==='student_set_document').length,1);
+ assert.equal(page.calls.filter(c=>c.name==='enroll_student_profile').length,enrollments);
+ assert.equal(page.calls.filter(c=>c.name==='student_complete_registration').length,1);
  assert.equal(page.get('#room').dataset.stage,'room');
  assert.equal(page.state('profile.topicId'),'team-a');
  assert.equal(page.state('profile.avatar.skin'),2);
@@ -810,7 +812,7 @@ test('editing a document during the contact hint discards the pending enrollment
  await page.get('#registration-form').dispatch('submit');await page.settle();
  page.fields.documentEntry.value='46';page.fields.documentEntry.dispatch('input');
  release(false);await page.settle();
- assert.equal(page.calls.some(c=>c.name==='enroll_student_document'),false);
+ assert.equal(page.calls.some(c=>c.name==='enroll_student_profile'),false);
  assert.equal(page.get('#finish-registration').disabled,false);
 });
 
@@ -887,7 +889,7 @@ test('logging out during the registration contact check prevents a late enrollme
  page.fields.email.value='a@example.invalid';page.fields.phone.value='60000009';
  await page.get('#registration-form').dispatch('submit');await page.settle();
  page.get('#logout').click();release(false);await page.settle();
- assert.equal(page.calls.some(c=>c.name==='enroll_student_document'),false);
+ assert.equal(page.calls.some(c=>c.name==='enroll_student_profile'),false);
  assert.equal(page.state('courseId'),'');
 });
 test('a delayed profile response cannot restore the student after logout',async()=>{
@@ -1047,4 +1049,60 @@ test('student cannot join an overfull group and sees its real occupancy',async()
  assert.match(page.get('#topic-dialog').textContent,/6 de 5 integrantes/);
  assert.match(page.get('#topic-dialog').textContent,/equipo está completo/);
  assert.doesNotMatch(page.get('#topic-dialog').textContent,/Sí, unirme|Quiero este equipo/);
+});
+
+test('registro rechaza edades ausentes, fraccionarias o fuera de rango antes de enviar datos',async()=>{
+ const page=await boot({submitted:NEW,signedIn:false});
+ Object.assign(page.fields.firstName,{value:'Ana'});page.fields.lastName.value='Prueba';
+ page.fields.email.value='a@example.invalid';page.fields.phone.value='60000009';
+ for(const age of ['', '0', '-1', '20.5', '121']){
+  page.fields.age.value=age;await page.get('#registration-form').dispatch('submit');await page.settle();
+  assert.equal(page.calls.some(c=>c.name==='enroll_student_profile'),false);
+  assert.equal(page.state('questions[questionIndex]'),'age');assert.match(page.get('#registration-error').textContent,/edad/);
+ }
+ page.fields.age.value='27';await page.get('#registration-form').dispatch('submit');await page.settle();
+ assert.equal(page.calls.find(c=>c.name==='enroll_student_profile').body.p_age,27);
+});
+test('un perfil anterior completa solo la edad conservando documento, avatar y grupo',async()=>{
+ const fixture={id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',age:null,avatar:{skin:2}};
+ const page=await boot({submitted:NEW,profileFixture:fixture});
+ assert.equal(page.state('completingProfile'),true);assert.equal(page.state('questions.join(",")'),'age');
+ assert.equal(page.get('.student-returning-entry').hidden,true);assert.equal(page.get('#change-code').hidden,true);
+ assert.equal(page.fields.age.value,'');const before=page.calls.filter(c=>c.name==='enroll_student_profile').length;
+ page.fields.age.value='34';await page.get('#registration-form').dispatch('submit');await page.settle();
+ assert.deepEqual(page.calls.find(c=>c.name==='student_complete_registration').body,{p_course_id:'course-fixture',p_age:34});
+ assert.equal(page.calls.filter(c=>c.name==='enroll_student_profile').length,before);
+ assert.equal(page.state('profile.topicId'),'g1');assert.equal(page.state('profile.avatar.skin'),2);
+ assert.equal(page.state('profile.age'),34);assert.equal(page.get('#room').dataset.stage,'room');
+});
+test('edad y documento pendientes se guardan juntos y un error conserva el formulario',async()=>{
+ let attempts=0;
+ const page=await boot({submitted:NEW,documentRequired:true,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',age:null,topicId:'g1',avatar:{skin:2}},
+ setDocument:()=>{if(++attempts===1)throw Error('No se pudo guardar. Inténtalo de nuevo.');}});
+ assert.equal(page.state('questions.join(",")'),'documentNumber,age');page.fields.age.value='26';
+ await page.get('#registration-form').dispatch('submit');await page.settle();
+ assert.equal(page.get('#room').dataset.stage,'registration');assert.equal(page.fields.age.value,'26');
+ assert.equal(page.fields.age.disabled,false);assert.equal(page.get('#finish-registration').disabled,false);
+ await page.get('#registration-form').dispatch('submit');await page.settle();
+ const saved=page.calls.filter(c=>c.name==='student_complete_registration').at(-1).body;
+ assert.equal(saved.p_age,26);assert.equal(saved.p_document_number,'8-123-45');assert.equal(page.get('#room').dataset.stage,'room');
+});
+test('cambiar la edad mientras se verifica el teléfono descarta el registro anterior',async()=>{
+ let release;
+ const page=await boot({submitted:NEW,signedIn:false,phoneHint:()=>new Promise(resolve=>release=resolve)});
+ page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';page.fields.email.value='a@example.invalid';page.fields.phone.value='60000009';
+ await page.get('#registration-form').dispatch('submit');await page.settle();
+ page.fields.age.value='22';release(false);await page.settle();
+ assert.equal(page.calls.some(c=>c.name==='enroll_student_profile'),false);
+ assert.equal(page.get('#finish-registration').disabled,false);
+});
+test('una edad pendiente no envía dos solicitudes ni reabre el aula después de cerrar sesión',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',age:null,topicId:'g1',avatar:{skin:2}},setDocument:()=>gate});
+ page.fields.age.value='24';await page.get('#registration-form').dispatch('submit');await page.settle();
+ await page.get('#registration-form').dispatch('submit');assert.equal(page.calls.filter(c=>c.name==='student_complete_registration').length,1);
+ assert.equal(page.fields.age.disabled,true);await page.get('#logout').click();
+ assert.equal(page.fields.age.disabled,false);assert.equal(page.get('#next-question').disabled,false);
+ release();await page.settle();
+ assert.equal(page.state('profile'),null);assert.equal(page.get('#room').dataset.stage,'registration');
 });

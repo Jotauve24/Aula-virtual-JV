@@ -70,10 +70,10 @@ test('onboarding separates code, registration, customization and room movement i
   assert.deepEqual(TUTORIAL_STEPS.map(step => step.id),
     ['code', 'registration', 'avatar', 'movement', 'capacity', 'choose', 'team', 'chat']);
   assert.deepEqual(TUTORIAL_REGISTRATION_FIELDS.map(field => field.id),
-    ['firstName', 'lastName', 'documentNumber', 'email', 'phone']);
+    ['firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone']);
   const scene = createTutorialScene();
-  assert.deepEqual([0, .21, .41, .61, .81].map(phase => scene.state('registration', phase).fieldIndex),
-    [0, 1, 2, 3, 4]);
+  assert.deepEqual([0, .17, .34, .51, .68, .85].map(phase => scene.state('registration', phase).fieldIndex),
+    [0, 1, 2, 3, 4, 5]);
 });
 
 test('the student appears after customization and only joins after confirming an available team', () => {

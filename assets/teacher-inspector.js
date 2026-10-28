@@ -1,7 +1,7 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.17.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.17.0';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.17.0';
-import { createTeamNameControl } from './team-ui.js?v=0.17.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.18.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.18.0';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.18.0';
+import { createTeamNameControl } from './team-ui.js?v=0.18.0';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);

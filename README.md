@@ -24,6 +24,25 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Edad y descarga completa (0.18.0)
+
+El registro pide edad en años cumplidos después de los apellidos. Acepta números
+enteros de 1 a 120. Los estudiantes anteriores completan únicamente los datos
+pendientes al regresar: edad, documento o ambos; conservan su perfil, avatar,
+equipo y conversaciones. La edad es la informada al registrarse o completarla,
+no una edad calculada a partir de una fecha de nacimiento.
+
+La descarga general conserva las seis columnas originales y añade tipo de
+documento, país emisor (ISO), cédula o pasaporte y edad. El documento se obtiene
+de la identidad vinculada al estudiante; no depende del campo histórico que
+podía estar vacío. Cédulas, pasaportes y teléfonos se exportan como texto para
+conservar guiones y ceros. La edad es numérica y un dato pendiente queda en
+blanco. Se mantienen filtros, primera fila fija, orden y materias deshabilitadas.
+
+Edad y documento solo se entregan al propio estudiante cuando corresponde y
+al propietario de su materia. No se incorporan a los equipos ni al chat. Las
+validaciones de identidad y contactos repetidos siguen en el servidor.
+
 ## Bloqueo de grupos y asignaciones excepcionales (0.17.0)
 
 El candado junto a cada tema permite bloquear o reabrir su ingreso. El bloqueo

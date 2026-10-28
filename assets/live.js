@@ -1,13 +1,13 @@
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.17.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.17.0';
-import './embed.js?v=0.17.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.17.0';
-import { SKINS, SHIRTS, normalizeCode } from './model.js?v=0.17.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.17.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.17.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.17.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.17.0';
-import { createTeamNameControl, renderTeamLight, teamLockIcon } from './team-ui.js?v=0.17.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.18.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.18.0';
+import './embed.js?v=0.18.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.18.0';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.18.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.18.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.18.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.18.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.18.0';
+import { createTeamNameControl, renderTeamLight, teamLockIcon } from './team-ui.js?v=0.18.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -101,6 +101,7 @@ const questionText = {
   code: ['¿Cuál es el código de tu materia?', 'El código de tu docente te abre la puerta de esta sala.'],
   firstName: ['¡Hola! ¿Cómo te llamas?', 'Escribe tus nombres para comenzar a crear tu perfil.'],
   lastName: ['¿Y cuál es tu apellido?', 'Así aparecerás en la lista del docente.'],
+  age: ['¿Cuántos años tienes?', 'Escribe tu edad actual en años cumplidos.'],
   email: ['¿Qué correo podemos usar para contactarte?', 'Tu equipo podrá ver este correo. No tienes que abrir ningún enlace de confirmación.'],
   documentNumber: ['Tu documento de identidad', 'Una sola cuenta por estudiante, aunque cambies de correo o dispositivo.'],
   phone: ['Por último, ¿tu número de teléfono?', 'Tu teléfono empieza privado. En «Mi equipo» decides si lo compartes.']
@@ -113,11 +114,11 @@ const entryCode = submittedCode || rememberedCode;
 registrationForm.elements.namedItem('code').value = entryCode;
 sessionStorage.removeItem('aula-course-code');
 let questions = registrationForm.elements.namedItem('code').value.trim()
-  ? ['firstName', 'lastName', 'documentNumber', 'email', 'phone']
-  : ['code', 'firstName', 'lastName', 'documentNumber', 'email', 'phone'];
+  ? ['firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone']
+  : ['code', 'firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone'];
 let questionIndex = 0;
 let registrationPending = false;
-let completingDocument = false;
+let completingProfile = false;
 const documentType = registrationForm.elements.namedItem('documentType');
 const documentNumber = registrationForm.elements.namedItem('documentNumber');
 const documentCountry = registrationForm.elements.namedItem('documentCountry');
@@ -195,19 +196,21 @@ function renderQuestion(focus = false) {
   document.querySelectorAll('.dialog-step').forEach(step => { step.hidden = step.dataset.step !== key; });
   $('#registration h2').textContent = questionText[key][0];
   $('#dialog-description').textContent = questionText[key][1];
-  $('#dialog-progress').textContent = `PASO ${questionIndex + 1} DE ${questions.length} · ${completingDocument ? 'COMPLETAR PERFIL' : 'REGISTRO POR PRIMERA VEZ'}`;
+  $('#dialog-progress').textContent = `PASO ${questionIndex + 1} DE ${questions.length} · ${completingProfile ? 'COMPLETAR PERFIL' : 'REGISTRO POR PRIMERA VEZ'}`;
   $('#previous-question').hidden = questionIndex === 0;
   $('#next-question').hidden = questionIndex === questions.length - 1;
   $('#finish-registration').hidden = questionIndex !== questions.length - 1;
-  $('#finish-registration').textContent = completingDocument ? 'Guardar documento y entrar →' : 'Crear mi personaje →';
-  $('#student-sign-in').hidden = completingDocument;
-  $('#change-code').disabled = completingDocument;
-  $('#dialog-privacy').hidden = questionIndex !== questions.length - 1;
-  $('#change-code').hidden = questions.includes('code');
+  $('#finish-registration').textContent = completingProfile ? 'Guardar datos y entrar →' : 'Crear mi personaje →';
+  $('#student-sign-in').hidden = completingProfile;
+  $('.student-returning-entry').hidden = completingProfile;
+  $('#change-code').disabled = completingProfile;
+  $('#dialog-privacy').hidden = completingProfile || questionIndex !== questions.length - 1;
+  $('#change-code').hidden = completingProfile || questions.includes('code');
   if(key !== duplicateNotice.dataset.field) hideDuplicateContact();
   if (focus) (key === 'documentNumber' && documentType.value === 'cedula' ? documentPrefix : registrationForm.elements.namedItem(key)).focus();
 }
 $('#next-question').addEventListener('click', async () => {
+  if (registrationPending) return;
   const field = registrationForm.elements.namedItem(questions[questionIndex]);
   if (!field.reportValidity()) return;
   const key=questions[questionIndex];
@@ -217,6 +220,9 @@ $('#next-question').addEventListener('click', async () => {
     field.focus(); return;
   }
   message('');
+  if (key === 'age') {
+    try { normalizeStudentAge(field.value); } catch(error) { message(error.message); field.focus(); return; }
+  }
   if (key === 'documentNumber') {
     try { documentDetails(); } catch(error) { message(error.message); return; }
   }
@@ -250,9 +256,9 @@ $('#next-question').addEventListener('click', async () => {
   if (key === 'code') field.value = normalizeCode(field.value);
   questionIndex++; renderQuestion(true);
 });
-$('#previous-question').addEventListener('click', () => { questionIndex--; renderQuestion(true); });
+$('#previous-question').addEventListener('click', () => { if(registrationPending)return; questionIndex--; renderQuestion(true); });
 $('#change-code').addEventListener('click', () => {
-  questions = ['code', 'firstName', 'lastName', 'documentNumber', 'email', 'phone'];
+  questions = ['code', 'firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone'];
   questionIndex = 0; message(''); renderQuestion(true);
 });
 registrationForm.addEventListener('keydown', event => {
@@ -296,14 +302,14 @@ async function enterCourse(code, details = {}) {
   const generation = ++courseEntryGeneration;
   code = normalizeCode(code);
   let result;
-  try { result = await studentRpc('enroll_student_document', { p_code: code, ...details }); }
+  try { result = await studentRpc('enroll_student_profile', { p_code: code, ...details }); }
   catch (error) {
     if (generation !== courseEntryGeneration) return;
     if (error.message !== 'Materia no encontrada') throw error;
     // Forget only the rejected shortcut. The anonymous session owns the profile and team.
     if (normalizeCode(localStorage.getItem('aula-student-course-code') || '') === code)
       localStorage.removeItem('aula-student-course-code');
-    questions = ['code', 'firstName', 'lastName', 'documentNumber', 'email', 'phone'];
+    questions = ['code', 'firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone'];
     questionIndex = 0; show('registration'); renderQuestion(true);
     throw new Error('No encontramos una materia con ese código. Revisa el código actual que te compartió tu docente.');
   }
@@ -317,7 +323,7 @@ async function openStudentCourse(result, code = null, generation = ++courseEntry
   const documentStatus = await studentRpc('student_document_status',{p_course_id:id});
   if (!entryCurrent(generation)) return;
   stopRoomPolling();
-  completingDocument = false;
+  completingProfile = false;
   courseId = id; courseName = result.course_name; profile = nextProfile;
   if (code) {
     localStorage.setItem('aula-student-course-code', code);
@@ -325,13 +331,18 @@ async function openStudentCourse(result, code = null, generation = ++courseEntry
   } else {
     localStorage.setItem('aula-student-resume-id', result.course_id);
   }
-  if (documentStatus.required) {
-    completingDocument = true;
-    questions = ['documentNumber']; questionIndex = 0;
-    documentType.value = 'cedula'; updateDocumentInput(true);
+  const needsAge = !Number.isInteger(profile.age) || profile.age < 1 || profile.age > 120;
+  if (documentStatus.required || needsAge) {
+    completingProfile = true;
+    questions = [...(documentStatus.required ? ['documentNumber'] : []), ...(needsAge ? ['age'] : [])];
+    questionIndex = 0;
+    if (documentStatus.required) { documentType.value = 'cedula'; updateDocumentInput(true); }
+    if (needsAge) registrationForm.elements.namedItem('age').value = '';
     show('registration'); renderQuestion(true);
-    $('#registration h2').textContent = 'Completa tu documento para continuar';
-    $('#dialog-description').textContent = 'Tu avatar, equipo y conversaciones se conservan. Este dato evita registros repetidos.';
+    if (documentStatus.required) {
+      $('#registration h2').textContent = 'Completa tu documento para continuar';
+      $('#dialog-description').textContent = 'Tu avatar, equipo y conversaciones se conservan. Este dato evita registros repetidos.';
+    }
     return;
   }
   $('#avatar-course').textContent = result.course_name;
@@ -346,29 +357,50 @@ async function openStudentCourse(result, code = null, generation = ++courseEntry
 $('#registration-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
   if (registrationPending) return;
   const f = event.target.elements;
-  if (completingDocument) {
-    const details = documentDetails();
+  if (completingProfile) {
+    const details = {};
+    if (questions.includes('documentNumber')) {
+      try { Object.assign(details,documentDetails()); }
+      catch(error) { questionIndex=questions.indexOf('documentNumber'); renderQuestion(true); throw error; }
+    }
+    if (questions.includes('age')) {
+      try { details.p_age=normalizeStudentAge(f.namedItem('age').value); }
+      catch(error) { questionIndex=questions.indexOf('age'); renderQuestion(true); throw error; }
+    }
     const generation = courseEntryGeneration, id = courseId;
-    registrationPending = true; $('#finish-registration').disabled = true;
+    const fields = ['age','documentType','documentNumber','documentCountry','documentPrefix','documentTome','documentEntry'].map(name=>f.namedItem(name));
+    registrationPending = true;
+    for (const field of fields) field.disabled=true;
+    $('#finish-registration').disabled = true; $('#finish-registration').textContent='Guardando tus datos…';
+    $('#next-question').disabled = true; $('#previous-question').disabled = true;
     try {
-      await studentRpc('student_set_document',{p_course_id:id,...details});
+      await studentRpc('student_complete_registration',{p_course_id:id,...details});
       if (!entryCurrent(generation) || courseId !== id) return;
       await openStudentCourse({course_id:id,course_name:courseName}, null, generation);
     } catch(error) {
+      if (!entryCurrent(generation) || courseId !== id) return;
       if (error.message?.startsWith('Este documento ya tiene')) showDuplicateContact('documentNumber');
       else throw error;
     } finally {
-      registrationPending = false;
-      $('#finish-registration').disabled = !duplicateNotice.hidden;
+      if (entryCurrent(generation) && courseId === id) {
+        registrationPending = false;
+        for (const field of fields) field.disabled=false;
+        $('#finish-registration').disabled = !duplicateNotice.hidden;
+        $('#finish-registration').textContent='Guardar datos y entrar →';
+        $('#next-question').disabled = !duplicateNotice.hidden; $('#previous-question').disabled = false;
+      }
     }
     return;
   }
   const documentInfo = documentDetails();
-  for (const name of ['firstName','lastName','email','phone']) {
+  for (const name of ['firstName','lastName','age','email','phone']) {
     if (!f.namedItem(name).reportValidity()) {
       questionIndex = questions.indexOf(name); renderQuestion(true); return;
     }
   }
+  let age;
+  try { age=normalizeStudentAge(f.namedItem('age').value); }
+  catch(error) { questionIndex=questions.indexOf('age'); renderQuestion(true); throw error; }
   const code = normalizeCode(f.namedItem('code').value);
   if (!/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(code))
     throw new Error('Revisa el código de tu materia. Tiene el formato MAT-XXXXX-XXXXX-XXXXX.');
@@ -376,7 +408,7 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
   if (!/^\+?[0-9 -]{7,20}$/.test(phone) || (phone.match(/\d/g) || []).length < 7)
     throw new Error('Revisa el número de teléfono.');
   const details = { p_email: f.namedItem('email').value.trim().toLowerCase(),
-    p_first_name: f.namedItem('firstName').value.trim(), p_last_name: f.namedItem('lastName').value.trim(), p_phone: phone, ...documentInfo };
+    p_first_name: f.namedItem('firstName').value.trim(), p_last_name: f.namedItem('lastName').value.trim(), p_phone: phone, p_age:age, ...documentInfo };
   const submit = $('#finish-registration');
   registrationPending = true;
   submit.disabled = true; submit.textContent = 'Guardando tu perfil…';
@@ -394,6 +426,7 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
     } catch { /* The database validates the final registration independently. */ }
     if (!entryCurrent(generation)) return;
     if (JSON.stringify(documentInfo) !== JSON.stringify(documentDetails()) ||
+        details.p_age !== normalizeStudentAge(f.namedItem('age').value) ||
         phone !== f.namedItem('phone').value.trim() ||
         details.p_email !== f.namedItem('email').value.trim().toLowerCase() ||
         details.p_first_name !== f.namedItem('firstName').value.trim() ||
@@ -419,7 +452,7 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
     registrationPending = false;
     $('#next-question').disabled = !duplicateNotice.hidden && duplicateNotice.dataset.field !== 'phone';
     submit.disabled = !duplicateNotice.hidden && ['phone','documentNumber'].includes(duplicateNotice.dataset.field);
-    submit.textContent = completingDocument ? 'Guardar documento y entrar →' : 'Crear mi personaje →';
+    submit.textContent = completingProfile ? 'Guardar datos y entrar →' : 'Crear mi personaje →';
   }
 }); });
 
@@ -1128,8 +1161,10 @@ $('#logout').addEventListener('click', () => {
   localStorage.removeItem('aula-student-document-recovery');
   stopRoomPolling();
   courseId = ''; courseName = ''; profile = null; topics = []; selectedTopic = null;
-  completingDocument = false;
-  registrationForm.reset(); documentType.value='cedula'; updateDocumentInput(true); questions = ['code', 'firstName', 'lastName', 'documentNumber', 'email', 'phone'];
+  completingProfile = false; registrationPending = false;
+  for(const name of ['age','documentType','documentNumber','documentCountry','documentPrefix','documentTome','documentEntry']) registrationForm.elements.namedItem(name).disabled=false;
+  $('#previous-question').disabled=false;
+  registrationForm.reset(); documentType.value='cedula'; updateDocumentInput(true); questions = ['code', 'firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone'];
   questionIndex = 0; renderQuestion();
   $('#group-badge').textContent = 'Elige tu espacio';
   $('#topic-buttons').replaceChildren();
@@ -1187,13 +1222,13 @@ async function refreshRoom() {
   } catch (error) {
     if (!stillCurrent()) return;
     if (error.message === 'Materia deshabilitada') {
-      ++courseEntryGeneration; completingDocument = false;
+      ++courseEntryGeneration; completingProfile = false;
       stopRoomPolling();
       courseId = ''; courseName = ''; profile = null; topics = [];
       localStorage.removeItem('aula-student-course-code');
       localStorage.removeItem('aula-student-resume-id');
       localStorage.removeItem('aula-student-recovery-code');
-      questions = ['code', 'firstName', 'lastName', 'documentNumber', 'email', 'phone']; questionIndex = 0;
+      questions = ['code', 'firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone']; questionIndex = 0;
       registrationForm.elements.namedItem('code').value = '';
       show('registration'); renderQuestion();
       message('Esta materia ya no está disponible. Pide al docente un código vigente.');

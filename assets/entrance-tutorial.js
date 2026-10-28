@@ -1,9 +1,9 @@
-import { drawWorld, avatarSVG } from './world.js?v=0.17.0';
-import { createRoomLayout, findPath } from './world-layout.js?v=0.17.0';
+import { drawWorld, avatarSVG } from './world.js?v=0.18.0';
+import { createRoomLayout, findPath } from './world-layout.js?v=0.18.0';
 
 export const TUTORIAL_STEPS = [
   { id: 'code', short: 'Código', title: 'Primero, el código de tu materia.', emphasis: 'código', description: 'Escribe el código de tu docente y pulsa «Entrar a mi materia».', duration: 6000 },
-  { id: 'registration', short: 'Registro', title: 'Luego, completa tu registro.', emphasis: 'tu registro', description: 'Completa tus datos y tu documento. Si ya tienes un perfil, recupéralo.', duration: 11000 },
+  { id: 'registration', short: 'Registro', title: 'Luego, completa tu registro.', emphasis: 'tu registro', description: 'Completa tus datos, edad y documento. Si ya tienes un perfil, recupéralo.', duration: 11000 },
   { id: 'avatar', short: 'Avatar', title: 'Después, personaliza tu avatar.', emphasis: 'tu avatar', description: 'Elige tu personaje y su apariencia. Después, pulsa «Guardar y explorar el aula».', duration: 6500 },
   { id: 'movement', short: 'Mover', title: 'Ahora, explora el aula.', emphasis: 'el aula', description: 'Toca el suelo o usa las flechas para caminar. Abre una mesa con E o su rótulo.', duration: 6500 },
   { id: 'capacity', short: 'Cupos', title: 'Revisa los cupos antes de elegir.', emphasis: 'los cupos', description: 'Si un equipo está completo, busca otra mesa con lugares disponibles.', duration: 6500 },
@@ -15,6 +15,7 @@ export const TUTORIAL_STEPS = [
 export const TUTORIAL_REGISTRATION_FIELDS = [
   { id: 'firstName', label: 'Tus nombres', value: 'Alex' },
   { id: 'lastName', label: 'Tus apellidos', value: 'Ejemplo' },
+  { id: 'age', label: 'Tu edad', value: '21 años' },
   { id: 'documentNumber', label: 'Cédula o pasaporte', value: '8-123-456' },
   { id: 'email', label: 'Correo de contacto', value: 'alex@ejemplo.com' },
   { id: 'phone', label: 'Tu teléfono', value: '6000-0011' }
