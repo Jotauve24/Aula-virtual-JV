@@ -24,6 +24,20 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Matrícula por verificar (0.19.0)
+
+El docente puede marcar o quitar una observación de matrícula con el triángulo
+junto al nombre de cada estudiante, incluso si aún no tiene equipo. La marca
+pertenece solo a esa materia; no elimina al estudiante, no cambia su grupo ni
+bloquea el aula o el chat. No tener marca no certifica la matrícula institucional.
+
+El estudiante ve su aviso; sus compañeros ven la observación junto a su nombre
+en Mi equipo y un aviso del grupo en el aula. Otros equipos no reciben ese dato.
+Al trasladarlo, la marca acompaña su perfil y el aviso se recalcula para cada
+equipo. El propietario puede consultar todas las marcas en el panel, en la sala
+docente y en la nueva columna «Revisión de matrícula» del Excel. El aviso se
+actualiza con la consulta periódica de la sala, normalmente en hasta 15 segundos.
+
 ## Edad y descarga completa (0.18.0)
 
 El registro pide edad en años cumplidos después de los apellidos. Acepta números

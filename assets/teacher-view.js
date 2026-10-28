@@ -1,9 +1,9 @@
-import './embed.js?v=0.18.0';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.18.0';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.18.0';
-import { drawWorld, roomTheme } from './world.js?v=0.18.0';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.18.0';
-import { renderTeamLight, teamLockIcon } from './team-ui.js?v=0.18.0';
+import './embed.js?v=0.19.0';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.19.0';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.19.0';
+import { drawWorld, roomTheme } from './world.js?v=0.19.0';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.19.0';
+import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.19.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -36,6 +36,7 @@ function renderRoster() {
     const title = document.createElement('span'); title.textContent = topic.name;
     const count = document.createElement('small'); count.textContent = topic.members.length + '/' + topic.capacity + ' cupos' + (topic.locked ? ' · Ingreso bloqueado' : '');
     summary.append(title, count); details.append(summary);
+    if (enrollmentReviewCount(topic.members)) details.append(enrollmentReviewBadge(enrollmentReviewSummary(topic.members)));
     const instructions = document.createElement('p'); instructions.className = 'teacher-view-topic-summary';
     instructions.textContent = topic.instructions || 'Sin indicaciones todavía.';
     details.append(instructions);
@@ -43,6 +44,7 @@ function renderRoster() {
     for (const member of [...topic.members].sort((a,b)=>String(a.id).localeCompare(String(b.id)))) {
       const row = document.createElement('li');
       const name = document.createElement('span'); name.textContent = member.name;
+      if (member.enrollmentReview === true) name.append(enrollmentReviewBadge());
       const presence = document.createElement('span'); presence.className = 'teacher-view-presence';
       presence.dataset.studentId = member.id;
       row.append(name,presence); members.append(row);

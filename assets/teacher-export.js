@@ -1,5 +1,5 @@
 const HEADERS = ['Nombre de la materia', 'Nombre', 'Apellido', 'Correo', 'Teléfono', 'Equipo',
-  'Tipo de documento', 'País emisor (ISO)', 'Cédula o pasaporte', 'Edad (años)'];
+  'Tipo de documento', 'País emisor (ISO)', 'Cédula o pasaporte', 'Edad (años)', 'Revisión de matrícula'];
 const XML_HEADER = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 const MAIN_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 
@@ -16,7 +16,8 @@ function studentRows(overviews) {
       student.topicId ? teams.get(student.topicId) || 'Equipo no disponible' : 'Sin equipo',
       student.documentType === 'cedula' ? 'Cédula' : student.documentType === 'passport' ? 'Pasaporte' : '',
       student.documentCountry || '', student.documentNumber || student.nationalId || '',
-      Number.isInteger(student.age) && student.age >= 1 && student.age <= 120 ? student.age : null
+      Number.isInteger(student.age) && student.age >= 1 && student.age <= 120 ? student.age : null,
+      student.enrollmentReview === true ? 'Por verificar' : ''
     ]);
   }).sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'es') ||
     String(a[2]).localeCompare(String(b[2]), 'es') || String(a[1]).localeCompare(String(b[1]), 'es'));
@@ -37,7 +38,7 @@ function worksheet(rows) {
     '<sheetFormatPr defaultRowHeight="17"/><cols><col min="1" max="1" width="48" customWidth="1"/><col min="2" max="3" width="22" customWidth="1"/>' +
     '<col min="4" max="4" width="35" customWidth="1"/><col min="5" max="6" width="22" customWidth="1"/>' +
     '<col min="7" max="7" width="22" customWidth="1"/><col min="8" max="8" width="24" customWidth="1"/>' +
-    '<col min="9" max="9" width="28" customWidth="1"/><col min="10" max="10" width="16" customWidth="1"/></cols>' +
+    '<col min="9" max="9" width="28" customWidth="1"/><col min="10" max="10" width="16" customWidth="1"/><col min="11" max="11" width="26" customWidth="1"/></cols>' +
     `<sheetData>${cells}</sheetData><autoFilter ref="${range}"/></worksheet>`;
 }
 

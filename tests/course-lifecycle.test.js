@@ -6,6 +6,7 @@ import { allCoursesXlsx } from '../assets/teacher-export.js';
 
 const source = readFileSync(new URL('../assets/teacher.js', import.meta.url), 'utf8')
   .replace(/^import .*;\r?\n/gm, '');
+const teamUiSource = readFileSync(new URL('../assets/team-ui.js', import.meta.url), 'utf8').replace(/^export /gm, '');
 
 class Element {
   constructor() {
@@ -24,10 +25,17 @@ class Element {
   click() { return this.listeners.has('click') ? this.dispatch('click') : this.children[0]?.click(); }
 }
 
+const reviewText = node => String(node.textContent || '') + node.children.map(reviewText).join(' ');
+
 async function boot({ files = [], fileError = null, students = [], topics = [], extraCourses = [],
   disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null, operationError = {} } = {}) {
   const nodes = new Map();
+  const descendants = node => [node, ...node.children.flatMap(descendants)];
   const get = selector => {
+    if (selector.startsWith('#')) {
+      const match = [...nodes.values()].flatMap(descendants).find(node => node.id === selector.slice(1));
+      if (match) return match;
+    }
     if (!nodes.has(selector)) nodes.set(selector, new Element());
     return nodes.get(selector);
   };
@@ -64,6 +72,12 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
       const topic=topics.find(row=>row.id===body.p_topic_id);
       topic.locked=body.p_locked;return {id:topic.id,locked:topic.locked};
     }
+    if (name === 'teacher_set_enrollment_review') {
+      const student = students.find(row => row.id === body.p_student_id);
+      assert.equal(body.p_course_id, course.id);
+      student.enrollmentReview = body.p_review;
+      return { id: student.id, enrollmentReview: student.enrollmentReview };
+    }
     if (name === 'teacher_assign_student') {
       assert.equal(body.p_course_id, course.id);
       assert.equal(course.active, true);
@@ -89,7 +103,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     if (name === 'teacher_delete_course') { assert.equal(course.active, false); course = null; return; }
     throw new Error('RPC inesperado: ' + name);
   };
-  const pageActions = vm.runInNewContext(source+'\n({openCourse,loadCourses})', {
+  const pageActions = vm.runInNewContext(teamUiSource+'\n'+source+'\n({openCourse,loadCourses})', {
     document: { querySelector: get, querySelectorAll: () => [], hidden: false,
       createTextNode: text => { const node = new Element(); node.textContent = text; return node; },
       body: { append() {} }, createElement: tag => {
@@ -110,6 +124,79 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
   await new Promise(resolve => setImmediate(resolve));
   return { get, calls, downloads, current: () => course, openCourse: pageActions.openCourse, loadCourses: pageActions.loadCourses };
 }
+
+test('el docente marca y retira una revisión sin eliminar, liberar o cambiar al estudiante',async()=>{
+ const students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:'g1',email:'a@example.invalid',phone:'60000001',age:21,avatar:{skin:1}}];
+ const before=structuredClone(students[0]);
+ const page=await boot({students,topics:[{id:'g1',name:'Coral',position:0,capacity:5}]});await page.openCourse('course-1');
+ const button=()=>page.get('#enrollment-review-a');
+ assert.equal(button()['aria-pressed'],'false');assert.match(button()['aria-label'],/Marcar matrícula por verificar de Ana/);
+ await button().click();assert.equal(students[0].enrollmentReview,true);
+ assert.equal(button()['aria-pressed'],'true');assert.equal(button().disabled,false);assert.equal(button().focused,true);
+ assert.match(reviewText(page.get('#student-list')),/1 matrícula por verificar/);
+ assert.match(page.get('#course-summary').textContent,/1 matrícula por verificar/);
+ assert.match(page.get('#teacher-success').textContent,/equipo verá el aviso/);
+ await button().click();assert.equal(students[0].enrollmentReview,false);
+ const {enrollmentReview,...rest}=students[0];assert.deepEqual(rest,before);
+ assert.doesNotMatch(reviewText(page.get('#student-list')),/Matrícula por verificar/);
+ assert.equal(page.calls.some(([name])=>/delete_student|release_student|assign_student/.test(name)),false);
+ assert.deepEqual(page.calls.filter(([name])=>name==='teacher_set_enrollment_review').map(([,body])=>body.p_review),[true,false]);
+});
+
+test('una marca también funciona sin equipo y no convierte a los demás en matrícula confirmada',async()=>{
+ const students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null},
+  {id:'b',firstName:'Bea',lastName:'Prueba',topicId:null}];
+ const page=await boot({students});await page.openCourse('course-1');await page.get('#enrollment-review-a').click();
+ assert.equal(students[0].topicId,null);assert.equal(students[1].enrollmentReview,undefined);
+ assert.match(reviewText(page.get('#student-list')),/1 matrícula por verificar/);
+ assert.doesNotMatch(reviewText(page.get('#student-list')),/Matrícula confirmada/);
+});
+
+test('un aviso pendiente bloquea duplicados y se puede reintentar tras un fallo',async()=>{
+ let release,fail=true;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({students:[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null}],
+  delays:{teacher_set_enrollment_review:()=>gate},operationError:{teacher_set_enrollment_review:()=>{const value=fail;fail=false;return value;}}});
+ await page.openCourse('course-1');const button=page.get('#enrollment-review-a');
+ const pending=button.click();await button.click();assert.equal(page.calls.filter(([n])=>n==='teacher_set_enrollment_review').length,1);
+ assert.equal(button.disabled,true);release();await pending;
+ assert.equal(button.disabled,false);assert.equal(button['aria-pressed'],'false');assert.match(page.get('#error').textContent,/conexión/);
+ await button.click();assert.equal(page.get('#enrollment-review-a')['aria-pressed'],'true');
+});
+
+test('dos revisiones simultáneas conservan ambas marcas y sus controles',async()=>{
+ const resolvers={};const students=['a','b'].map(id=>({id,firstName:id,lastName:'Prueba',topicId:null}));
+ const page=await boot({students,delays:{teacher_set_enrollment_review:body=>new Promise(resolve=>resolvers[body.p_student_id]=resolve)}});
+ await page.openCourse('course-1');const a=page.get('#enrollment-review-a').click(),b=page.get('#enrollment-review-b').click();
+ resolvers.a();await a;assert.equal(page.get('#enrollment-review-b').disabled,true);
+ resolvers.b();await b;assert.ok(students.every(s=>s.enrollmentReview));
+ assert.equal(page.get('#enrollment-review-a').disabled,false);assert.equal(page.get('#enrollment-review-b').disabled,false);
+ assert.match(page.get('#course-summary').textContent,/2 matrículas por verificar/);
+});
+
+test('una respuesta tardía de la marca no restaura la vista tras salir',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({students:[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null}],delays:{teacher_set_enrollment_review:()=>gate}});
+ await page.openCourse('course-1');const pending=page.get('#enrollment-review-a').click();
+ page.get('#logout').click();release();await pending;
+ assert.equal(page.get('#login').hidden,false);assert.doesNotMatch(page.get('#teacher-success').textContent,/Matrícula por verificar/);
+});
+
+test('reabrir la misma materia mientras se guarda no deja el triángulo bloqueado',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({students:[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null}],delays:{teacher_set_enrollment_review:()=>gate}});
+ await page.openCourse('course-1');const pending=page.get('#enrollment-review-a').click();
+ await page.openCourse('course-1');assert.equal(page.get('#enrollment-review-a').disabled,true);
+ release();await pending;
+ assert.equal(page.get('#enrollment-review-a').disabled,false);assert.equal(page.get('#enrollment-review-a')['aria-pressed'],'true');
+});
+
+test('materias deshabilitadas conservan las observaciones sin ofrecer cambios',async()=>{
+ const page=await boot({students:[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null,enrollmentReview:true}]});
+ page.current().active=false;await page.openCourse('course-1');
+ assert.match(reviewText(page.get('#student-list')),/Matrícula por verificar/);
+ const walk=n=>[n,...n.children.flatMap(walk)];
+ assert.equal(walk(page.get('#student-list')).some(n=>n.className==='secondary teacher-icon-button teacher-enrollment-toggle'),false);
+});
 
 test('docente descarga todas las materias, incluso las deshabilitadas, sin equipo e inscritos recientemente', async () => {
   const students = [

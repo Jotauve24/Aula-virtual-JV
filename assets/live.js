@@ -1,13 +1,13 @@
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.18.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.18.0';
-import './embed.js?v=0.18.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.18.0';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.18.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.18.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.18.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.18.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.18.0';
-import { createTeamNameControl, renderTeamLight, teamLockIcon } from './team-ui.js?v=0.18.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.19.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.19.0';
+import './embed.js?v=0.19.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.19.0';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.19.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.19.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.19.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.19.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.19.0';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.19.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -47,7 +47,7 @@ function show(stage) {
   stopAnimation();
   stopAmbientAnimation();
   const onboarding = stage !== 'room';
-  if (onboarding) $('#team-room-light').hidden = true;
+  if (onboarding) { $('#team-room-light').hidden = true; $('#enrollment-review-alert').hidden = true; }
   $('#in-room-dialog').hidden = !onboarding;
   closeTopic();
   $('#registration').hidden = stage !== 'registration';
@@ -66,6 +66,7 @@ function show(stage) {
     : stage === 'avatar' ? 'Elige tu estilo antes de entrar a las mesas de trabajo.'
     : 'Explora, crea y conversa con tu equipo.';
   $('.room-tabs').hidden = onboarding;
+  if (!onboarding) renderEnrollmentReviewNotice(topics.find(topic => topic.id === profile?.topicId));
   if (onboarding) setRoomTab('aula');
   $('#registration h2').id = stage === 'registration' ? 'dialog-title' : 'registration-title';
   $('#avatar h2').id = stage === 'avatar' ? 'dialog-title' : 'avatar-title';
@@ -583,6 +584,7 @@ function renderTopics() {
   $('#room-map').style.aspectRatio = layout.width + ' / ' + layout.height;
   draw();
   const mine = topics.find(t => t.id === profile.topicId);
+  renderEnrollmentReviewNotice(mine);
   renderTeamLight($('#team-room-light'), layout, topics.indexOf(mine));
   $('#group-badge').textContent = mine ? 'Tu equipo: ' + mine.name : 'Tu equipo: sin asignar';
   const locations = layout.rooms.map(room => [room.label.x, room.label.y, room.arrival.x, room.arrival.y]);
@@ -614,6 +616,29 @@ function renderTopics() {
   if (activeTopic) topicPanel(activeTopic);
 }
 function side(...nodes) { $('#side-content').replaceChildren(...nodes); }
+function renderEnrollmentReviewNotice(team) {
+  const host = $('#enrollment-review-alert');
+  const own = profile.enrollmentReview === true;
+  const count = enrollmentReviewCount(team?.members);
+  const signature = own || count ? courseId + '/' + profile.id + '/' + (team?.id || '') + '/' + (own ? 'own' : count) : '';
+  host.hidden = !signature;
+  if (host.dataset.reviewNotice === signature) return;
+  host.dataset.reviewNotice = signature;
+  if (!signature) { host.replaceChildren(); return; }
+  const text = element('div');
+  text.append(element('strong', own ? 'Tu matrícula está por verificar.' : 'Tu equipo tiene ' + enrollmentReviewSummary(team.members) + '.'),
+    element('p', own
+      ? 'Comunícate con el docente para confirmar tu matrícula en esta materia. ' + (team
+        ? 'Conservas tu lugar y el acceso al chat.' : 'Tu perfil se conserva y puedes seguir explorando el aula.')
+      : 'Revisen la marca junto al nombre en «Mi equipo» y comuníquense con el docente. El equipo conserva sus lugares y su chat.'));
+  host.replaceChildren(text);
+  if (team) {
+    const open = element('button', 'Ver mi equipo →', 'button secondary'); open.type = 'button';
+    open.id = 'enrollment-review-open'; open.hidden = activeTab === 'equipo';
+    open.addEventListener('click', () => { setRoomTab('equipo'); $('#tab-equipo').focus(); });
+    host.append(open);
+  }
+}
 function openTopic(topic, target) {
   setRoomTab('aula');
   walkTo(target, () => {
@@ -740,6 +765,7 @@ function teamRosterPanel(team) {
     const identity = element('div', '', 'team-member-identity');
     identity.append(participantAvatar(member.name), element('strong', member.name + (member.mine ? ' · Tú' : '')));
     card.append(identity);
+    if (member.enrollmentReview === true) { card.dataset.enrollmentReview = 'true'; card.append(enrollmentReviewBadge()); }
     const presence = element('span', '', 'member-presence');
     presence.dataset.studentId = member.id;
     presence.dataset.memberPresence = '';
@@ -1180,6 +1206,8 @@ function closeTopic() {
 $('#topic-dialog').addEventListener('cancel', event => { event.preventDefault(); homePanel(); });
 function setRoomTab(name) {
   activeTab = name;
+  const reviewOpen = $('#enrollment-review-open');
+  if (reviewOpen) reviewOpen.hidden = name === 'equipo';
   for (const tab of document.querySelectorAll('[data-room-tab]')) {
     const selected = tab.dataset.roomTab === name;
     tab.setAttribute('aria-selected', String(selected)); tab.tabIndex = selected ? 0 : -1;
@@ -1216,7 +1244,7 @@ async function refreshRoom() {
     const [rows, currentProfile] = await Promise.all([studentRpc('course_room', {p_course_id:currentCourseId}), studentRpc('my_profile',{p_course_id:currentCourseId})]);
     if (!stillCurrent()) return;
     const ordered = sortTopics(rows);
-    if (JSON.stringify(ordered) !== JSON.stringify(topics) || currentProfile.topicId !== profile.topicId || currentProfile.registrationOpen !== profile.registrationOpen) {
+    if (JSON.stringify(ordered) !== JSON.stringify(topics) || currentProfile.topicId !== profile.topicId || currentProfile.registrationOpen !== profile.registrationOpen || currentProfile.enrollmentReview !== profile.enrollmentReview) {
       topics = ordered; profile = currentProfile; renderTopics();
     }
   } catch (error) {

@@ -1,6 +1,6 @@
 # AulaVirtualJv · Alcance vigente
 
-Estado: versión 0.18.0, 27 de octubre de 2026.
+Estado: versión 0.19.0, 28 de octubre de 2026.
 
 El aula se publica en GitHub Pages y utiliza Supabase para sesiones, materias,
 perfiles, equipos, presencia y chat. Todas las materias comparten las mismas
@@ -23,6 +23,7 @@ páginas, módulos y funciones; no existen copias independientes por materia.
 | Nombre del equipo | Sus integrantes pueden cambiarlo desde el lápiz de Mi equipo (2–80 caracteres). Se conservan ID, integrantes, cupos, indicaciones, avatares y chat. Validación de pertenencia, nombres repetidos y cambios simultáneos en el servidor. El docente conserva su edición existente. |
 | Edad y Excel | Edad declarada en años completos (1–120), privada frente a compañeros. La descarga incluye materia, nombre, apellido, correo, teléfono, equipo, tipo de documento, país emisor ISO, cédula/pasaporte y edad. Documentos como texto, edad numérica y datos pendientes en blanco. |
 | Presencia | Conteos y posiciones recientes. Inscripción, pertenencia a equipo y conexión son estados independientes. |
+| Revisión de matrícula | El propietario marca o retira «Matrícula por verificar» sin eliminar ni restringir al estudiante. Aviso personal, aviso al equipo y marca junto al integrante; no se expone a otros equipos. Persiste por estudiante y materia, acompaña los traslados y aparece en la sala docente y en el Excel. Sin marca no significa matrícula institucional confirmada. |
 | Chat | Conversación y adjuntos privados por equipo. Correo visible para el propio equipo; teléfono voluntario. Envíos simultáneos bloqueados. |
 | ZombieAdmin | Simulación docente con datos y chat ficticios; no ocupa plazas ni modifica conversaciones reales. |
 

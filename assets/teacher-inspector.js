@@ -1,7 +1,7 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.18.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.18.0';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.18.0';
-import { createTeamNameControl } from './team-ui.js?v=0.18.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.19.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.19.0';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.19.0';
+import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.19.0';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);
@@ -202,6 +202,8 @@ function teamRosterPanel(topic){
   }
   nameControl.update(topic.name);
   section.append(el('span','TU EQUIPO','eyebrow'),nameControl.element);
+  if(enrollmentReviewCount(members)) section.append(enrollmentReviewBadge(enrollmentReviewSummary(members)),
+    el('p','El docente está verificando la matrícula de los integrantes marcados. Sus lugares y su chat se conservan.'));
   const sharingCard=el('div','','share-contact-card');
   sharingCard.dataset.sharing=String(demo.sharing);
   const heading=el('div','','share-contact-heading');
@@ -230,6 +232,7 @@ function teamRosterPanel(topic){
     const identity=el('div','','team-member-identity');
     identity.append(participantAvatar(member.name),el('strong',member.name+(member.mine?' · Tú':'')));
     card.append(identity);
+    if(member.enrollmentReview===true){card.dataset.enrollmentReview='true';card.append(enrollmentReviewBadge());}
     const presence=el('span',member.mine?'Tú · en el aula':
       context().peers.some(peer=>peer.id===member.id)?'En el aula ahora':'Sin conexión','member-presence');
     presence.dataset.connected=member.mine||context().peers.some(peer=>peer.id===member.id)?'true':'false';
@@ -255,6 +258,7 @@ function teamRosterPanel(topic){
       const identity=el('div','','team-member-identity');
       identity.append(participantAvatar(person.name),el('strong',person.name+(person.mine?' · Tú':'')));
       card.append(identity);
+      if(person.enrollmentReview===true){card.dataset.enrollmentReview='true';card.append(enrollmentReviewBadge());}
       const presence=el('span',person.mine?'Tú · en el aula':
         context().peers.some(peer=>peer.id===person.id)?'En el aula ahora':'Sin conexión','member-presence');
       presence.dataset.connected=person.mine||context().peers.some(peer=>peer.id===person.id)?'true':'false';
