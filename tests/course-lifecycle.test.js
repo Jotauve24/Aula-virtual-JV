@@ -54,7 +54,9 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     if (name === 'teacher_disabled_courses') return [...(course && !course.active ? [courseRow()] : []), ...disabledCourses];
     if (name === 'teacher_live_course_counts') return typeof liveRows === 'function' ? liveRows() : liveRows ?? [
       {course_id:course?.id,online_count:0,students:[],student_count:students.length,topic_count:topics.length,
-        pending_work_group_count:topics.filter(t=>t.workGroupCreated!==true).length,enrollment_review_count:students.filter(s=>s.enrollmentReview===true).length}
+        pending_work_group_count:topics.filter(t=>t.workGroupCreated!==true).length,
+        ready_work_group_count:topics.filter(t=>t.workGroupCreated!==true&&t.capacity>0&&students.filter(s=>s.topicId===t.id).length>=t.capacity).length,
+        enrollment_review_count:students.filter(s=>s.enrollmentReview===true).length}
     ];
     if (name === 'teacher_student_recovery_requests') return recoveryRequests;
     if (name === 'teacher_decide_student_recovery') {
@@ -160,12 +162,40 @@ test('las tarjetas reflejan al volver las marcas guardadas y retiradas',async()=
  assert.doesNotMatch(reviewText(page.get('#course-follow-up-course-1')),/matrícula por verificar/);
 });
 test('un fallo conserva los últimos pendientes con un aviso y luego recupera el conteo',async()=>{
- let fail=false;const topics=[{id:'g1'}];
- const page=await boot({topics,operationError:{teacher_live_course_counts:()=>fail}});
+ let fail=false;const topics=[{id:'g1',capacity:1}];
+ const page=await boot({topics,students:[{id:'a',topicId:'g1'}],operationError:{teacher_live_course_counts:()=>fail}});
  fail=true;await page.refresh();const host=page.get('#course-follow-up-course-1');
  assert.match(reviewText(host),/1 grupo pendiente/);assert.match(reviewText(host),/Sin actualizar/);assert.equal(host.dataset.state,'stale');
+ assert.match(reviewText(host),/1 grupo listo para check/);
  topics[0].workGroupCreated=true;fail=false;await page.refresh();
  assert.match(reviewText(host),/0 grupos pendientes/);assert.doesNotMatch(reviewText(host),/Sin actualizar/);assert.equal(host.dataset.state,'ready');
+ assert.doesNotMatch(reviewText(host),/listo para check/);
+});
+test('la campanita cuenta solo grupos completos sin check y sigue sus cambios',async()=>{
+ const topics=[{id:'full',name:'Completo',capacity:2,locked:true},{id:'checked',name:'Ya creado',capacity:1,workGroupCreated:true},
+  {id:'partial',name:'Incompleto',capacity:2},{id:'empty',name:'Vacío',capacity:1}];
+ const students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:'full'},
+  {id:'b',firstName:'Bea',lastName:'Prueba',topicId:'full',enrollmentReview:true},
+  {id:'c',topicId:'checked'},{id:'d',topicId:'partial'},{id:'u',topicId:null}];
+ const page=await boot({topics,students});const host=()=>page.get('#course-follow-up-course-1');
+ assert.match(reviewText(host()),/3 grupos pendientes/);assert.match(reviewText(host()),/1 grupo listo para check/);
+ assert.match(reviewText(host()),/1 matrícula por verificar/);
+ const before=structuredClone(students);
+ await page.openCourse('course-1');await page.get('#work-group-created-full').click();
+ await page.loadCourses();await page.refresh();assert.doesNotMatch(reviewText(host()),/listo para check/);
+ assert.match(reviewText(host()),/2 grupos pendientes/);assert.deepEqual(students,before);
+ await page.openCourse('course-1');await page.get('#work-group-created-full').click();
+ await page.loadCourses();await page.refresh();assert.match(reviewText(host()),/1 grupo listo para check/);
+ students[0].topicId=null;await page.refresh();assert.doesNotMatch(reviewText(host()),/listo para check/);
+ students[0].topicId='full';await page.refresh();assert.match(reviewText(host()),/1 grupo listo para check/);
+ assert.equal(topics[0].workGroupCreated,false);assert.equal(topics[0].locked,true);
+});
+test('dos grupos llenos o con cupo superado muestran una cantidad plural sin exigir matrícula confirmada',async()=>{
+ const page=await boot({topics:[{id:'a',capacity:1},{id:'b',capacity:1}],
+  students:[{id:'a1',topicId:'a',enrollmentReview:true},{id:'a2',topicId:'a'},{id:'b1',topicId:'b'}]});
+ assert.match(reviewText(page.get('#course-follow-up-course-1')),/2 grupos listos para check/);
+ assert.match(reviewText(page.get('#course-follow-up-course-1')),/1 matrícula por verificar/);
+ assert.equal(page.calls.filter(([name])=>name==='teacher_set_work_group_created').length,0);
 });
 test('sin datos de seguimiento la tarjeta nunca asegura que no haya pendientes',async()=>{
  const page=await boot({liveRows:[{course_id:'course-1',online_count:0}]});
@@ -177,7 +207,7 @@ test('una lectura anterior al check guardado no repone el contador anterior',asy
  let held=false,release;
  const topics=[{id:'g1',name:'Coral',capacity:5,position:0}];
  const page=await boot({topics,delays:{teacher_live_course_counts:()=>held?new Promise(resolve=>release=resolve):undefined},
-  liveRows:()=>[{course_id:'course-1',online_count:0,student_count:held?99:0,topic_count:1,pending_work_group_count:1,enrollment_review_count:0}]});
+  liveRows:()=>[{course_id:'course-1',online_count:0,student_count:held?99:0,topic_count:1,pending_work_group_count:1,ready_work_group_count:0,enrollment_review_count:0}]});
  await page.openCourse('course-1');held=true;const read=page.refresh();
  await page.get('#work-group-created-g1').click();
  const host=page.get('#course-follow-up-course-1'),signature=host.dataset.signature;
