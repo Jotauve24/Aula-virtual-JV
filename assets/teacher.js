@@ -1,12 +1,15 @@
-import './embed.js?v=0.18.0';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.18.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.18.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.18.0';
+import './embed.js?v=0.19.0';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.19.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.19.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.19.0';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.19.0';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
 let renamingCourseTarget = null;
 let movingStudentTarget = null, movingStudent = false;
+const pendingEnrollmentReviews = new Map();
+let enrollmentReviewRevision = 0;
 const courseIsCurrent = (id,generation) => id === courseId && generation === courseRequestGeneration && signedIn();
 let dashboardCourses = [], liveTimer = 0, liveGeneration = 0, liveRefreshing = false;
 let liveRosterSnapshot = null, lastLiveFetch = 0;
@@ -376,7 +379,12 @@ async function openCourse(id) {
   const keepToolsOpen = id === courseId && $('#course-tools').open;
   // Commit only the latest response: slow connections can finish out of order.
   const requestId = ++courseRequestGeneration;
-  const details = await rpc('teacher_overview', { p_course_id: id });
+  let details, reviewRevision;
+  do {
+    reviewRevision = enrollmentReviewRevision;
+    details = await rpc('teacher_overview', { p_course_id: id });
+    if (requestId !== courseRequestGeneration || !signedIn()) return;
+  } while (reviewRevision !== enrollmentReviewRevision);
   if (requestId !== courseRequestGeneration || !signedIn()) return;
   courseId = id;
   overview = details;
@@ -388,7 +396,7 @@ async function openCourse(id) {
   if (overview.course.active) void refreshStudentRecoveryRequests(id);
   $('#detail-live-panel').hidden = !overview.course.active;
   if (overview.course.active) updateLiveRosterViews();
-  $('#course-summary').textContent = `${overview.students.length} estudiantes · ${overview.topics.length} temas`;
+  renderCourseSummary();
   $('#detail-student-total').textContent = String(overview.students.length);
   $('#detail-group-total').textContent = String(overview.topics.length);
   $('#detail-unassigned-total').textContent = String(overview.students.filter(student => !student.topicId).length);
@@ -459,6 +467,16 @@ async function openCourse(id) {
     });
     card.append(title, capacity, instructions, edit, lock); return card;
   }));
+  renderStudentGroups();
+  renderRegistrationControl();
+}
+function renderCourseSummary() {
+  const pending = enrollmentReviewCount(overview.students);
+  $('#course-summary').textContent = `${overview.students.length} estudiantes · ${overview.topics.length} temas` +
+    (pending ? ' · ' + enrollmentReviewSummary(overview.students) : '');
+}
+function renderStudentGroups() {
+  const id = overview.course.id, active = overview.course.active;
   const groups = [...overview.topics.map(topic => ({ id: topic.id, name: topic.name, capacity: topic.capacity, locked: topic.locked })),
     { id: null, name: 'Sin equipo', capacity: null }];
   $('#student-list').replaceChildren(...groups.map(group => {
@@ -470,6 +488,7 @@ async function openCourse(id) {
     const count = document.createElement('span'); count.textContent = group.capacity === null
       ? `${students.length} pendiente${students.length === 1 ? '' : 's'}` : `${students.length} de ${group.capacity} integrantes` + (group.locked ? ' · Ingreso bloqueado' : '');
     heading.append(title, count); card.append(heading);
+    if (enrollmentReviewCount(students)) card.append(enrollmentReviewBadge(enrollmentReviewSummary(students)));
     if (!students.length) {
       const empty = document.createElement('p'); empty.textContent = group.id ? 'Aún no hay estudiantes en este grupo.' : 'Todos eligieron un equipo.';
       card.append(empty);
@@ -477,6 +496,10 @@ async function openCourse(id) {
     for (const student of students) {
       const row = document.createElement('div'); row.className = 'teacher-student';
       const name = document.createElement('strong'); name.textContent = `${student.lastName}, ${student.firstName}`;
+      if (active) name.className = 'teacher-student-name has-review-control';
+      if (student.enrollmentReview === true) {
+        row.dataset.enrollmentReview = 'true'; name.append(enrollmentReviewBadge());
+      }
       const contact = document.createElement('span'); contact.textContent = [student.email || 'Sin correo', student.phone || 'Sin teléfono'].join(' · ');
       row.append(name, contact);
       if (!group.id) {
@@ -507,11 +530,56 @@ async function openCourse(id) {
         move.addEventListener('click', () => openMoveStudent(student));
         row.append(move);
       }
+      if (active) name.append(enrollmentReviewControl(id, student));
       card.append(row);
     }
     return card;
   }));
-  renderRegistrationControl();
+}
+function enrollmentReviewControl(id, student) {
+  const button = document.createElement('button'); button.type = 'button';
+  const key = id + '/' + student.id, review = student.enrollmentReview === true;
+  button.id = 'enrollment-review-' + student.id;
+  button.className = 'secondary teacher-icon-button teacher-enrollment-toggle';
+  const action = review ? 'Quitar aviso de matrícula' : 'Marcar matrícula por verificar';
+  button.title = action; button.setAttribute('aria-label', action + ' de ' + student.firstName + ' ' + student.lastName);
+  button.setAttribute('aria-pressed', String(review));
+  button.disabled = pendingEnrollmentReviews.has(key);
+  button.setAttribute('aria-busy', String(button.disabled));
+  button.append(enrollmentReviewIcon());
+  button.addEventListener('click', async () => {
+    const generation = courseRequestGeneration, account = accountGeneration;
+    if (button.disabled || pendingEnrollmentReviews.has(key) || !courseIsCurrent(id, generation)) return;
+    const target = { generation }; pendingEnrollmentReviews.set(key, target);
+    button.disabled = true; button.setAttribute('aria-busy', 'true'); alertError('');
+    try {
+      const saved = await rpc('teacher_set_enrollment_review', {
+        p_course_id: id, p_student_id: student.id, p_review: !review
+      });
+      if (saved?.id !== student.id || saved.enrollmentReview !== !review)
+        throw new Error('No se pudo verificar la marca. Vuelve a abrir la materia para comprobarla.');
+      if (account !== accountGeneration || !signedIn()) return;
+      enrollmentReviewRevision++;
+      if (id !== courseId || overview?.course?.id !== id) return;
+      const currentStudent = overview.students.find(row => row.id === student.id);
+      if (!currentStudent) return;
+      currentStudent.enrollmentReview = saved.enrollmentReview;
+      renderStudentGroups(); renderCourseSummary();
+      if (!courseIsCurrent(id, generation)) return;
+      $('#enrollment-review-' + student.id)?.focus();
+      teacherSuccess(saved.enrollmentReview
+        ? 'Matrícula por verificar: ' + student.firstName + ' ' + student.lastName + '. Su equipo verá el aviso; conserva su lugar y su chat.'
+        : 'Aviso de matrícula retirado de ' + student.firstName + ' ' + student.lastName + '.');
+    } catch (error) { if (courseIsCurrent(id, generation)) alertError(error.message); }
+    finally {
+      if (pendingEnrollmentReviews.get(key) === target) pendingEnrollmentReviews.delete(key);
+      if (id === courseId && signedIn()) {
+        const current = $('#enrollment-review-' + student.id);
+        if (current) { current.disabled = pendingEnrollmentReviews.has(key); current.setAttribute('aria-busy', String(current.disabled)); }
+      }
+    }
+  });
+  return button;
 }
 function renderRegistrationControl() {
   $('#registration').textContent = overview.course.registrationOpen ? 'Cerrar inscripciones' : 'Abrir inscripciones';

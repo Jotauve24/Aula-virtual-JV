@@ -18,7 +18,7 @@ function sheetXml(bytes) {
   throw new Error('No hay hoja de estudiantes en el archivo');
 }
 
-test('Excel recibe las diez columnas, acentos y delimitadores sin dividir registros', () => {
+test('Excel recibe las once columnas, acentos y delimitadores sin dividir registros', () => {
   const sheet = sheetXml(allCoursesXlsx([{
     course: { name: 'Ética; sección "A"' }, topics: [],
     students: [{ firstName: 'María', lastName: 'O"Neill', email: 'maria@ejemplo.com', phone: '0555; 123', topicId: null }]
@@ -53,7 +53,7 @@ test('documentos se exportan completos como texto y edades como números',()=>{
    {firstName:'Ceci',lastName:'Cano',nationalId:'E-12-345',age:null},
    {firstName:'Dora',lastName:'Diaz',age:0}]
  }]));
- assert.match(sheet,/<dimension ref="A1:J5"/);assert.match(sheet,/<autoFilter ref="A1:J5"/);
+ assert.match(sheet,/<dimension ref="A1:K5"/);assert.match(sheet,/<autoFilter ref="A1:K5"/);
  for(const heading of ['Tipo de documento','País emisor (ISO)','Cédula o pasaporte','Edad (años)'])assert.ok(sheet.includes(heading));
  assert.match(sheet,/<c r="G2" t="inlineStr"[^>]*><is><t[^>]*>Cédula<\/t>/);
  assert.match(sheet,/<c r="I2" t="inlineStr"[^>]*><is><t[^>]*>8-123-45<\/t>/);
@@ -66,6 +66,17 @@ test('documentos se exportan completos como texto y edades como números',()=>{
  assert.doesNotMatch(sheet,/antiguo|undefined|<f>/);
 });
 test('el Excel vacío conserva las nuevas columnas y el filtro completo',()=>{
- const sheet=sheetXml(allCoursesXlsx([]));assert.match(sheet,/<dimension ref="A1:J1"/);
- assert.match(sheet,/<autoFilter ref="A1:J1"/);assert.equal((sheet.match(/<c r=/g)||[]).length,10);
+ const sheet=sheetXml(allCoursesXlsx([]));assert.match(sheet,/<dimension ref="A1:K1"/);
+ assert.match(sheet,/<autoFilter ref="A1:K1"/);assert.equal((sheet.match(/<c r=/g)||[]).length,11);
+});
+
+test('el Excel distingue una marca docente de la ausencia de observación, sin certificar matrícula',()=>{
+ const sheet=sheetXml(allCoursesXlsx([{course:{name:'Prueba'},topics:[],students:[
+  {firstName:'Ana',lastName:'A',enrollmentReview:true,age:21},
+  {firstName:'Bea',lastName:'B',enrollmentReview:false},
+  {firstName:'Ceci',lastName:'C'}]}]));
+ assert.match(sheet,/Revisión de matrícula/);
+ assert.match(sheet,/<c r="K2" t="inlineStr"[^>]*><is><t[^>]*>Por verificar<\/t>/);
+ for(const row of [3,4])assert.match(sheet,new RegExp('<c r="K'+row+'" t="inlineStr"[^>]*><is><t[^>]*><\\/t>'));
+ assert.doesNotMatch(sheet,/Confirmada|Matriculado|Verificada/);
 });

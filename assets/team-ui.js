@@ -12,6 +12,30 @@ export function teamLockIcon() {
   return icon;
 }
 
+// A teacher observation, not an automatic enrollment decision or an access lock.
+export function enrollmentReviewCount(members = []) {
+  return members.filter(member => member.enrollmentReview === true).length;
+}
+
+export function enrollmentReviewSummary(members) {
+  const count = enrollmentReviewCount(members);
+  return count + (count === 1 ? ' matrícula por verificar' : ' matrículas por verificar');
+}
+
+export function enrollmentReviewIcon() {
+  const icon = document.createElement('span');
+  icon.className = 'enrollment-review-icon'; icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M10.3 3.9 2.5 17.4A2 2 0 0 0 4.2 20.4h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 3h.01"/></svg>';
+  return icon;
+}
+
+export function enrollmentReviewBadge(text = 'Matrícula por verificar') {
+  const badge = document.createElement('small'); badge.className = 'enrollment-review-badge';
+  const label = document.createElement('span'); label.textContent = text;
+  badge.append(enrollmentReviewIcon(), label);
+  return badge;
+}
+
 // The light follows the room, while the canvas and its hit targets stay intact.
 export function renderTeamLight(node, layout, index) {
   const room = layout.rooms[index];

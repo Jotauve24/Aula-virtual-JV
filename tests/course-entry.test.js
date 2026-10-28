@@ -23,6 +23,48 @@ const LAST_CODE = 'aula-student-course-code';
 const HANDOFF = 'aula-course-code';
 const SESSION = 'aula-student-session';
 
+test('el equipo recibe una revisión, identifica al integrante y conserva su chat al retirarla',async()=>{
+ const room=[{id:'g1',name:'Coral',capacity:5,members:[
+  {id:'self',name:'Ana Prueba',mine:true,enrollmentReview:false},
+  {id:'peer',name:'Luis Prueba',enrollmentReview:true}]}];
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}},roomFixture:room});
+ const banner=page.get('#enrollment-review-alert');assert.equal(banner.hidden,false);
+ assert.match(banner.textContent,/1 matrícula por verificar/);
+ assert.match(page.get('#team-roster-host').textContent,/Luis PruebaMatrícula por verificar/);
+ const chat=page.get('#team-chat-host').children[0];
+ await banner.children[1].click();assert.equal(page.state('activeTab'),'equipo');
+ room[0].members[1].enrollmentReview=false;await page.state('refreshRoom()');
+ assert.equal(banner.hidden,true);assert.doesNotMatch(page.get('#team-roster-host').textContent,/Matrícula por verificar/);
+ assert.equal(page.get('#team-chat-host').children[0],chat);
+ assert.equal(page.calls.some(c=>c.name==='team_chat_send'),false);
+});
+
+test('la marca personal sin equipo aparece y se retira al actualizar el perfil',async()=>{
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:null,avatar:{skin:1},enrollmentReview:true}});
+ const banner=page.get('#enrollment-review-alert');assert.equal(banner.hidden,false);assert.match(banner.textContent,/Tu matrícula está por verificar/);
+ assert.equal(banner.children.length,1);
+ await page.state(`(()=>{const original=studentRpc;studentRpc=async(name,body)=>{
+  const value=await original(name,body);return name==='my_profile'?{...value,enrollmentReview:false}:value;
+ };return refreshRoom();})()`);
+ assert.equal(banner.hidden,true);assert.equal(page.state('profile.topicId'),null);
+});
+
+test('una observación personal vuelve al cerrar el editor de avatar y no se muestra al salir',async()=>{
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:null,avatar:{skin:1},enrollmentReview:true}});
+ await page.get('#edit-avatar').click();assert.equal(page.get('#enrollment-review-alert').hidden,true);
+ await page.get('#cancel-avatar').click();assert.equal(page.get('#enrollment-review-alert').hidden,false);
+ page.get('#logout').click();assert.equal(page.get('#enrollment-review-alert').hidden,true);
+});
+
+test('el aviso no se duplica al cambiar la cantidad de integrantes marcados',async()=>{
+ const room=[{id:'g1',name:'Coral',capacity:5,members:[{id:'a',name:'A',enrollmentReview:true},{id:'b',name:'B',enrollmentReview:false}]}];
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}},roomFixture:room});
+ room[0].members[1].enrollmentReview=true;await page.state('refreshRoom()');
+ assert.equal(page.get('#enrollment-review-alert').children.length,2);
+ assert.match(page.get('#enrollment-review-alert').textContent,/2 matrículas por verificar/);
+ assert.doesNotMatch(page.get('#enrollment-review-alert').textContent,/1 matrícula por verificar/);
+});
+
 function storage(entries = {}) {
   const values = new Map(Object.entries(entries));
   return {
