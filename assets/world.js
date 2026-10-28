@@ -1,8 +1,8 @@
-import { avatarXFrame, drawAvatarX } from './avatar-x.js?v=0.22.0';
-import { SKINS, SHIRTS } from './model.js?v=0.22.0';
-import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.22.0';
-import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.22.0';
-import { canWalkSegment } from './world-layout.js?v=0.22.0';
+import { avatarXFrame, drawAvatarX } from './avatar-x.js?v=0.23.0';
+import { SKINS, SHIRTS } from './model.js?v=0.23.0';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.23.0';
+import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.23.0';
+import { canWalkSegment } from './world-layout.js?v=0.23.0';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -60,48 +60,152 @@ function zombieRects(direction, step = 0) {
   add(9,45-step,8,3,'#222d43');add(18,45+step,8,3,'#222d43');
   return pixels;
 }
-function spriteRects(avatar, step = 0, seated = false) {
-  if (avatar?.character === 'zombie') return zombieRects(avatar.direction, step);
-  const skin = SKINS[avatar.skin] || SKINS[1];
-  const outfit = Number.isInteger(avatar.outfit) && avatar.outfit >= 0 && avatar.outfit < SHIRTS.length
-    ? avatar.outfit : avatar.shirt;
-  const shirt = SHIRTS[outfit] || SHIRTS[0];
-  const hair = '#594735';
-  const r = [];
-  const add = (x, y, w, h, c) => r.push([x, y, w, h, c]);
-  if (avatar.hair === 'long') {
-    // Back layer falls past the shoulders instead of disappearing beneath the shirt.
-    add(4, 5, 25, 31, hair); add(3, 14, 5, 22, hair); add(26, 14, 5, 22, hair);
+// Every surface uses the same native pixel art and the student's saved choices.
+// Shading is cached by the finite palette, never by a student's identity.
+const avatarPalettes = new Map();
+function avatarPalette(look = {}) {
+  const pick = (colors, value, fallback) => {
+    const index = typeof value === 'string' && /^\d$/.test(value) ? Number(value) : value;
+    return Number.isInteger(index) && index >= 0 && index < colors.length ? colors[index] : colors[fallback];
+  };
+  const skin = pick(SKINS, look.skin, 1);
+  const outfit = Number.isInteger(look.outfit) && look.outfit >= 0 && look.outfit < SHIRTS.length ? look.outfit : look.shirt;
+  const shirt = pick(SHIRTS, outfit, 0), hair = look.hair === 'curly' ? '#3e3732' : '#594735';
+  const key = skin + shirt + hair;
+  if (!avatarPalettes.has(key)) avatarPalettes.set(key, {
+    skin, skinLight:shade(skin,19), skinShade:shade(skin,-24), skinEdge:shade(skin,-40),
+    mouth:shade(skin,-60), shirt, shirtLight:shade(shirt,24), shirtSoft:shade(shirt,10),
+    shirtShade:shade(shirt,-23), shirtEdge:shade(shirt,-37),
+    hair, hairLight:shade(hair,25), hairSoft:shade(hair,12), hairShade:shade(hair,-16)
+  });
+  return avatarPalettes.get(key);
+}
+function avatarHeadRects(look, palette, direction) {
+  const p = palette, pixels = [], add = (x,y,w,h,color) => pixels.push([x,y,w,h,color]);
+  const back = direction === 'up', side = direction === 'left' || direction === 'right';
+  const long = look.hair === 'long', curly = look.hair === 'curly';
+  // Rounded, stepped silhouettes remain sharp at both map and portrait sizes.
+  if (curly) {
+    add(11,1,5,4,p.hairShade);add(18,0,5,4,p.hairShade);add(7,3,20,4,p.hairShade);
+    add(4,6,26,10,p.hairShade);add(3,10,3,5,p.hairShade);add(28,9,3,6,p.hairShade);
+    add(5,15,5,4,p.hairShade);add(25,14,4,5,p.hairShade);
+  } else {
+    add(10,2,14,2,p.hairShade);add(7,4,20,4,p.hairShade);add(5,8,24,11,p.hairShade);
   }
-  add(8, 5, 16, 15, skin); add(6, 6, 2, 11, skin); add(24, 6, 2, 11, skin);
-  add(9, 17, 14, 3, shade(skin, -24)); add(10, 8, 3, 3, shade(skin, 15));
-  add(8, 3, 16, 5, hair); add(6, 6, 4, 5, hair);
-  if (avatar.hair === 'curly') { add(5, 2, 21, 6, '#3e3732'); add(3, 5, 5, 10, '#3e3732'); add(24, 5, 5, 10, '#3e3732'); }
-  if (avatar.direction !== 'up') { add(12, 12, 2, 2, '#35352d'); add(21, 12, 2, 2, '#35352d'); }
-  else add(8, 6, 16, 9, hair);
-  if (avatar.direction !== 'up') add(16, 17, 3, 1, '#9e6752');
-  add(13, 20, 7, 3, skin); add(8, 23, 17, 14, shirt); add(4, 25, 5, 8, shirt); add(25, 25, 5, 8, shirt);
-  add(9, 24, 2, 11, shade(shirt, 22)); add(22, 25, 3, 12, shade(shirt, -28));
-  add(13, 23, 7, 2, shade(shirt, -23)); add(10, 35, 13, 2, shade(shirt, -18));
-  add(4, 33, 5, 5, skin); add(25, 33, 5, 5, skin);
-  if (seated) {
-    add(8, 36, 19, 6, '#465552'); add(5, 41, 11, 4, '#465552');
-    add(19, 41, 11, 4, '#465552');
-  } else { add(9, 37, 7, 9 - step, '#465552'); add(19, 37, 7, 9 + step, '#465552'); }
-  if (avatar.presentation === 'mujer') {
-    add(9, 34, 15, 4, shirt); add(7, 38, 19, 4, shirt); add(5, 42, 23, 3, shirt);
+  if (!back) {
+    add(6,13,3,6,p.skinShade);add(7,14,2,3,p.skin);
+    add(26,13,3,6,p.skinEdge);add(26,14,2,3,p.skin);
+    add(9,7,16,1,p.skinShade);add(7,8,20,12,p.skinShade);
+    add(8,20,18,2,p.skinShade);add(10,22,14,1,p.skinShade);add(12,23,10,1,p.skinEdge);
+    add(8,9,17,11,p.skin);add(10,8,14,2,p.skin);add(10,20,14,2,p.skin);
+    add(9,11,2,2,p.skinLight);add(12,9,8,1,p.skinLight);
+    add(25,10,2,9,p.skinEdge);add(9,19,3,2,p.skinShade);
+    if (side) {
+      add(23,13,3,4,'#302b28');add(23,13,1,1,'#fff6e4');add(24,16,1,1,'#645147');
+      add(28,16,2,2,p.skin);add(27,18,2,1,p.skinShade);
+      add(24,20,3,1,p.mouth);add(24,11,3,1,p.hairShade);
+      add(8,8,11,12,p.hair);add(17,9,3,7,p.hair);add(14,16,4,3,p.hairShade);
+      add(17,16,3,5,p.skinShade);add(18,17,2,3,p.skin);
+    } else {
+      add(10,11,4,1,p.hairShade);add(20,11,4,1,p.hairShade);
+      for (const x of [10,20]) {
+        add(x,13,4,5,'#302b28');add(x,13,2,2,'#fff6e4');add(x+2,17,1,1,'#645147');
+      }
+      add(16,17,2,1,p.skinShade);add(16,16,1,1,p.skinLight);
+      add(14,20,1,1,p.mouth);add(19,20,1,1,p.mouth);add(15,21,4,1,p.mouth);
+    }
   }
-  if (avatar.hair === 'long') {
-    add(3, 12, 5, 25, hair); add(26, 12, 5, 25, hair);
-    add(4, 37, 4, 4, hair); add(26, 37, 4, 4, hair);
-    add(6, 18, 2, 12, '#765c46'); add(26, 18, 2, 12, '#765c46');
+  if (back) {
+    add(7,6,20,13,p.hair);add(9,19,16,3,p.hairShade);
+    add(8,8,3,9,p.hairSoft);add(23,8,3,10,p.hairShade);
+    add(12,6,10,2,p.hairLight);
   }
-  if (seated) { add(4, 44, 12, 4, '#34403d'); add(19, 44, 12, 4, '#34403d'); }
-  else { add(8, 44 - step, 8, 4, '#34403d'); add(19, 44 + step, 8, 4, '#34403d'); }
-  return r;
+  if (curly) {
+    add(11,2,11,4,p.hair);add(7,5,19,4,p.hair);add(5,8,5,7,p.hair);add(25,8,4,7,p.hair);
+    for (const [x,y,w,h] of [[12,3,4,2],[19,4,4,2],[8,6,4,3],[15,6,4,2],[22,7,4,2],[6,10,3,2],[25,11,2,2]]) {
+      add(x,y,w,h,p.hairSoft);add(x,y,Math.max(1,w-1),1,p.hairLight);
+    }
+    add(10,8,4,2,p.hair);add(17,8,4,2,p.hair);add(24,9,3,3,p.hair);
+    add(5,14,3,4,p.hair);add(26,14,2,4,p.hairShade);
+  } else if (long) {
+    add(10,3,13,3,p.hair);add(7,6,18,3,p.hair);add(6,9,4,10,p.hair);
+    add(10,8,6,2,p.hair);add(24,8,4,11,p.hair);
+    add(11,5,9,1,p.hairLight);add(8,7,5,1,p.hairSoft);add(7,10,2,7,p.hairSoft);
+    add(25,10,2,7,p.hairShade);
+    if (back) {
+      add(6,15,22,17,p.hair);add(7,32,19,4,p.hair);add(9,36,14,2,p.hairShade);
+      add(8,17,2,16,p.hairLight);add(11,21,2,13,p.hairSoft);add(23,17,3,17,p.hairShade);
+      add(17,20,2,15,p.hairSoft);
+    } else {
+      add(5,17,4,17,p.hair);add(6,34,3,4,p.hairShade);
+      add(25,17,4,17,p.hair);add(25,34,3,4,p.hairShade);
+      add(6,19,1,13,p.hairLight);add(8,25,1,9,p.hairSoft);add(26,19,1,13,p.hairSoft);
+      add(28,19,1,12,p.hairShade);
+    }
+  } else {
+    add(10,3,13,3,p.hair);add(7,6,19,3,p.hair);add(6,9,4,7,p.hair);
+    add(10,8,5,2,p.hair);add(24,8,4,8,p.hair);
+    add(10,5,8,1,p.hairLight);add(8,7,7,1,p.hairSoft);add(20,5,4,2,p.hairSoft);
+    add(7,10,2,3,p.hairSoft);add(26,11,2,5,p.hairShade);
+  }
+  return pixels;
+}
+function spriteRects(avatar = {}, step = 0, seated = false) {
+  const look = avatar && typeof avatar === 'object' ? avatar : {};
+  if (look.character === 'zombie') return zombieRects(look.direction, step);
+  const p = avatarPalette(look), pixels = [], add = (x,y,w,h,color) => pixels.push([x,y,w,h,color]);
+  const stride = seated ? 0 : Math.round(Math.max(-2,Math.min(2,Number.isFinite(step) ? step : 0)));
+  const swing = Math.sign(stride), dress = look.presentation === 'mujer';
+  const direction = ['up','down','left','right'].includes(look.direction) ? look.direction : 'down';
+  const side = direction === 'left' || direction === 'right';
+  if (look.hair === 'long') {
+    add(7,6,20,30,p.hairShade);add(5,13,4,22,p.hairShade);add(25,13,4,22,p.hairShade);
+  }
+  // Separated legs, cuffs and shoe highlights preserve the original ground anchor.
+  for (const [x,offset] of [[10,-stride],[19,stride]]) {
+    if (dress) { add(x+1,41,5,4+offset,p.skin);add(x+4,41,2,4+offset,p.skinShade); }
+    else {
+      add(x,37,7,7+offset,'#465552');add(x,38,2,5+offset,'#536560');
+      add(x+5,38,2,6+offset,'#34433f');add(x+1,42+offset,4,1,'#3a4b46');
+    }
+    const foot = seated ? 44 : 44+offset;
+    add(x-1,foot,8,4,'#293632');add(x,foot,6,2,'#3b4b46');add(x,foot,4,1,'#65706a');
+    add(x-1,foot+3,8,1,'#202c29');
+  }
+  if (seated) { add(8,37,18,5,'#465552');add(7,42,8,2,'#536560');add(20,42,7,2,'#536560'); }
+  // Shoulders, soft folds and a ribbed collar give the plain saved outfit volume.
+  add(10,25,14,1,p.shirtShade);add(8,26,18,10,p.shirt);add(9,36,16,2,p.shirtShade);
+  add(5,27+swing,4,6,p.shirt);add(25,27-swing,4,6,p.shirtShade);
+  add(5,28+swing,1,4,p.shirtLight);add(25,28-swing,2,4,p.shirt);
+  add(5,33+swing,4,5,p.skin);add(6,38+swing,3,1,p.skinShade);
+  add(25,33-swing,4,5,p.skin);add(25,38-swing,3,1,p.skinEdge);
+  add(5,34+swing,1,3,p.skinLight);add(28,34-swing,1,3,p.skinShade);
+  add(9,27,2,8,p.shirtLight);add(11,27,2,7,p.shirtSoft);
+  add(23,27,3,9,p.shirtEdge);add(14,28,7,2,p.shirtSoft);add(19,33,3,1,p.shirtShade);
+  add(10,36,13,1,p.shirtEdge);
+  if (side) { add(8,27,3,9,p.shirtShade);add(20,28,4,6,p.shirt);add(20,34-swing,4,5,p.skin); }
+  if (dress) {
+    add(10,35,14,3,p.shirt);add(8,38,18,3,p.shirt);add(7,41,20,2,p.shirtShade);
+    add(10,36,2,5,p.shirtLight);add(12,37,2,5,p.shirtSoft);add(23,36,2,5,p.shirtEdge);
+    add(8,42,18,1,p.shirtEdge);
+  }
+  add(14,22,6,4,p.skinShade);add(14,24,5,2,p.skin);
+  add(13,26,8,1,p.shirtEdge);add(14,26,5,1,p.shirtLight);
+  pixels.push(...avatarHeadRects(look,p,direction));
+  if (look.hair === 'long' && direction !== 'up') {
+    // Long locks sit behind the small forearms, so hands remain visible.
+    add(7,29+swing,4,4,p.shirt);add(24,29-swing,3,4,p.shirtShade);
+    add(7,33+swing,4,5,p.skin);add(24,33-swing,3,5,p.skin);
+    add(7,34+swing,1,3,p.skinLight);add(26,34-swing,1,3,p.skinShade);
+    add(8,38+swing,3,1,p.skinShade);add(24,38-swing,2,1,p.skinEdge);
+  }
+  return direction === 'left' ? pixels.map(([x,y,w,h,color])=>[34-x-w,y,w,h,color]) : pixels;
+}
+function escapeAvatarAttribute(value) {
+  return String(value ?? '').replace(/[&<>"']/g,character=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[character]));
 }
 export function avatarSVG(avatar, className = '', label = '') {
-  return `<svg class="${className}" viewBox="0 0 34 52" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'} shape-rendering="crispEdges">${spriteRects(avatar).map(([x,y,w,h,c]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`).join('')}</svg>`;
+  return `<svg class="${escapeAvatarAttribute(className)}" viewBox="0 0 34 52" ${label ? `role="img" aria-label="${escapeAvatarAttribute(label)}"` : 'aria-hidden="true"'} shape-rendering="crispEdges" focusable="false">${spriteRects(avatar).map(([x,y,w,h,c]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`).join('')}</svg>`;
 }
 function rect(ctx, x, y, w, h, color) { ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
 function avatar(ctx, x, y, look, step = 0, seated = false, seatColor = '#596e84') {
@@ -137,11 +241,7 @@ function officeChair(ctx, x, y, color) {
 function seatedDeskAvatar(ctx, x, y, look, chairColor) {
   // The chair, body and backrest share one anchor;
   // the rear view keeps the legs behind the desk instead of splaying them out.
-  const skin = SKINS[look.skin] || SKINS[1];
-  const outfit = Number.isInteger(look.outfit) && look.outfit >= 0 && look.outfit < SHIRTS.length
-    ? look.outfit : look.shirt;
-  const shirt = SHIRTS[outfit] || SHIRTS[0];
-  const hair = look.hair === 'curly' ? '#3e3732' : '#594735';
+  const palette = avatarPalette(look), {skin,shirt,hair} = palette;
   const p = (dx,dy,w,h,color) => rect(ctx,x+dx,y+dy,w,h,color);
 
   // Chair base and cushion sit behind the student.
@@ -170,16 +270,18 @@ function seatedDeskAvatar(ctx, x, y, look, chairColor) {
   if (look.hair === 'long') {
     p(-7,-46,14,2,hair);p(-9,-44,18,15,hair);p(-8,-29,16,5,hair);
     p(-8,-24,5,3,hair);p(4,-24,4,2,hair);
-    p(-6,-42,2,15,'#765c46');p(-4,-44,9,2,'#765c46');
-    p(5,-39,2,13,'#493a2e');
+    p(-6,-42,2,15,palette.hairLight);p(-4,-44,9,2,palette.hairSoft);
+    p(5,-39,2,13,palette.hairShade);p(-2,-38,2,13,palette.hairSoft);
   } else if (look.hair === 'curly') {
-    p(-6,-46,12,2,hair);p(-8,-44,16,10,hair);p(-6,-34,12,2,hair);
+    p(-6,-46,5,3,hair);p(0,-47,5,4,hair);p(-8,-44,16,10,hair);p(-6,-34,12,2,hair);
     p(-10,-42,3,5,hair);p(7,-42,3,5,hair);
-    [[-5,-43],[-1,-45],[4,-43],[-7,-38],[2,-38]].forEach(([dx,dy])=>p(dx,dy,3,2,'#625349'));
+    [[-5,-43],[-1,-45],[4,-43],[-7,-38],[2,-38]].forEach(([dx,dy])=>{
+      p(dx,dy,3,2,palette.hairSoft);p(dx,dy,2,1,palette.hairLight);
+    });
   } else {
     p(-6,-45,12,2,hair);p(-8,-43,16,9,hair);p(-6,-34,12,2,hair);
-    p(-5,-43,8,2,'#765c46');p(-6,-40,2,4,'#765c46');
-    p(5,-41,2,7,'#493a2e');
+    p(-5,-43,8,2,palette.hairLight);p(-6,-40,2,4,palette.hairSoft);
+    p(5,-41,2,7,palette.hairShade);
   }
 }
 function plant(ctx, x, y) {

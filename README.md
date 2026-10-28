@@ -24,6 +24,18 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Avatares Pixel moderno (0.23.0)
+
+Los avatares comparten un dibujo pixelado renovado: ojos expresivos con brillo,
+sonrisa, peinados con luces y textura, ropa con volumen y zapatos definidos.
+Mantienen los tonos de piel, los siete colores de ropa, los tres peinados y la
+presentación guardada. Frente, perfiles y espalda distinguen hacia dónde caminan;
+brazos y piernas acompañan el paso. El cabello sentado conserva el mismo acabado.
+
+La personalización, portada, tutorial y salas usan el dibujo compartido. No hay
+migración de perfiles ni nuevas opciones obligatorias. Se mantienen las mesas,
+los movimientos y las identidades; los personajes especiales siguen su arte propio.
+
 ## Grupos listos para check (0.22.0)
 
 Una campanita roja discreta indica cuántos grupos alcanzaron su cupo y aún no
