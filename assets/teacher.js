@@ -1,8 +1,8 @@
-import './embed.js?v=0.21.0';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.21.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.21.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.21.0';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.21.0';
+import './embed.js?v=0.22.0';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.22.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.22.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.22.0';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.22.0';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
@@ -166,6 +166,14 @@ function renderCourseFollowUp(id, counts, stale = false) {
   pending.append(document.createTextNode(number + (counts.pendingWorkGroupCount === 1 ? ' grupo pendiente' : ' grupos pendientes')));
   host.textContent = '';
   host.replaceChildren(pending);
+  if (counts.readyWorkGroupCount) {
+    const ready = document.createElement('span'); ready.className = 'teacher-course-ready-groups';
+    ready.title = 'Grupos completos o con cupo superado que todavía no tienen el check de grupo de trabajo creado.';
+    ready.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>';
+    const readyNumber = new Intl.NumberFormat('es-PA').format(counts.readyWorkGroupCount);
+    ready.append(document.createTextNode(readyNumber + (counts.readyWorkGroupCount === 1 ? ' grupo listo para check' : ' grupos listos para check')));
+    host.append(document.createTextNode(' '), ready);
+  }
   if (counts.enrollmentReviewCount) {
     const reviewNumber = new Intl.NumberFormat('es-PA').format(counts.enrollmentReviewCount);
     host.append(document.createTextNode(' '), enrollmentReviewBadge(reviewNumber + (counts.enrollmentReviewCount === 1 ? ' matrícula por verificar' : ' matrículas por verificar')));

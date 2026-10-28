@@ -1,4 +1,4 @@
-# Pendientes en Mis materias · 0.21.0
+# Pendientes en Mis materias · 0.22.0
 
 La tarjeta de cada materia activa conserva el acceso y la lista de conectados.
 Debajo de sus inscritos y grupos muestra el número de grupos que no tienen el
@@ -10,13 +10,28 @@ marcados, con triángulo rojo de 12 px y texto rojo de 11 px. Cuenta personas,
 incluidas las que no tienen equipo o están desconectadas; no cuenta grupos ni
 certifica la matrícula institucional. Las dos observaciones son independientes.
 
+## Campanita de grupos listos
+
+Una campanita roja de 14 px y texto rojo de 11 px indica «1 grupo listo para
+check» o su plural. Aparece solo si hay grupos sin check cuya ocupación alcanza
+o supera su capacidad. Incluye grupos llenos bloqueados y las excepciones de
+cupo autorizadas por el docente. Excluye grupos archivados, vacíos, incompletos
+y los que ya tienen check; los estudiantes sin equipo no completan ningún grupo.
+
+Es un subconjunto de los grupos pendientes, independiente de las observaciones
+de matrícula. Poner el check elimina el aviso correspondiente; quitarlo lo
+reactiva si el grupo sigue lleno. Una salida, un traslado o aumentar la capacidad
+puede volver incompleto al grupo y retirar el aviso. El aviso no marca el check,
+no bloquea el grupo, no produce sonido y no envía notificaciones externas.
+
 ## Datos y actualización
 
 La RPC existente `teacher_live_course_counts` mantiene su nombre, retorno JSON
 y campos de presencia. Añade `student_count`, `topic_count`,
-`pending_work_group_count` y `enrollment_review_count` calculados en la misma
+`pending_work_group_count`, `ready_work_group_count` y `enrollment_review_count` calculados en la misma
 consulta. Se agregan estudiantes y grupos por separado para evitar multiplicar
-cantidades al cruzar las tablas. Usa los índices existentes por materia.
+cantidades al cruzar las tablas. La ocupación se agrupa una vez por equipo y
+solo dentro de su materia. Usa los índices existentes por materia.
 
 La consulta existente cada 5 segundos actualiza el seguimiento, la presencia y
 los totales de las tarjetas sin reconstruir los botones ni cerrar las listas
@@ -52,3 +67,7 @@ La revisión visual usa fixtures locales ficticios a 1440, 768 y 390 px,
 incluyendo nombres largos y estados sin datos. Se conserva el diseño existente,
 Nunito y las paletas compartidas: es una ampliación de la tarjeta, sin cambiar
 su composición ni sus controles principales.
+
+La integración de grupos listos comprueba grupos llenos y con cupo superado,
+check puesto/retirado, bloqueo, archivado, cupo ampliado, salida y reasignación,
+propietarios distintos y alumnos sin equipo. Los datos se revierten al terminar.

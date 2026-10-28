@@ -36,6 +36,8 @@
 #courses .teacher-course-follow-up{display:flex;flex-wrap:wrap;align-items:center;gap:5px 16px;min-height:18px;margin-top:9px;color:var(--muted);font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums}
 .teacher-course-pending-groups{display:inline-flex;align-items:center;gap:5px}
 .teacher-course-pending-groups svg{flex:none}
+#courses .teacher-course-ready-groups{display:inline-flex;align-items:center;gap:4px;color:var(--red);font-size:11px;line-height:1.5}
+.teacher-course-ready-groups svg{flex:none}
 #courses .teacher-course-follow-up .enrollment-review-badge{display:inline-flex;align-items:center;margin:0;color:var(--red);font-size:11px;line-height:1.5;background:transparent}
 .teacher-course-follow-up-stale{flex-basis:100%;font-size:11px;color:var(--muted)}
 .teacher-live-error{margin:10px 0 0;padding:10px 12px;background:var(--warning-soft);border:1px solid var(--line);border-radius:9px;color:var(--warning-ink);font-size:12px}

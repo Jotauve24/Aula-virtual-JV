@@ -95,22 +95,24 @@ test('formats last heartbeat time from server clock without trusting local time 
 
 test('el seguimiento cuenta todas las marcas independientemente de la conexión',()=>{
   const stats=buildTeacherPresenceStats(courses,[{course_id:'course-a',online_count:0,students:[],
-    student_count:29,topic_count:6,pending_work_group_count:4,enrollment_review_count:3}]);
+    student_count:29,topic_count:6,pending_work_group_count:4,ready_work_group_count:2,enrollment_review_count:3}]);
   assert.equal(stats.online,0);
   assert.deepEqual(stats.followUpByCourse.get('course-a'),{
-    studentCount:29,topicCount:6,pendingWorkGroupCount:4,enrollmentReviewCount:3
+    studentCount:29,topicCount:6,pendingWorkGroupCount:4,readyWorkGroupCount:2,enrollmentReviewCount:3
   });
   assert.equal(stats.followUpByCourse.get('course-b'),null);
 });
 test('cero pendientes es un dato válido y una respuesta sin seguimiento permanece desconocida',()=>{
-  const zero={course_id:'course-a',online_count:0,student_count:0,topic_count:0,pending_work_group_count:0,enrollment_review_count:0};
+  const zero={course_id:'course-a',online_count:0,student_count:0,topic_count:0,pending_work_group_count:0,ready_work_group_count:0,enrollment_review_count:0};
   assert.equal(buildTeacherPresenceStats(courses,[zero]).followUpByCourse.get('course-a').pendingWorkGroupCount,0);
   assert.equal(buildTeacherPresenceStats(courses,[{course_id:'course-a',online_count:0}]).followUpByCourse.get('course-a'),null);
 });
 test('el seguimiento inválido no se presenta como cero ni oculta la presencia válida',()=>{
-  const row={course_id:'course-a',online_count:2,student_count:7,topic_count:4,pending_work_group_count:1,enrollment_review_count:1};
+  const row={course_id:'course-a',online_count:2,student_count:7,topic_count:4,pending_work_group_count:1,ready_work_group_count:0,enrollment_review_count:1};
   for(const patch of [{student_count:null},{topic_count:'4'},{pending_work_group_count:-1},
-    {pending_work_group_count:5},{enrollment_review_count:8},{enrollment_review_count:NaN},{topic_count:1.5}]) {
+    {pending_work_group_count:5},{enrollment_review_count:8},{enrollment_review_count:NaN},{topic_count:1.5},
+    {ready_work_group_count:undefined},{ready_work_group_count:null},{ready_work_group_count:-1},
+    {ready_work_group_count:'1'},{ready_work_group_count:2},{ready_work_group_count:0.5}]) {
     const stats=buildTeacherPresenceStats(courses,[{...row,...patch}]);
     assert.equal(stats.followUpByCourse.get('course-a'),null);assert.equal(stats.online,2);
   }

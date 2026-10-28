@@ -1,6 +1,6 @@
 # AulaVirtualJv · Alcance vigente
 
-Estado: versión 0.21.0, 28 de octubre de 2026.
+Estado: versión 0.22.0, 28 de octubre de 2026.
 
 El aula se publica en GitHub Pages y utiliza Supabase para sesiones, materias,
 perfiles, equipos, presencia y chat. Todas las materias comparten las mismas
@@ -22,7 +22,7 @@ páginas, módulos y funciones; no existen copias independientes por materia.
 | Excepciones de cupo | El propietario puede asignar estudiantes sin equipo o trasladarlos a un grupo lleno, con autorización explícita por asignación. El grupo muestra su ocupación real, por ejemplo 6/5, y mantiene su límite original para estudiantes. Se puede editar su nombre e indicaciones sin ampliar ese límite. |
 | Nombre del equipo | Sus integrantes pueden cambiarlo desde el lápiz de Mi equipo (2–80 caracteres). Se conservan ID, integrantes, cupos, indicaciones, avatares y chat. Validación de pertenencia, nombres repetidos y cambios simultáneos en el servidor. El docente conserva su edición existente. |
 | Edad y Excel | Edad declarada en años completos (1–120), privada frente a compañeros. La descarga incluye materia, nombre, apellido, correo, teléfono, equipo, tipo de documento, país emisor ISO, cédula/pasaporte y edad. Documentos como texto, edad numérica y datos pendientes en blanco. |
-| Pendientes en Mis materias | Cada tarjeta indica grupos sin el check de grupo creado y, si hay observaciones, la cantidad de matrículas por verificar en rojo pequeño. Incluye estudiantes sin equipo y desconectados; excluye grupos archivados. Se actualiza cada 5 segundos con la consulta docente existente. |
+| Pendientes en Mis materias | Cada tarjeta indica grupos sin el check de grupo creado y, si hay observaciones, la cantidad de matrículas por verificar en rojo pequeño. Incluye estudiantes sin equipo y desconectados; excluye grupos archivados. Una campanita roja muestra cuántos grupos completos o con cupo superado siguen sin check. Se actualiza cada 5 segundos con la consulta docente existente. |
 | Presencia | Conteos y posiciones recientes. Inscripción, pertenencia a equipo y conexión son estados independientes. |
 | Revisión de matrícula | El propietario marca o retira «Matrícula por verificar» sin eliminar ni restringir al estudiante. Aviso personal, aviso al equipo y marca junto al integrante; no se expone a otros equipos. Persiste por estudiante y materia, acompaña los traslados y aparece en la sala docente y en el Excel. Sin marca no significa matrícula institucional confirmada. |
 | Grupo de trabajo creado | Check manual del docente en el encabezado de cada equipo. Permite llevar seguimiento de los grupos que ya preparó en su plataforma, conserva la marca al reabrir y permite quitarla. Es independiente de los cupos, bloqueos y observaciones de matrícula. Se incluye en el Excel y solo lo consulta el dueño de la materia. |

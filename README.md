@@ -24,6 +24,14 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Grupos listos para check (0.22.0)
+
+Una campanita roja discreta indica cuántos grupos alcanzaron su cupo y aún no
+tienen el check de grupo de trabajo creado. Incluye grupos con cupo superado
+y bloqueados; excluye los archivados, incompletos y ya marcados. Desaparece al
+poner el check o cuando el grupo vuelve a quedar incompleto. Usa la consulta
+existente del panel cada 5 segundos, sin sonido ni marcado automático.
+
 ## Pendientes por materia (0.21.0)
 
 Cada tarjeta de Mis materias muestra cuántos grupos siguen sin el check de

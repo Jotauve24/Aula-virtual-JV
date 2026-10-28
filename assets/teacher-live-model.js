@@ -44,12 +44,14 @@ export function buildTeacherPresenceStats(courses, rows) {
     byCourse.set(id, online);
     studentsByCourse.set(id, students);
     observedAtByCourse.set(id, item.observed_at || null);
-    const counts = [item.student_count, item.topic_count, item.pending_work_group_count, item.enrollment_review_count];
+    const counts = [item.student_count, item.topic_count, item.pending_work_group_count, item.ready_work_group_count, item.enrollment_review_count];
     if (counts.every(value => Number.isSafeInteger(value) && value >= 0) &&
-      item.pending_work_group_count <= item.topic_count && item.enrollment_review_count <= item.student_count) {
+      item.pending_work_group_count <= item.topic_count && item.ready_work_group_count <= item.pending_work_group_count &&
+      item.enrollment_review_count <= item.student_count) {
       followUpByCourse.set(id, {
         studentCount: item.student_count, topicCount: item.topic_count,
-        pendingWorkGroupCount: item.pending_work_group_count, enrollmentReviewCount: item.enrollment_review_count
+        pendingWorkGroupCount: item.pending_work_group_count, readyWorkGroupCount: item.ready_work_group_count,
+        enrollmentReviewCount: item.enrollment_review_count
       });
     }
   }
