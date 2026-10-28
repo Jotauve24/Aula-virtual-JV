@@ -32,6 +32,12 @@
 .teacher-course-meta>span{font-size:12px;line-height:1.4}
 .teacher-course-meta b{font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
 .teacher-course-meta .teacher-course-open{margin-left:auto;color:var(--accent);font-size:12px;font-weight:750}
+/* Follow-up stays beside the subject it belongs to, below its existing totals. */
+#courses .teacher-course-follow-up{display:flex;flex-wrap:wrap;align-items:center;gap:5px 16px;min-height:18px;margin-top:9px;color:var(--muted);font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums}
+.teacher-course-pending-groups{display:inline-flex;align-items:center;gap:5px}
+.teacher-course-pending-groups svg{flex:none}
+#courses .teacher-course-follow-up .enrollment-review-badge{display:inline-flex;align-items:center;margin:0;color:var(--red);font-size:11px;line-height:1.5;background:transparent}
+.teacher-course-follow-up-stale{flex-basis:100%;font-size:11px;color:var(--muted)}
 .teacher-live-error{margin:10px 0 0;padding:10px 12px;background:var(--warning-soft);border:1px solid var(--line);border-radius:9px;color:var(--warning-ink);font-size:12px}
 .teacher-live-error[hidden]{display:none}
 @media(max-width:1000px){.teacher-activity-heading{flex-wrap:wrap}.teacher-activity-overview{gap:8px}.teacher-activity-metric{padding:12px;min-height:103px}.teacher-course-heading{flex-wrap:wrap}.teacher-course-live-pill{margin-left:0}}

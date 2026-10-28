@@ -1,8 +1,8 @@
-import './embed.js?v=0.20.0';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.20.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.20.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.20.0';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.20.0';
+import './embed.js?v=0.21.0';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.21.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.21.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.21.0';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.21.0';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
@@ -14,6 +14,7 @@ let courseDetailRevision = 0;
 const courseIsCurrent = (id,generation) => id === courseId && generation === courseRequestGeneration && signedIn();
 let dashboardCourses = [], liveTimer = 0, liveGeneration = 0, liveRefreshing = false;
 let liveRosterSnapshot = null, lastLiveFetch = 0;
+let courseFollowUpSnapshot = new Map();
 function stopDashboardPresence() {
   if (liveTimer) clearInterval(liveTimer);
   liveTimer = 0;
@@ -74,10 +75,17 @@ async function loadCourses() {
     const meta = document.createElement('div'); meta.className = 'teacher-course-meta';
     const students = document.createElement('span');
     const studentNumber = document.createElement('b'); studentNumber.textContent = String(course.student_count);
+    studentNumber.id = 'course-student-total-' + course.id;
     students.append(studentNumber, document.createTextNode(' inscritos'));
-    const topics = document.createElement('span'); topics.textContent = course.topic_count + ' grupos';
+    const topics = document.createElement('span'); topics.textContent = course.topic_count + (Number(course.topic_count) === 1 ? ' grupo' : ' grupos');
+    topics.id = 'course-topic-total-' + course.id;
     const open = document.createElement('span'); open.className = 'teacher-course-open'; open.textContent = 'Administrar materia →';
     meta.append(students, topics, open); button.append(heading, meta);
+    const followUp = document.createElement('div'); followUp.className = 'teacher-course-follow-up';
+    followUp.id = 'course-follow-up-' + course.id; followUp.dataset.state = 'pending';
+    followUp.setAttribute('role', 'status'); followUp.setAttribute('aria-atomic', 'true');
+    followUp.textContent = 'Comprobando pendientes…';
+    button.setAttribute('aria-describedby', followUp.id); button.append(followUp);
     button.addEventListener('click', () => run(() => openCourse(course.id)));
 
     const details = document.createElement('details');
@@ -122,6 +130,7 @@ async function loadCourses() {
   }));
   dashboardCourses = courses;
   liveRosterSnapshot = null;
+  courseFollowUpSnapshot = new Map();
   $('#summary-active-courses').textContent = String(courses.length);
   $('#summary-enrolled').textContent = String(courses.reduce((total, row) => total + Number(row.student_count), 0));
   $('#summary-online').textContent = courses.length ? '—' : '0';
@@ -137,6 +146,34 @@ function startDashboardPresence() {
   const refresh = () => { if (generation === liveGeneration) void refreshDashboardPresence(generation); };
   liveTimer = setInterval(refresh, 5000);
   refresh();
+}
+function renderCourseFollowUp(id, counts, stale = false) {
+  const host = $('#course-follow-up-' + id);
+  if (!host) return;
+  const state = counts ? stale ? 'stale' : 'ready' : 'unavailable';
+  const signature = JSON.stringify([counts, state]);
+  if (host.dataset.signature === signature) return;
+  host.dataset.signature = signature; host.dataset.state = state;
+  if (!counts) {
+    host.replaceChildren();
+    host.textContent = 'Pendientes no disponibles · reintentando…';
+    return;
+  }
+  const pending = document.createElement('span'); pending.className = 'teacher-course-pending-groups';
+  pending.title = 'Grupos sin el check de grupo de trabajo creado en tu plataforma.';
+  pending.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>';
+  const number = new Intl.NumberFormat('es-PA').format(counts.pendingWorkGroupCount);
+  pending.append(document.createTextNode(number + (counts.pendingWorkGroupCount === 1 ? ' grupo pendiente' : ' grupos pendientes')));
+  host.textContent = '';
+  host.replaceChildren(pending);
+  if (counts.enrollmentReviewCount) {
+    const reviewNumber = new Intl.NumberFormat('es-PA').format(counts.enrollmentReviewCount);
+    host.append(document.createTextNode(' '), enrollmentReviewBadge(reviewNumber + (counts.enrollmentReviewCount === 1 ? ' matrícula por verificar' : ' matrículas por verificar')));
+  }
+  if (stale) {
+    const note = document.createElement('span'); note.className = 'teacher-course-follow-up-stale';
+    note.textContent = 'Sin actualizar · reintentando…'; host.append(note);
+  }
 }
 function onlineStudentList(students, observedAt, fetchedAt) {
   const list = document.createElement('ul'); list.className = 'teacher-online-students';
@@ -219,17 +256,30 @@ function markPresenceUnavailable() {
     notice.textContent = 'La presencia no está disponible. Reintentando…'; host.replaceChildren(notice);
   });
   $('#detail-live-count').textContent = '— en línea';
-  $('#live-error').textContent = 'La presencia en vivo no está disponible. Reintentaremos automáticamente sin interrumpir el panel.';
+  dashboardCourses.forEach(course => renderCourseFollowUp(course.id, courseFollowUpSnapshot.get(course.id), true));
+  $('#live-error').textContent = 'No se pudo actualizar la presencia ni los pendientes. Reintentaremos automáticamente.';
   $('#live-error').hidden = false;
 }
 async function refreshDashboardPresence(generation = liveGeneration) {
   if (liveRefreshing || document.hidden || ($('#dashboard').hidden && $('#detail').hidden) || !dashboardCourses.length) return;
   liveRefreshing = true;
+  const revision = courseDetailRevision;
   try {
     const rows = await rpc('teacher_live_course_counts');
     if (generation !== liveGeneration || ($('#dashboard').hidden && $('#detail').hidden)) return;
+    if (revision !== courseDetailRevision) return; // A confirmed check/review is newer than this read.
     const stats = buildTeacherPresenceStats(dashboardCourses, rows);
     liveRosterSnapshot = stats;
+    courseFollowUpSnapshot = stats.followUpByCourse;
+    dashboardCourses = dashboardCourses.map(course => {
+      const counts = stats.followUpByCourse.get(course.id);
+      renderCourseFollowUp(course.id, counts);
+      if (!counts) return course;
+      $('#course-student-total-' + course.id).textContent = String(counts.studentCount);
+      $('#course-topic-total-' + course.id).textContent = counts.topicCount + (counts.topicCount === 1 ? ' grupo' : ' grupos');
+      return { ...course, student_count: counts.studentCount, topic_count: counts.topicCount };
+    });
+    $('#summary-enrolled').textContent = String(dashboardCourses.reduce((total, course) => total + Number(course.student_count), 0));
     lastLiveFetch = Date.now();
     $('#summary-online').textContent = String(stats.online);
     document.querySelectorAll('[data-live-course-id]').forEach(label => {

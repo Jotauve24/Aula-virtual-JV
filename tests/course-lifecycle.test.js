@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { allCoursesXlsx } from '../assets/teacher-export.js';
+import { buildTeacherPresenceStats, presenceAgeLabel } from '../assets/teacher-live-model.js';
 
 const source = readFileSync(new URL('../assets/teacher.js', import.meta.url), 'utf8')
   .replace(/^import .*;\r?\n/gm, '');
@@ -28,7 +29,7 @@ class Element {
 const reviewText = node => String(node.textContent || '') + node.children.map(reviewText).join(' ');
 
 async function boot({ files = [], fileError = null, students = [], topics = [], extraCourses = [],
-  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null, operationError = {} } = {}) {
+  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null, operationError = {}, liveRows } = {}) {
   const nodes = new Map();
   const descendants = node => [node, ...node.children.flatMap(descendants)];
   const get = selector => {
@@ -51,6 +52,10 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     if(operationError[name]?.()) throw new Error('Error de conexión de prueba');
     if (name === 'my_courses') return [...(course?.active ? [courseRow()] : []), ...extraCourses];
     if (name === 'teacher_disabled_courses') return [...(course && !course.active ? [courseRow()] : []), ...disabledCourses];
+    if (name === 'teacher_live_course_counts') return typeof liveRows === 'function' ? liveRows() : liveRows ?? [
+      {course_id:course?.id,online_count:0,students:[],student_count:students.length,topic_count:topics.length,
+        pending_work_group_count:topics.filter(t=>t.workGroupCreated!==true).length,enrollment_review_count:students.filter(s=>s.enrollmentReview===true).length}
+    ];
     if (name === 'teacher_student_recovery_requests') return recoveryRequests;
     if (name === 'teacher_decide_student_recovery') {
       const index = recoveryRequests.findIndex(request => request.id === body.p_request_id);
@@ -109,7 +114,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     if (name === 'teacher_delete_course') { assert.equal(course.active, false); course = null; return; }
     throw new Error('RPC inesperado: ' + name);
   };
-  const pageActions = vm.runInNewContext(teamUiSource+'\n'+source+'\n({openCourse,loadCourses})', {
+  const pageActions = vm.runInNewContext(teamUiSource+'\n'+source+'\n({openCourse,loadCourses,refreshDashboardPresence})', {
     document: { querySelector: get, querySelectorAll: () => [], hidden: false,
       createTextNode: text => { const node = new Element(); node.textContent = text; return node; },
       body: { append() {} }, createElement: tag => {
@@ -120,7 +125,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     configured: true, signedIn: () => true, rpc, googleAvailable: async () => false,
     sendCode() {}, signInWithGoogle() {}, signOut() {}, confirm: () => true,
     Blob, URL: { createObjectURL(blob) { downloadedBlob = blob; return 'blob:roster'; }, revokeObjectURL() {} },
-    allCoursesXlsx, TextEncoder,
+    allCoursesXlsx, TextEncoder, buildTeacherPresenceStats, presenceAgeLabel,
     setTimeout() {}, setInterval() { return 1; }, clearInterval() {},
     deleteTeacherCourseFiles: async (id, paths) => {
       calls.push(['remove_storage_files', { id, paths }]);
@@ -128,8 +133,61 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     }
   }, { filename: 'assets/teacher.js' });
   await new Promise(resolve => setImmediate(resolve));
-  return { get, calls, downloads, current: () => course, openCourse: pageActions.openCourse, loadCourses: pageActions.loadCourses };
+  return { get, calls, downloads, current: () => course, openCourse: pageActions.openCourse, loadCourses: pageActions.loadCourses, refresh:pageActions.refreshDashboardPresence };
 }
+
+test('Mis materias muestra grupos sin check y matrícula por verificar aunque nadie esté conectado',async()=>{
+ const page=await boot({topics:[{id:'g1',workGroupCreated:true},{id:'g2',locked:true},{id:'g3'}],
+  students:[{id:'a',topicId:'g1',enrollmentReview:true},{id:'b',topicId:null,enrollmentReview:true}]});
+ const host=page.get('#course-follow-up-course-1');
+ assert.match(reviewText(host),/2 grupos pendientes/);assert.match(reviewText(host),/2 matrículas por verificar/);
+ assert.equal(host.dataset.state,'ready');assert.equal(page.get('#summary-online').textContent,'0');
+ assert.equal(page.get('#course-student-total-course-1').textContent,'2');
+ assert.equal(page.get('#course-topic-total-course-1').textContent,'3 grupos');
+ assert.equal(page.get('#summary-enrolled').textContent,'2');
+ assert.equal(page.calls.filter(([name])=>name==='teacher_overview').length,0);
+});
+test('las tarjetas reflejan al volver las marcas guardadas y retiradas',async()=>{
+ const page=await boot({topics:[{id:'g1',name:'Coral',capacity:5,position:0}],
+  students:[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:null}]});
+ await page.openCourse('course-1');await page.get('#work-group-created-g1').click();
+ await page.get('#enrollment-review-a').click();await page.loadCourses();await page.refresh();
+ assert.match(reviewText(page.get('#course-follow-up-course-1')),/0 grupos pendientes/);
+ assert.match(reviewText(page.get('#course-follow-up-course-1')),/1 matrícula por verificar/);
+ await page.openCourse('course-1');await page.get('#work-group-created-g1').click();
+ await page.get('#enrollment-review-a').click();await page.loadCourses();await page.refresh();
+ assert.match(reviewText(page.get('#course-follow-up-course-1')),/1 grupo pendiente/);
+ assert.doesNotMatch(reviewText(page.get('#course-follow-up-course-1')),/matrícula por verificar/);
+});
+test('un fallo conserva los últimos pendientes con un aviso y luego recupera el conteo',async()=>{
+ let fail=false;const topics=[{id:'g1'}];
+ const page=await boot({topics,operationError:{teacher_live_course_counts:()=>fail}});
+ fail=true;await page.refresh();const host=page.get('#course-follow-up-course-1');
+ assert.match(reviewText(host),/1 grupo pendiente/);assert.match(reviewText(host),/Sin actualizar/);assert.equal(host.dataset.state,'stale');
+ topics[0].workGroupCreated=true;fail=false;await page.refresh();
+ assert.match(reviewText(host),/0 grupos pendientes/);assert.doesNotMatch(reviewText(host),/Sin actualizar/);assert.equal(host.dataset.state,'ready');
+});
+test('sin datos de seguimiento la tarjeta nunca asegura que no haya pendientes',async()=>{
+ const page=await boot({liveRows:[{course_id:'course-1',online_count:0}]});
+ assert.match(reviewText(page.get('#course-follow-up-course-1')),/Pendientes no disponibles/);
+ assert.doesNotMatch(reviewText(page.get('#course-follow-up-course-1')),/0 grupos pendientes/);
+ assert.equal(page.get('#course-follow-up-course-1').dataset.state,'unavailable');
+});
+test('una lectura anterior al check guardado no repone el contador anterior',async()=>{
+ let held=false,release;
+ const topics=[{id:'g1',name:'Coral',capacity:5,position:0}];
+ const page=await boot({topics,delays:{teacher_live_course_counts:()=>held?new Promise(resolve=>release=resolve):undefined},
+  liveRows:()=>[{course_id:'course-1',online_count:0,student_count:held?99:0,topic_count:1,pending_work_group_count:1,enrollment_review_count:0}]});
+ await page.openCourse('course-1');held=true;const read=page.refresh();
+ await page.get('#work-group-created-g1').click();
+ const host=page.get('#course-follow-up-course-1'),signature=host.dataset.signature;
+ release();await read;assert.equal(host.dataset.signature,signature);assert.equal(page.get('#summary-enrolled').textContent,'0');
+});
+test('salir mientras llegan los pendientes no restaura el panel ni sus totales',async()=>{
+ let held=false,release;const page=await boot({delays:{teacher_live_course_counts:()=>held?new Promise(resolve=>release=resolve):undefined}});
+ held=true;const read=page.refresh();page.get('#logout').click();
+ release();await read;assert.equal(page.get('#login').hidden,false);assert.equal(page.get('#dashboard').hidden,true);
+});
 
 test('el docente marca y retira una revisión sin eliminar, liberar o cambiar al estudiante',async()=>{
  const students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:'g1',email:'a@example.invalid',phone:'60000001',age:21,avatar:{skin:1}}];
