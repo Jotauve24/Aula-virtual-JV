@@ -1,15 +1,16 @@
-import './embed.js?v=0.19.0';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.19.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.19.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.19.0';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.19.0';
+import './embed.js?v=0.20.0';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.20.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.20.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.20.0';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.20.0';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
 let renamingCourseTarget = null;
 let movingStudentTarget = null, movingStudent = false;
 const pendingEnrollmentReviews = new Map();
-let enrollmentReviewRevision = 0;
+const pendingWorkGroups = new Map();
+let courseDetailRevision = 0;
 const courseIsCurrent = (id,generation) => id === courseId && generation === courseRequestGeneration && signedIn();
 let dashboardCourses = [], liveTimer = 0, liveGeneration = 0, liveRefreshing = false;
 let liveRosterSnapshot = null, lastLiveFetch = 0;
@@ -381,10 +382,10 @@ async function openCourse(id) {
   const requestId = ++courseRequestGeneration;
   let details, reviewRevision;
   do {
-    reviewRevision = enrollmentReviewRevision;
+    reviewRevision = courseDetailRevision;
     details = await rpc('teacher_overview', { p_course_id: id });
     if (requestId !== courseRequestGeneration || !signedIn()) return;
-  } while (reviewRevision !== enrollmentReviewRevision);
+  } while (reviewRevision !== courseDetailRevision);
   if (requestId !== courseRequestGeneration || !signedIn()) return;
   courseId = id;
   overview = details;
@@ -477,7 +478,7 @@ function renderCourseSummary() {
 }
 function renderStudentGroups() {
   const id = overview.course.id, active = overview.course.active;
-  const groups = [...overview.topics.map(topic => ({ id: topic.id, name: topic.name, capacity: topic.capacity, locked: topic.locked })),
+  const groups = [...overview.topics.map(topic => ({ id: topic.id, name: topic.name, capacity: topic.capacity, locked: topic.locked, workGroupCreated: topic.workGroupCreated })),
     { id: null, name: 'Sin equipo', capacity: null }];
   $('#student-list').replaceChildren(...groups.map(group => {
     const students = overview.students.filter(student => student.topicId === group.id)
@@ -487,7 +488,9 @@ function renderStudentGroups() {
     const title = document.createElement('h4'); title.textContent = group.name;
     const count = document.createElement('span'); count.textContent = group.capacity === null
       ? `${students.length} pendiente${students.length === 1 ? '' : 's'}` : `${students.length} de ${group.capacity} integrantes` + (group.locked ? ' · Ingreso bloqueado' : '');
-    heading.append(title, count); card.append(heading);
+    heading.append(title, count);
+    if (group.id) { heading.className += ' has-work-group-check'; heading.append(workGroupControl(id, group, active)); }
+    card.append(heading);
     if (enrollmentReviewCount(students)) card.append(enrollmentReviewBadge(enrollmentReviewSummary(students)));
     if (!students.length) {
       const empty = document.createElement('p'); empty.textContent = group.id ? 'Aún no hay estudiantes en este grupo.' : 'Todos eligieron un equipo.';
@@ -559,14 +562,13 @@ function enrollmentReviewControl(id, student) {
       if (saved?.id !== student.id || saved.enrollmentReview !== !review)
         throw new Error('No se pudo verificar la marca. Vuelve a abrir la materia para comprobarla.');
       if (account !== accountGeneration || !signedIn()) return;
-      enrollmentReviewRevision++;
+      courseDetailRevision++;
       if (id !== courseId || overview?.course?.id !== id) return;
       const currentStudent = overview.students.find(row => row.id === student.id);
       if (!currentStudent) return;
       currentStudent.enrollmentReview = saved.enrollmentReview;
       renderStudentGroups(); renderCourseSummary();
       if (!courseIsCurrent(id, generation)) return;
-      $('#enrollment-review-' + student.id)?.focus();
       teacherSuccess(saved.enrollmentReview
         ? 'Matrícula por verificar: ' + student.firstName + ' ' + student.lastName + '. Su equipo verá el aviso; conserva su lugar y su chat.'
         : 'Aviso de matrícula retirado de ' + student.firstName + ' ' + student.lastName + '.');
@@ -575,7 +577,57 @@ function enrollmentReviewControl(id, student) {
       if (pendingEnrollmentReviews.get(key) === target) pendingEnrollmentReviews.delete(key);
       if (id === courseId && signedIn()) {
         const current = $('#enrollment-review-' + student.id);
-        if (current) { current.disabled = pendingEnrollmentReviews.has(key); current.setAttribute('aria-busy', String(current.disabled)); }
+        if (current) {
+          current.disabled = pendingEnrollmentReviews.has(key); current.setAttribute('aria-busy', String(current.disabled));
+          if (courseIsCurrent(id, generation)) current.focus();
+        }
+      }
+    }
+  });
+  return button;
+}
+function workGroupControl(id, group, active) {
+  const button = document.createElement('button'); button.type = 'button';
+  const key = id + '/' + group.id, created = group.workGroupCreated === true;
+  const action = created ? 'Quitar marca de grupo de trabajo creado' : 'Marcar grupo de trabajo como creado';
+  button.id = 'work-group-created-' + group.id;
+  button.className = 'secondary teacher-icon-button work-group-check';
+  button.title = active ? action : created ? 'Grupo de trabajo creado' : 'Grupo de trabajo pendiente';
+  button.setAttribute('aria-label', button.title + ': ' + group.name);
+  button.setAttribute('aria-pressed', String(created));
+  button.disabled = !active || pendingWorkGroups.has(key);
+  button.setAttribute('aria-busy', String(pendingWorkGroups.has(key)));
+  button.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="3"/>' +
+    (created ? '<path d="m7 12 3 3 7-7"/>' : '') + '</svg>';
+  button.addEventListener('click', async () => {
+    const generation = courseRequestGeneration, account = accountGeneration;
+    if (button.disabled || pendingWorkGroups.has(key) || !courseIsCurrent(id, generation)) return;
+    const target = {}; pendingWorkGroups.set(key, target);
+    button.disabled = true; button.setAttribute('aria-busy', 'true'); alertError('');
+    try {
+      const saved = await rpc('teacher_set_work_group_created', { p_course_id: id, p_topic_id: group.id, p_created: !created });
+      if (saved?.id !== group.id || saved.workGroupCreated !== !created)
+        throw new Error('No se pudo verificar el check. Vuelve a abrir la materia para comprobarlo.');
+      if (account !== accountGeneration || !signedIn()) return;
+      courseDetailRevision++;
+      if (id !== courseId || overview?.course?.id !== id) return;
+      const currentGroup = overview.topics.find(topic => topic.id === group.id);
+      if (!currentGroup) return;
+      currentGroup.workGroupCreated = saved.workGroupCreated;
+      renderStudentGroups();
+      if (!courseIsCurrent(id, generation)) return;
+      teacherSuccess(saved.workGroupCreated ? 'Grupo de trabajo marcado como creado: ' + currentGroup.name + '.'
+        : 'Marca de grupo de trabajo creado retirada de ' + currentGroup.name + '.');
+    } catch (error) { if (courseIsCurrent(id, generation)) alertError(error.message); }
+    finally {
+      if (pendingWorkGroups.get(key) === target) pendingWorkGroups.delete(key);
+      if (id === courseId && signedIn()) {
+        const current = $('#work-group-created-' + group.id);
+        if (current) {
+          current.disabled = !overview?.course?.active || pendingWorkGroups.has(key);
+          current.setAttribute('aria-busy', String(pendingWorkGroups.has(key)));
+          if (courseIsCurrent(id, generation)) current.focus();
+        }
       }
     }
   });

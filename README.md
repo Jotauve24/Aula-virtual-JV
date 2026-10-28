@@ -24,6 +24,19 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Seguimiento de grupos de trabajo (0.20.0)
+
+El check junto al encabezado de cada equipo permite marcar «Grupo de trabajo
+creado» cuando el docente ya lo preparó en su plataforma. Es una marca manual
+del propietario: persiste al reabrir la materia y se quita con otro clic. No
+depende de que el equipo esté lleno ni de que su ingreso esté bloqueado.
+
+La marca corresponde al equipo, conserva su valor si cambian sus integrantes
+y no crea ni sincroniza grupos externos. El Excel añade «Grupo de trabajo
+creado»: Sí o No para un equipo disponible y vacío para una persona sin equipo.
+Las observaciones de matrícula ahora usan texto rojo pequeño y un icono de
+14 px; sus controles mantienen un área de activación de 44 px.
+
 ## Matrícula por verificar (0.19.0)
 
 El docente puede marcar o quitar una observación de matrícula con el triángulo

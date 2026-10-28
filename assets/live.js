@@ -1,13 +1,13 @@
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.19.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.19.0';
-import './embed.js?v=0.19.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.19.0';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.19.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.19.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.19.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.19.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.19.0';
-import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.19.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.20.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.20.0';
+import './embed.js?v=0.20.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.20.0';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.20.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.20.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.20.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.20.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.20.0';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.20.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -627,10 +627,7 @@ function renderEnrollmentReviewNotice(team) {
   if (!signature) { host.replaceChildren(); return; }
   const text = element('div');
   text.append(element('strong', own ? 'Tu matrícula está por verificar.' : 'Tu equipo tiene ' + enrollmentReviewSummary(team.members) + '.'),
-    element('p', own
-      ? 'Comunícate con el docente para confirmar tu matrícula en esta materia. ' + (team
-        ? 'Conservas tu lugar y el acceso al chat.' : 'Tu perfil se conserva y puedes seguir explorando el aula.')
-      : 'Revisen la marca junto al nombre en «Mi equipo» y comuníquense con el docente. El equipo conserva sus lugares y su chat.'));
+    element('p', 'Consulta al docente.'));
   host.replaceChildren(text);
   if (team) {
     const open = element('button', 'Ver mi equipo →', 'button secondary'); open.type = 'button';
