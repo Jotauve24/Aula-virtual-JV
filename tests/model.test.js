@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeCode } from '../assets/model.js';
+import { normalizeCode, normalizeStudentAge } from '../assets/model.js';
 import { createRoomLayout, findPath, isWalkable, canWalkSegment } from '../assets/world-layout.js';
 
 test('el código de materia tolera espacios y minúsculas',()=>{
@@ -33,3 +33,10 @@ test('un destino dentro de un mueble se aproxima por suelo accesible',()=>{
   for(const point of path){assert.ok(canWalkSegment(previous,point,layout));previous=point;}
 });
 
+
+
+test('edad exige años enteros y conserva los límites válidos',()=>{
+ for(const value of [undefined,null,'',' ',0,-1,'20.5',121,NaN,Infinity,'veinte'])
+  assert.throws(()=>normalizeStudentAge(value),/edad/);
+ for(const value of [1,'21',120]) assert.equal(normalizeStudentAge(value),Number(value));
+});
