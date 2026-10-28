@@ -7,6 +7,9 @@ export function buildTeacherPresenceStats(courses, rows) {
   const byCourse = new Map(courses.map(course => [String(course.id), 0]));
   const studentsByCourse = new Map([...byCourse.keys()].map(id => [id, []]));
   const observedAtByCourse = new Map();
+  // Follow-up comes from the same owner-only snapshot, including offline students.
+  // Missing/older responses remain unknown; they must never look like zero pending.
+  const followUpByCourse = new Map([...byCourse.keys()].map(id => [id, null]));
   const seen = new Set();
   for (const item of rows) {
     if (!item || typeof item.course_id !== 'string') {
@@ -41,6 +44,14 @@ export function buildTeacherPresenceStats(courses, rows) {
     byCourse.set(id, online);
     studentsByCourse.set(id, students);
     observedAtByCourse.set(id, item.observed_at || null);
+    const counts = [item.student_count, item.topic_count, item.pending_work_group_count, item.enrollment_review_count];
+    if (counts.every(value => Number.isSafeInteger(value) && value >= 0) &&
+      item.pending_work_group_count <= item.topic_count && item.enrollment_review_count <= item.student_count) {
+      followUpByCourse.set(id, {
+        studentCount: item.student_count, topicCount: item.topic_count,
+        pendingWorkGroupCount: item.pending_work_group_count, enrollmentReviewCount: item.enrollment_review_count
+      });
+    }
   }
   return {
     courses: byCourse.size,
@@ -48,7 +59,8 @@ export function buildTeacherPresenceStats(courses, rows) {
     online: [...byCourse.values()].reduce((sum, count) => sum + count, 0),
     byCourse,
     studentsByCourse,
-    observedAtByCourse
+    observedAtByCourse,
+    followUpByCourse
   };
 }
 

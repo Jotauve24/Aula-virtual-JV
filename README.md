@@ -24,6 +24,18 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Pendientes por materia (0.21.0)
+
+Cada tarjeta de Mis materias muestra cuántos grupos siguen sin el check de
+«Grupo de trabajo creado». Si hay estudiantes marcados para revisión, aparece
+un aviso rojo pequeño con la cantidad de matrículas por verificar. Cuenta a
+todos los inscritos, aunque estén desconectados o sin equipo.
+
+El seguimiento se actualiza con la consulta existente cada 5 segundos, sin
+abrir cada materia. Los grupos archivados quedan fuera; los vacíos, incompletos
+y bloqueados cuentan si no tienen check. Los ceros se muestran como ceros y un
+fallo de conexión indica que los últimos datos están sin actualizar.
+
 ## Seguimiento de grupos de trabajo (0.20.0)
 
 El check junto al encabezado de cada equipo permite marcar «Grupo de trabajo
