@@ -50,5 +50,10 @@ contra las funciones instaladas. Un lector independiente de XLSX verificó las
 el filtro A:K y la fila de encabezados fija. En navegador se comprobó el control
 docente a 1440, 768 y 390 px, el equipo a 768 y 390 px y el perfil sin equipo a
 320 px: sin desbordamiento horizontal en el documento del producto. Los
-triángulos miden 44 × 44 px y se activan con teclado. Se probaron marcar y quitar
+controles tienen 44 × 44 px y se activan con teclado. Se probaron marcar y quitar
 el aviso sin cambiar integrantes; la captura de comprobación usa solo ejemplos.
+
+En 0.20.0 la observación se presenta como una etiqueta roja de 11 px, con icono
+de 12 px; el botón del triángulo muestra un icono de 14 px sin relleno. El aviso
+estudiantil usa una línea compacta y «Consulta al docente», sin el recuadro
+grande anterior. Los controles conservan su área de activación de 44 × 44 px.

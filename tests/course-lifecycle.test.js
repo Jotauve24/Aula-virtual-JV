@@ -19,7 +19,7 @@ class Element {
   append(...nodes) { this.children.push(...nodes); }
   showModal() { this.open = true; }
   close() { this.open = false; }
-  focus() { this.focused = true; }
+  focus() { if (!this.disabled) this.focused = true; }
   remove() { this.removed = true; }
   dispatch(name) { return this.listeners.get(name)?.({ target: this, preventDefault() {} }); }
   click() { return this.listeners.has('click') ? this.dispatch('click') : this.children[0]?.click(); }
@@ -77,6 +77,12 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
       assert.equal(body.p_course_id, course.id);
       student.enrollmentReview = body.p_review;
       return { id: student.id, enrollmentReview: student.enrollmentReview };
+    }
+    if (name === 'teacher_set_work_group_created') {
+      assert.equal(body.p_course_id, course.id);
+      const topic = topics.find(row => row.id === body.p_topic_id);
+      topic.workGroupCreated = body.p_created;
+      return { id: topic.id, workGroupCreated: topic.workGroupCreated };
     }
     if (name === 'teacher_assign_student') {
       assert.equal(body.p_course_id, course.id);
@@ -188,6 +194,73 @@ test('reabrir la misma materia mientras se guarda no deja el triángulo bloquead
  await page.openCourse('course-1');assert.equal(page.get('#enrollment-review-a').disabled,true);
  release();await pending;
  assert.equal(page.get('#enrollment-review-a').disabled,false);assert.equal(page.get('#enrollment-review-a')['aria-pressed'],'true');
+});
+
+test('el check del grupo se guarda, se conserva al reabrir y se puede quitar',async()=>{
+ const topics=[{id:'g1',name:'Coral',capacity:5,position:0},{id:'g2',name:'Teal',capacity:5,position:1}];
+ const students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:'g1',enrollmentReview:true,avatar:{skin:1}}];
+ const before=structuredClone(students);
+ const page=await boot({topics,students});await page.openCourse('course-1');
+ const control=()=>page.get('#work-group-created-g1');
+ assert.equal(control()['aria-pressed'],'false');assert.match(control()['aria-label'],/Marcar grupo de trabajo como creado: Coral/);
+ await control().click();assert.equal(topics[0].workGroupCreated,true);assert.equal(topics[1].workGroupCreated,undefined);
+ assert.equal(control()['aria-pressed'],'true');assert.equal(control().disabled,false);assert.equal(control().focused,true);
+ await page.openCourse('course-1');assert.equal(control()['aria-pressed'],'true');
+ await control().click();assert.equal(topics[0].workGroupCreated,false);assert.deepEqual(students,before);
+ const walk=n=>[n,...n.children.flatMap(walk)];
+ assert.equal(walk(page.get('#student-list')).filter(n=>n.className==='secondary teacher-icon-button work-group-check').length,2);
+ assert.deepEqual(page.calls.filter(([name])=>name==='teacher_set_work_group_created').map(([,b])=>b.p_created),[true,false]);
+});
+
+test('el check no depende de que el equipo esté lleno ni de que esté bloqueado',async()=>{
+ const topics=[{id:'empty',name:'Vacío',capacity:5,locked:true},{id:'full',name:'Lleno',capacity:1,locked:true}];
+ const students=[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:'full'}];
+ const page=await boot({topics,students});await page.openCourse('course-1');
+ await page.get('#work-group-created-empty').click();await page.get('#work-group-created-full').click();
+ assert.ok(topics.every(t=>t.workGroupCreated));assert.ok(topics.every(t=>t.locked));
+ assert.equal(students[0].topicId,'full');assert.equal(topics[1].capacity,1);
+});
+
+test('un check pendiente evita duplicados y permite reintentar tras un error',async()=>{
+ let release,fail=true;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({topics:[{id:'g1',name:'Coral',capacity:5}],delays:{teacher_set_work_group_created:()=>gate},
+  operationError:{teacher_set_work_group_created:()=>{const v=fail;fail=false;return v;}}});
+ await page.openCourse('course-1');const button=page.get('#work-group-created-g1');
+ const saving=button.click();await button.click();assert.equal(page.calls.filter(([n])=>n==='teacher_set_work_group_created').length,1);
+ release();await saving;assert.equal(button.disabled,false);assert.equal(button['aria-pressed'],'false');
+ assert.match(page.get('#error').textContent,/conexión/);await button.click();assert.equal(page.get('#work-group-created-g1')['aria-pressed'],'true');
+});
+
+test('un check y una alerta guardados simultáneamente conservan ambos estados',async()=>{
+ const resolve={};const page=await boot({topics:[{id:'g1',name:'Coral',capacity:5}],
+  students:[{id:'a',firstName:'Ana',lastName:'Prueba',topicId:'g1'}],delays:{
+   teacher_set_work_group_created:()=>new Promise(r=>resolve.group=r),teacher_set_enrollment_review:()=>new Promise(r=>resolve.student=r)}});
+ await page.openCourse('course-1');const a=page.get('#work-group-created-g1').click(),b=page.get('#enrollment-review-a').click();
+ resolve.student();await b;assert.equal(page.get('#work-group-created-g1').disabled,true);
+ resolve.group();await a;assert.equal(page.get('#enrollment-review-a')['aria-pressed'],'true');
+ assert.equal(page.get('#work-group-created-g1')['aria-pressed'],'true');assert.equal(page.get('#work-group-created-g1').disabled,false);
+});
+
+test('reabrir durante un check pendiente no deja el control bloqueado',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({topics:[{id:'g1',name:'Coral',capacity:5}],delays:{teacher_set_work_group_created:()=>gate}});
+ await page.openCourse('course-1');const saving=page.get('#work-group-created-g1').click();
+ await page.openCourse('course-1');assert.equal(page.get('#work-group-created-g1').disabled,true);
+ release();await saving;assert.equal(page.get('#work-group-created-g1').disabled,false);assert.equal(page.get('#work-group-created-g1')['aria-pressed'],'true');
+});
+
+test('salir durante el guardado del check no restaura la materia ni muestra el éxito tarde',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({topics:[{id:'g1',name:'Coral',capacity:5}],delays:{teacher_set_work_group_created:()=>gate}});
+ await page.openCourse('course-1');const saving=page.get('#work-group-created-g1').click();
+ page.get('#logout').click();release();await saving;
+ assert.equal(page.get('#login').hidden,false);assert.doesNotMatch(page.get('#teacher-success').textContent,/marcado como creado/);
+});
+
+test('el check de una materia deshabilitada se consulta sin permitir cambiarlo',async()=>{
+ const page=await boot({topics:[{id:'g1',name:'Coral',capacity:5,workGroupCreated:true}]});page.current().active=false;
+ await page.openCourse('course-1');const b=page.get('#work-group-created-g1');assert.equal(b.disabled,true);assert.equal(b['aria-pressed'],'true');
+ await b.click();assert.equal(page.calls.some(([n])=>n==='teacher_set_work_group_created'),false);
 });
 
 test('materias deshabilitadas conservan las observaciones sin ofrecer cambios',async()=>{
