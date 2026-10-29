@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "AulavirtualJV",
+  "short_name": "AulavirtualJV",
+  "description": "Tu aula para aprender, formar equipos y compartir.",
+  "lang": "es-PA",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbf8ef",
+  "theme_color": "#fbf8ef",
+  "icons": [
+    {
+      "src": "./assets/icons/app-icon-192.png?v=0.25.0",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/app-icon-512.png?v=0.25.0",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

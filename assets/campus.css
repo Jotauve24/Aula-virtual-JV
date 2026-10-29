@@ -251,3 +251,24 @@
 .campus-theme #room .team-name-row h3{font-size:clamp(20px,2vw,26px);line-height:1.25}
 .map-action.is-join-locked strong{padding-inline-end:12px}
 .map-action .team-lock-icon{position:absolute;inset-block-start:5px;inset-inline-end:5px;display:inline-flex;color:inherit;pointer-events:none}
+
+/* Teacher email/password access follows the shared classroom palette. */
+.teacher-access-card{min-width:0}
+.teacher-access-card input{font-size:16px;min-height:48px}
+.teacher-password-field{position:relative}
+.teacher-password-field input{padding-right:55px}
+.teacher-access-card .teacher-password-toggle{position:absolute;right:3px;top:3px;width:44px;min-height:44px;margin:0;padding:10px;border:0;background:transparent;color:var(--muted)}
+.teacher-password-toggle[aria-pressed="true"]{color:var(--accent);background:var(--accent-soft)}
+.teacher-access-card .teacher-auth-link{width:100%;min-height:44px;margin-top:8px;padding:10px 4px;border:0;background:transparent;color:var(--accent);font-size:13px;font-weight:750;text-decoration:underline;text-underline-offset:3px}
+.teacher-access-options{margin-top:16px;padding-top:8px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.teacher-access-options summary,.teacher-account-options summary{min-height:44px;padding:12px 0;cursor:pointer}
+.teacher-access-options summary:focus-visible,.teacher-account-options summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.teacher-access-options button{margin-top:8px}
+.teacher-access-card .teacher-auth-error{margin:14px 0 0;padding:12px;border-left:3px solid var(--red);border-radius:5px;background:var(--red-soft);color:var(--red);font-size:13px;overflow-wrap:anywhere}
+.teacher-password-panel{max-width:520px;margin:6vh auto}
+.teacher-password-panel h1{font-size:clamp(27px,5vw,35px);line-height:1.15;letter-spacing:-.8px;margin:14px 0}
+#verify .secondary{margin-top:24px}
+.teacher-account-tools{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.teacher-account-options{min-width:100px;font-size:13px;color:var(--muted)}
+.teacher-account-options button{display:block;margin-top:4px}
+@media(max-width:560px){.teacher-password-panel{margin:20px auto}.teacher-account-tools{gap:10px}.teacher-account-options{min-width:80px}}

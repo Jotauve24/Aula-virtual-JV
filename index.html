@@ -2,25 +2,33 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  <meta name="application-name" content="AulavirtualJV">
+  <meta name="apple-mobile-web-app-title" content="AulavirtualJV">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.webmanifest?v=0.25.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png?v=0.25.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png?v=0.25.0">
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fbf8ef">
-  <meta name="description" content="AulaVirtualJv: ingresa con el código de tu materia, crea tu avatar y encuentra tu equipo.">
+  <meta name="description" content="AulavirtualJV: ingresa con el código de tu materia, crea tu avatar y encuentra tu equipo.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>Ingreso de estudiantes · AulaVirtualJv</title><script src="./assets/page-shell.js?v=0.24.0"></script>
-  <link rel="icon" href="./assets/favicon.svg?v=0.24.0" type="image/svg+xml">
+  <title>Ingreso de estudiantes · AulavirtualJV</title><script src="./assets/page-shell.js?v=0.25.0"></script>
+  <link rel="icon" href="./assets/favicon.svg?v=0.25.0" type="image/svg+xml">
   <link rel="preload" as="font" href="./assets/fonts/nunito-latin.woff" type="font/woff" crossorigin>
-  <link rel="stylesheet" href="./assets/palette.css?v=0.24.0"><link rel="stylesheet" href="./assets/styles.css?v=0.24.0"><link rel="stylesheet" href="./assets/brand.css?v=0.24.0">
-  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.24.0">
-  <link rel="stylesheet" href="./assets/campus.css?v=0.24.0">
-  <link rel="modulepreload" data-aula-module href="./assets/app.js?v=0.24.0">
-<link rel="stylesheet" href="./assets/page-shell.css?v=0.24.0">
+  <link rel="stylesheet" href="./assets/palette.css?v=0.25.0"><link rel="stylesheet" href="./assets/styles.css?v=0.25.0"><link rel="stylesheet" href="./assets/brand.css?v=0.25.0">
+  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.25.0">
+  <link rel="stylesheet" href="./assets/campus.css?v=0.25.0">
+  <link rel="modulepreload" data-aula-module href="./assets/app.js?v=0.25.0">
+<link rel="stylesheet" href="./assets/page-shell.css?v=0.25.0">
 </head>
 <body class="campus-theme campus-panel campus-entrance">
   <a class="skip-link" href="#main">Ir al contenido</a>
   <header class="site-header">
-    <a class="brand" href="./" aria-label="AulaVirtualJv, volver al ingreso">
-      <img class="brand-mark" src="./assets/favicon.svg?v=0.24.0" width="40" height="40" alt="" aria-hidden="true">
-      <span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.24.0" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span>
+    <a class="brand" href="./" aria-label="AulavirtualJV, volver al ingreso">
+      <img class="brand-mark" src="./assets/favicon.svg?v=0.25.0" width="40" height="40" alt="" aria-hidden="true">
+      <span><span class="brand-name">Aula<span class="brand-light">virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.25.0" width="38" height="30" alt="JV"></span><small>Un espacio para hacer equipo</small></span>
     </a>
     <nav class="entry-nav" aria-label="Navegación principal"><a href="#entrance-tutorial">Cómo funciona</a></nav>
     <div class="entry-tools"><a class="entry-teacher" href="./docente.html">Acceso docente <span aria-hidden="true">↗</span></a><button id="expand-aula" class="button secondary entry-expand" type="button" aria-label="Ampliar aula" title="Ampliar aula"><svg data-fullscreen-icon viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button></div>
@@ -52,7 +60,7 @@
             <div class="tour-room" data-tour-room aria-hidden="true"><strong>Equipo Cosmos</strong><small>2/5 · Disponible</small></div>
           </div>
           <div class="tour-card" data-tour-card="code" aria-hidden="true">
-            <div class="tour-card-top"><span>AulaVirtualJv · Ingreso</span><span class="tour-window-dots"><i></i><i></i><i></i></span></div>
+            <div class="tour-card-top"><span>AulavirtualJV · Ingreso</span><span class="tour-window-dots"><i></i><i></i><i></i></span></div>
             <div class="tour-card-body"><p class="tour-mini-eyebrow">PRIMERO: LA PORTADA</p><h3>Entra a tu materia.</h3><div class="tour-code"><span>#</span><b>MAT-ABCDE-FGHJK-LMNPQ</b></div><div class="tour-data-line"><i aria-hidden="true"><svg viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m2 6 3 3 5-6"/></svg></i> Tu docente comparte el código.</div><div class="tour-data-line"><i aria-hidden="true"><svg viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m2 6 3 3 5-6"/></svg></i> Lo escribes en la portada.</div><span class="tour-mini-button">Entrar a mi materia →</span></div>
           </div>
           <div class="tour-card" data-tour-card="registration" aria-hidden="true" hidden>
@@ -106,7 +114,7 @@
     <section class="campus-values" aria-label="Lo que encontrarás en tu aula"><div><span class="campus-value-icon avatar-value" aria-hidden="true"><span data-entry-avatar="2"></span></span><p><strong>Hazlo tuyo.</strong><span>Crea un personaje a tu estilo.</span></p></div><div><span class="campus-value-icon team-value" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="10" cy="11" r="4"/><circle cx="22" cy="11" r="4"/><path d="M3 25v-3a7 7 0 0 1 14 0v3m-2-5a7 7 0 0 1 14 2v3"/></svg></span><p><strong>Encuentra tu lugar.</strong><span>Elige un equipo y comparte ideas.</span></p></div><div><span class="campus-value-icon chat-value" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 5h20a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H13l-7 5v-5a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Z"/><path d="M10 12h12m-12 6h8"/></svg></span><p><strong>Que siga la conversación.</strong><span>Tu equipo y su chat, siempre a mano.</span></p></div></section>
     <noscript><p class="notice">Activa JavaScript para entrar a tu materia.</p></noscript>
   </main>
-  <footer class="site-footer"><span>AulaVirtualJv <span class="footer-separator">/</span> Aprender también es encontrarse.</span><span><a href="./docente.html">Acceso docente</a> · 2026</span></footer>
+  <footer class="site-footer"><span>AulavirtualJV <span class="footer-separator">/</span> Aprender también es encontrarse.</span><span><a href="./docente.html">Acceso docente</a> · 2026</span></footer>
   <dialog id="info-dialog" aria-labelledby="dialog-title"><div class="dialog-body"><button class="dialog-close" type="button" aria-label="Cerrar">×</button><h2 id="dialog-title"></h2><p id="dialog-text"></p><button class="button primary dialog-done" type="button">Entendido</button></div></dialog>
 </body>
 </html>

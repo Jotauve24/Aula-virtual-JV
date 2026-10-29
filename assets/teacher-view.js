@@ -1,9 +1,9 @@
-import './embed.js?v=0.24.0';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.24.0';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.24.0';
-import { drawWorld, roomTheme } from './world.js?v=0.24.0';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.24.0';
-import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.24.0';
+import './embed.js?v=0.25.0';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.25.0';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.25.0';
+import { drawWorld, roomTheme } from './world.js?v=0.25.0';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.25.0';
+import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.25.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -250,7 +250,7 @@ async function initialize() {
     const rows = await rpc('course_room',{p_course_id:queryCourseId});
     courseId = queryCourseId;
     $('#course-title').textContent = overview.course.name;
-    document.title = 'Sala docente · ' + overview.course.name + ' · AulaVirtualJv';
+    document.title = 'Sala docente · ' + overview.course.name + ' · AulavirtualJV';
     $('#loading').hidden=true;$('#room').hidden=false;
     applyTopics(rows);
     player = { ...layout.spawn, direction:'up' };

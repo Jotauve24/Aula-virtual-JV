@@ -1,8 +1,10 @@
-import { openAuthPage } from './embed.js?v=0.24.0';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.24.0';
+import { openAuthPage } from './embed.js?v=0.25.0';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.25.0';
 
 const sessionKey = 'aula-supabase-session';
 const studentSessionKey = 'aula-student-session';
+const teacherRecoveryKey = 'aula-teacher-password-recovery';
+let teacherSignInGeneration = 0;
 export const configured = /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL) &&
   /^sb_publishable_|^eyJ/.test(SUPABASE_PUBLISHABLE_KEY);
 
@@ -20,6 +22,13 @@ function saveSession(value, key = sessionKey) {
   else localStorage.removeItem(key);
   sessionStorage.removeItem(key);
 }
+function teacherIdentity(value = session()) {
+  try {
+    const payload = value.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const id = JSON.parse(atob(payload)).sub;
+    return typeof id === 'string' && id ? id : null;
+  } catch { return null; }
+}
 // Previous releases stored the session only in one tab. Preserve it on upgrade.
 if (!session()) {
   try {
@@ -36,11 +45,18 @@ if (fragment.has('access_token') && fragment.has('refresh_token')) {
     refresh_token: fragment.get('refresh_token'),
     expires_in: Number(fragment.get('expires_in')) || 3600 },
     isStudentCallback ? studentSessionKey : sessionKey);
+  if (!isStudentCallback) {
+    if (fragment.get('type') === 'recovery' && teacherIdentity())
+      sessionStorage.setItem(teacherRecoveryKey, teacherIdentity());
+    else sessionStorage.removeItem(teacherRecoveryKey);
+  }
   history.replaceState(null, '', location.pathname + location.search);
 }
-async function request(path, body, token) {
+const callbackError = fragment.get('error_code') || fragment.get('error');
+if (callbackError) history.replaceState(null, '', location.pathname + location.search);
+async function request(path, body, token, method = 'POST') {
   const response = await fetch(endpoint(path), {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json', apikey: SUPABASE_PUBLISHABLE_KEY,
       ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(body),
@@ -61,9 +77,56 @@ function invalidAuthSession(status, code) {
     /^(refresh_token_(not_found|already_used)|session_not_found|user_not_found|user_banned|invalid_grant|bad_jwt)$/.test(code || '');
 }
 export async function sendCode(email) {
-  const redirect = location.origin + location.pathname;
+  const redirect = new URL('docente.html', location.href).href;
   return request(`/auth/v1/otp?redirect_to=${encodeURIComponent(redirect)}`,
-    { email, create_user: true });
+    { email: email.trim().toLowerCase(), create_user: false });
+}
+export async function signInTeacherWithPassword(email, password) {
+  const generation = ++teacherSignInGeneration;
+  const data = await request('/auth/v1/token?grant_type=password',
+    { email: email.trim().toLowerCase(), password });
+  if (generation !== teacherSignInGeneration) throw new Error('La sesión se cerró. Inténtalo nuevamente.');
+  if (!data.access_token || !data.refresh_token || data.user?.is_anonymous === true)
+    throw new Error('No se pudo iniciar la sesión docente.');
+  saveSession(data);
+  sessionStorage.removeItem(teacherRecoveryKey);
+}
+export async function resetTeacherPassword(email) {
+  const redirect = new URL('docente.html', location.href).href;
+  return request('/auth/v1/recover?redirect_to=' + encodeURIComponent(redirect),
+    { email: email.trim().toLowerCase() });
+}
+export function teacherRecoveryPending() {
+  const identity = teacherIdentity();
+  return !!identity && sessionStorage.getItem(teacherRecoveryKey) === identity;
+}
+export function teacherCallbackError() {
+  return callbackError ? 'Este enlace de acceso venció o ya se utilizó. Entra con tu contraseña o solicita otro enlace.' : '';
+}
+export async function updateTeacherPassword(password) {
+  if (typeof password !== 'string' || password.length < 8)
+    throw new Error('Usa una contraseña de al menos 8 caracteres.');
+  const generation = teacherSignInGeneration, token = await accessToken();
+  if (generation !== teacherSignInGeneration) throw new Error('La sesión se cerró. Inténtalo nuevamente.');
+  await request('/auth/v1/user', { password }, token, 'PUT');
+  if (generation !== teacherSignInGeneration || !signedIn())
+    throw new Error('La sesión se cerró. Entra nuevamente con tu contraseña.');
+  sessionStorage.removeItem(teacherRecoveryKey);
+}
+export function teacherAuthError(error) {
+  const code = error?.code || '';
+  if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(error?.message || ''))
+    return 'Se alcanzó el límite de correos de acceso. Entra con tu contraseña si ya tienes una, o espera antes de solicitar otro correo.';
+  if (error?.status === 429 || /over_request_rate_limit|over_email_send_rate_limit/.test(code))
+    return 'Demasiados intentos. Espera un momento antes de volver a intentar.';
+  if (/invalid_credentials|email_not_confirmed/.test(code) || error?.status === 400 && /invalid login/i.test(error?.message || ''))
+    return 'No se pudo entrar con esos datos. Revisa tu correo y contraseña, o usa «Crear o recuperar contraseña».';
+  if (/weak_password/.test(code)) return 'Elige una contraseña más segura, con letras, números y símbolos.';
+  if (/same_password/.test(code)) return 'Elige una contraseña diferente a la actual.';
+  if (/reauthentication|session_not_found|bad_jwt|refresh_token/.test(code) || error?.status === 401)
+    return 'Por seguridad, vuelve a entrar o usa «Crear o recuperar contraseña» para confirmar tu identidad.';
+  if (/al menos 8|sesión se cerró/.test(error?.message || '')) return error.message;
+  return 'No se pudo completar el acceso. Revisa tu conexión y vuelve a intentarlo.';
 }
 export async function googleAvailable() {
   if (!configured) return false;
@@ -191,7 +254,11 @@ export function studentSignOut() {
   saveSession(null, studentSessionKey);
 }
 export function signedIn() { return !!session()?.access_token; }
-export function signOut() { saveSession(null); }
+export function signOut() {
+  teacherSignInGeneration++;
+  saveSession(null);
+  sessionStorage.removeItem(teacherRecoveryKey);
+}
 
 // Delete only objects returned by the teacher-owned course manifest. Storage's
 // API removes the underlying files as well as their metadata.

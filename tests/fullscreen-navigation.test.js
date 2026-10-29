@@ -78,7 +78,7 @@ test('all internal pages live in one accessible frame with fullscreen permission
   assert.equal(page.document.documentElement.classList.contains('aula-shell'), true);
   assert.equal(page.children.length, 1);
   assert.equal(page.frame.src, BASE);
-  assert.equal(page.frame.title, 'Contenido de AulaVirtualJv');
+  assert.equal(page.frame.title, 'Contenido de AulavirtualJV');
   assert.equal(page.frame.getAttribute('allow'), 'fullscreen');
   assert.equal(page.frame.hasAttribute('allowfullscreen'), true);
   assert.equal(page.frame.getAttribute('data-aula-embedded'), 'false');

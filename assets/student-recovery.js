@@ -1,6 +1,6 @@
 import {
   studentSignedIn, studentRpc, studentAuthUser, protectStudentAccount, emailStudentLogin
-} from './supabase-client.js?v=0.24.0';
+} from './supabase-client.js?v=0.25.0';
 
 const $ = selector => document.querySelector(selector);
 const dialog = $('#student-account-dialog'), area = $('#account-dialog-content');
@@ -152,7 +152,7 @@ async function openSignIn() {
     await emailStudentLogin(input.value);
     if(!current())return;
     form.hidden=true;
-    setNotice('Revisa el correo electrónico y abre el enlace. Volverás a AulaVirtualJv para continuar.');
+    setNotice('Revisa el correo electrónico y abre el enlace. Volverás a AulavirtualJV para continuar.');
   });});
   area.append(form);
   input.focus();

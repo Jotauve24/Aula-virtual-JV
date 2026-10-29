@@ -2,28 +2,36 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  <meta name="application-name" content="AulavirtualJV">
+  <meta name="apple-mobile-web-app-title" content="AulavirtualJV">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.webmanifest?v=0.25.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png?v=0.25.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png?v=0.25.0">
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fbf8ef"><meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; media-src 'self' https://sonidosmp3gratis.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
-  <title>Sala docente · AulaVirtualJv</title><script src="./assets/page-shell.js?v=0.24.0"></script>
-  <link rel="icon" href="./assets/favicon.svg?v=0.24.0" type="image/svg+xml">
-  <link rel="preload" as="font" href="./assets/fonts/nunito-latin.woff" type="font/woff" crossorigin><link rel="stylesheet" href="./assets/palette.css?v=0.24.0"><link rel="stylesheet" href="./assets/styles.css?v=0.24.0">
-  <link rel="stylesheet" href="./assets/brand.css?v=0.24.0">
-  <link rel="stylesheet" href="./assets/live-world.css?v=0.24.0">
-  <link rel="stylesheet" href="./assets/teacher-view.css?v=0.24.0">
-  <link rel="modulepreload" data-aula-module href="./assets/teacher-view.js?v=0.24.0">
-<link rel="stylesheet" href="./assets/retro-audio.css?v=0.24.0">
-<link rel="modulepreload" data-aula-module href="./assets/retro-audio.js?v=0.24.0">  <link rel="stylesheet" href="./assets/chat-notification.css?v=0.24.0">
-<link rel="stylesheet" href="./assets/campus.css?v=0.24.0">
-<link rel="stylesheet" href="./assets/page-shell.css?v=0.24.0">
-<link rel="stylesheet" href="./assets/enrollment-review.css?v=0.24.0"></head>
+  <title>Sala docente · AulavirtualJV</title><script src="./assets/page-shell.js?v=0.25.0"></script>
+  <link rel="icon" href="./assets/favicon.svg?v=0.25.0" type="image/svg+xml">
+  <link rel="preload" as="font" href="./assets/fonts/nunito-latin.woff" type="font/woff" crossorigin><link rel="stylesheet" href="./assets/palette.css?v=0.25.0"><link rel="stylesheet" href="./assets/styles.css?v=0.25.0">
+  <link rel="stylesheet" href="./assets/brand.css?v=0.25.0">
+  <link rel="stylesheet" href="./assets/live-world.css?v=0.25.0">
+  <link rel="stylesheet" href="./assets/teacher-view.css?v=0.25.0">
+  <link rel="modulepreload" data-aula-module href="./assets/teacher-view.js?v=0.25.0">
+<link rel="stylesheet" href="./assets/retro-audio.css?v=0.25.0">
+<link rel="modulepreload" data-aula-module href="./assets/retro-audio.js?v=0.25.0">  <link rel="stylesheet" href="./assets/chat-notification.css?v=0.25.0">
+<link rel="stylesheet" href="./assets/campus.css?v=0.25.0">
+<link rel="stylesheet" href="./assets/page-shell.css?v=0.25.0">
+<link rel="stylesheet" href="./assets/enrollment-review.css?v=0.25.0"></head>
 <body class="campus-theme">
   <a class="skip-link" href="#main">Ir al contenido</a>
   <header class="site-header">
     <a class="brand" href="./docente.html" aria-label="Volver al panel docente">
-      <img class="brand-mark" src="./assets/favicon.svg?v=0.24.0" width="40" height="40" alt="" aria-hidden="true">
-      <span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.24.0" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span>
+      <img class="brand-mark" src="./assets/favicon.svg?v=0.25.0" width="40" height="40" alt="" aria-hidden="true">
+      <span><span class="brand-name">Aula<span class="brand-light">virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.25.0" width="38" height="30" alt="JV"></span><small>Un espacio para hacer equipo</small></span>
     </a>
     <div class="header-tools"><button id="retro-sound-toggle" class="retro-sound-toggle" type="button" aria-pressed="true" aria-label="Silenciar sonidos del aula" title="Silenciar música y efectos">🔉 Sonido</button><button id="expand-aula" class="button secondary" type="button">Ampliar aula</button><button id="demo-message-trigger" class="button secondary" type="button" title="Genera un mensaje ficticio para mostrar cómo llega al alumno" hidden>✉ Simular mensaje</button><button id="restart-demo" class="button secondary" type="button" title="Borra únicamente la simulación de elección, privacidad y chat">Reiniciar demostración</button><a id="back-panel" class="button secondary" href="./docente.html">← Volver a la materia</a></div>
   </header>
@@ -35,7 +43,7 @@
     </section>
     <section id="room" class="room-shell teacher-view" data-stage="room" hidden>
       <div class="room-header">
-        <div class="room-heading"><span class="eyebrow">VISTA DOCENTE · AulaVirtualJv</span><h1 id="course-title">Sala de la materia</h1><p id="room-intro">Vive el recorrido del estudiante: elige equipo, prueba la privacidad y conversa en un chat ficticio. Ninguna prueba modifica datos reales.</p></div>
+        <div class="room-heading"><span class="eyebrow">VISTA DOCENTE · AulavirtualJV</span><h1 id="course-title">Sala de la materia</h1><p id="room-intro">Vive el recorrido del estudiante: elige equipo, prueba la privacidad y conversa en un chat ficticio. Ninguna prueba modifica datos reales.</p></div>
         <div class="room-header-actions"><span class="group-badge" id="group-badge">Administrador · Sin grupo seleccionado</span><span id="online-count" class="online-count" data-state="reconnecting">Conectando…</span></div>
       </div>
       <div class="room-tabs" role="tablist" aria-label="Secciones del aula"><button type="button" id="tab-aula" role="tab" aria-selected="true" aria-controls="panel-aula" data-admin-tab="aula">Aula y temas</button><button type="button" id="tab-equipo" role="tab" aria-selected="false" aria-controls="panel-equipo" tabindex="-1" data-admin-tab="equipo">Mi equipo</button><button type="button" id="tab-chat" role="tab" aria-selected="false" aria-controls="panel-chat" tabindex="-1" data-admin-tab="chat">Chat <span id="demo-chat-unread" class="demo-chat-unread" hidden>1</span></button></div>
@@ -68,6 +76,6 @@
       <dialog id="topic-dialog" class="topic-dialog" aria-labelledby="topic-title" hidden></dialog>
     </section>
   </main>
-  <footer class="site-footer"><span>AulaVirtualJv · Vista docente</span><span>Administrador · 2026</span></footer>
+  <footer class="site-footer"><span>AulavirtualJV · Vista docente</span><span>Administrador · 2026</span></footer>
 </body>
 </html>
