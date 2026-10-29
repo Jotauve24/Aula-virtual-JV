@@ -1,6 +1,6 @@
 # AulaVirtualJv · Alcance vigente
 
-Estado: versión 0.23.0, 28 de octubre de 2026.
+Estado: versión 0.24.0, 28 de octubre de 2026.
 
 El aula se publica en GitHub Pages y utiliza Supabase para sesiones, materias,
 perfiles, equipos, presencia y chat. Todas las materias comparten las mismas
@@ -12,6 +12,7 @@ páginas, módulos y funciones; no existen copias independientes por materia.
 | Portada | Código y recuperación agrupados, ayuda compacta junto al código, instrucciones y controles del tutorial unificados con paso actual resaltado. Tutorial animado en el orden real: código, registro, personalización del avatar, movimiento en el aula, cupos, elección y confirmación, Mi equipo y chat. Pausa, repetición y navegación manual. Datos de ejemplo y movimiento reducido; sin operaciones en la base de datos. |
 | Pantalla completa | Ampliar aula desde Inicio se mantiene al navegar entre las cuatro páginas internas. El documento exterior conserva la ampliación; solo cambia su contenido. Reducir aula y Esc permiten salir. El panel docente incluye el control. Los accesos externos y la recarga siguen las reglas del navegador. |
 | Avatares | Pixel moderno compartido en portada, tutorial, personalización y salas. Ojos con brillo, sonrisa, cabello y ropa con volumen; frente, perfiles, espalda y paso coordinado. Se conservan las elecciones guardadas y las posiciones del aula. |
+| Estabilidad y accesibilidad | El avatar congela la elección mientras guarda y conserva el foco al cambiar opciones. Los controles de personalización tienen al menos 44 px de altura y el registro móvil usa campos de 16 px. La recuperación descarta respuestas de ventanas cerradas y la edición de temas evita cambios simultáneos. La presencia sin respuesta permanece desconocida. |
 | Primer ingreso | Código de materia, nombres, apellidos, edad, cédula o pasaporte, correo y teléfono; avatar y elección de equipo. El correo inicial es de contacto y no se confirma. |
 | Regreso habitual | La sesión guardada permite continuar con el mismo perfil, avatar y equipo. |
 | Otro navegador | Acceso mediante enlace de correo verificado. Se abren las materias propias o se recupera una inscripción anterior con coincidencia única y sin presencia reciente. |

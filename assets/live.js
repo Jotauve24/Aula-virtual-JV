@@ -1,18 +1,19 @@
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.23.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.23.0';
-import './embed.js?v=0.23.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.23.0';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.23.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.23.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.23.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.23.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.23.0';
-import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.23.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.24.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.24.0';
+import './embed.js?v=0.24.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.24.0';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.24.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.24.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.24.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.24.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.24.0';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.24.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let courseId = '', profile = null, topics = [], selectedTopic = null;
 let courseEntryGeneration = 0;
+let registrationHintRequest = 0, avatarSaveRequest = null;
 const entryCurrent = generation => generation === courseEntryGeneration && studentSignedIn();
 let look = { skin: 1, shirt: 0, outfit: 0, hair: 'short', presentation: 'hombre' };
 let player = { x: 400, y: 300, direction: 'down' }, path = [], animation = 0, onArrival = null;
@@ -119,6 +120,7 @@ let questions = registrationForm.elements.namedItem('code').value.trim()
   : ['code', 'firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone'];
 let questionIndex = 0;
 let registrationPending = false;
+let registrationRequest = null;
 let completingProfile = false;
 const documentType = registrationForm.elements.namedItem('documentType');
 const documentNumber = registrationForm.elements.namedItem('documentNumber');
@@ -193,6 +195,7 @@ $('#email-duplicate-recover').addEventListener('click',()=>{
   $('#student-sign-in').click();
 });
 function renderQuestion(focus = false) {
+  registrationHintRequest++;
   const key = questions[questionIndex];
   document.querySelectorAll('.dialog-step').forEach(step => { step.hidden = step.dataset.step !== key; });
   $('#registration h2').textContent = questionText[key][0];
@@ -229,18 +232,24 @@ $('#next-question').addEventListener('click', async () => {
   }
   if (key === 'email') {
     const submit=$('#next-question');
+    const request = ++registrationHintRequest, generation = courseEntryGeneration;
     const email=field.value.trim().toLowerCase();
     const firstName=registrationForm.elements.namedItem('firstName').value.trim();
     const lastName=registrationForm.elements.namedItem('lastName').value.trim();
     const code=normalizeCode(registrationForm.elements.namedItem('code').value);
+    const current = () => request === registrationHintRequest && generation === courseEntryGeneration &&
+      $('#room').dataset.stage === 'registration' && questions[questionIndex] === 'email' &&
+      email === field.value.trim().toLowerCase() && code === normalizeCode(registrationForm.elements.namedItem('code').value) &&
+      firstName === registrationForm.elements.namedItem('firstName').value.trim() &&
+      lastName === registrationForm.elements.namedItem('lastName').value.trim();
     submit.disabled=true;
     try {
       await signInStudentAnonymously();
+      if (!current()) return;
       const exists=await studentRpc('student_registration_email_hint',{
         p_code:code,p_email:email,p_first_name:firstName,p_last_name:lastName
       });
-      if (email!==field.value.trim().toLowerCase() || questions[questionIndex]!=='email')
-        return;
+      if (!current()) return;
       if (exists) {
         showDuplicateContact('email');
         return;
@@ -249,10 +258,9 @@ $('#next-question').addEventListener('click', async () => {
       // The hint is best-effort; the server independently BLOCKS duplicates
       // when the student eventually submits the full registration form.
     } finally {
-      if (duplicateNotice.hidden) submit.disabled=false;
+      if (current() && duplicateNotice.hidden) submit.disabled=false;
     }
-    if (email!==field.value.trim().toLowerCase() || questions[questionIndex]!=='email')
-      return;
+    if (!current()) return;
   }
   if (key === 'code') field.value = normalizeCode(field.value);
   questionIndex++; renderQuestion(true);
@@ -369,6 +377,8 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
       catch(error) { questionIndex=questions.indexOf('age'); renderQuestion(true); throw error; }
     }
     const generation = courseEntryGeneration, id = courseId;
+    const request = {}; registrationRequest = request;
+    const current = () => registrationRequest === request && generation === courseEntryGeneration && courseId === id;
     const fields = ['age','documentType','documentNumber','documentCountry','documentPrefix','documentTome','documentEntry'].map(name=>f.namedItem(name));
     registrationPending = true;
     for (const field of fields) field.disabled=true;
@@ -379,11 +389,15 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
       if (!entryCurrent(generation) || courseId !== id) return;
       await openStudentCourse({course_id:id,course_name:courseName}, null, generation);
     } catch(error) {
-      if (!entryCurrent(generation) || courseId !== id) return;
+      if (!current()) return;
       if (error.message?.startsWith('Este documento ya tiene')) showDuplicateContact('documentNumber');
-      else throw error;
+      else {
+        if (!studentSignedIn()) { $('#student-sign-in').hidden = false; $('.student-returning-entry').hidden = false; }
+        throw error;
+      }
     } finally {
-      if (entryCurrent(generation) && courseId === id) {
+      if (current()) {
+        registrationRequest = null;
         registrationPending = false;
         for (const field of fields) field.disabled=false;
         $('#finish-registration').disabled = !duplicateNotice.hidden;
@@ -411,13 +425,14 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
   const details = { p_email: f.namedItem('email').value.trim().toLowerCase(),
     p_first_name: f.namedItem('firstName').value.trim(), p_last_name: f.namedItem('lastName').value.trim(), p_phone: phone, p_age:age, ...documentInfo };
   const submit = $('#finish-registration');
+  const request = {}; registrationRequest = request;
   registrationPending = true;
   submit.disabled = true; submit.textContent = 'Guardando tu perfil…';
   const generation = courseEntryGeneration;
   try {
     await signInStudentAnonymously();
     if (!entryCurrent(generation)) return;
-    // Only a convenience hint; enroll_student enforces the phone check even
+    // Only a convenience hint; enroll_student_profile enforces the phone check even
     // if this request fails or a second browser submits at the same time.
     let repeatedPhone = false;
     try {
@@ -436,6 +451,7 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
     if (repeatedPhone) { showDuplicateContact('phone'); return; }
     try { await enterCourse(code, details); }
     catch (error) {
+      if (registrationRequest !== request) return;
       if (error.message?.startsWith('Este documento ya tiene')) { showDuplicateContact('documentNumber'); return; }
       if (error.message?.includes('Este correo ya tiene una inscripción')) {
         showDuplicateContact('email');
@@ -449,11 +465,15 @@ $('#registration-form').addEventListener('submit', event => { event.preventDefau
       if (!error.message.includes('students_auth_user_id_fkey')) throw error;
       studentSignOut(); await signInStudentAnonymously(); await enterCourse(code, details);
     }
+  } catch (error) {
+    if (registrationRequest === request) throw error;
   } finally {
-    registrationPending = false;
-    $('#next-question').disabled = !duplicateNotice.hidden && duplicateNotice.dataset.field !== 'phone';
-    submit.disabled = !duplicateNotice.hidden && ['phone','documentNumber'].includes(duplicateNotice.dataset.field);
-    submit.textContent = completingProfile ? 'Guardar datos y entrar →' : 'Crear mi personaje →';
+    if (registrationRequest === request) {
+      registrationRequest = null; registrationPending = false;
+      $('#next-question').disabled = !duplicateNotice.hidden && duplicateNotice.dataset.field !== 'phone';
+      submit.disabled = !duplicateNotice.hidden && ['phone','documentNumber'].includes(duplicateNotice.dataset.field);
+      submit.textContent = completingProfile ? 'Guardar datos y entrar →' : 'Crear mi personaje →';
+    }
   }
 }); });
 
@@ -461,13 +481,14 @@ function renderAvatarOptions() {
   $('#presentation-options').replaceChildren(...[['mujer', 'Mujer'], ['hombre', 'Hombre']].map(([value, label]) => {
     const button = element('button', '', 'avatar-style-option');
     button.type = 'button';
+    button.disabled = !!avatarSaveRequest;
     button.dataset.presentation = value;
     button.setAttribute('aria-label', 'Avatar ' + label.toLowerCase());
     button.setAttribute('aria-pressed', String(look.presentation === value));
     button.innerHTML = avatarSVG({ ...look, presentation: value,
       hair: value === 'mujer' ? 'long' : 'short', outfit: value === 'mujer' ? 5 : 1 });
     button.append(element('span', label));
-    button.addEventListener('click', () => { if (look.presentation !== value) {
+    button.addEventListener('click', () => { if (avatarSaveRequest) return; if (look.presentation !== value) {
       look.presentation = value;
       look.hair = value === 'mujer' ? 'long' : 'short';
       look.outfit = value === 'mujer' ? 5 : 1;
@@ -484,38 +505,58 @@ function renderAvatarOptions() {
     const buttons = colors.map((color, index) => {
       const button = element('button', '', 'swatch');
       button.type = 'button'; button.style.background = color;
+      button.disabled = !!avatarSaveRequest;
       button.setAttribute('aria-label', labels[index]);
       button.setAttribute('aria-pressed', String(look[key] === index));
-      button.addEventListener('click', () => { look[key] = index;
+      button.addEventListener('click', () => { if (avatarSaveRequest) return; look[key] = index;
         // The existing save endpoint accepts shirt 0–2; the extra outfit index
         // preserves the wider palette in its JSON avatar without a data migration.
         if (key === 'outfit') look.shirt = index < 3 ? index : 0;
-        renderAvatarOptions(); });
+        renderAvatarOptions(); $('#' + id).children[index]?.focus(); });
       return button;
     });
     $('#' + id).replaceChildren(...buttons);
   }
   const hairs = [['short', 'Corto'], ['long', 'Largo'], ['curly', 'Rizado']];
-  $('#hair-options').replaceChildren(...hairs.map(([value, label]) => {
+  $('#hair-options').replaceChildren(...hairs.map(([value, label], index) => {
     const button = element('button', label, 'hair-option'); button.type = 'button';
+    button.disabled = !!avatarSaveRequest;
     button.setAttribute('aria-pressed', String(look.hair === value));
-    button.addEventListener('click', () => { look.hair = value; renderAvatarOptions(); });
+    button.addEventListener('click', () => { if (avatarSaveRequest) return; look.hair = value;
+      renderAvatarOptions(); $('#hair-options').children[index]?.focus(); });
     return button;
   }));
   $('#avatar-image').innerHTML = avatarSVG(look);
 }
 $('#avatar-form').addEventListener('submit', event => { event.preventDefault(); run(async () => {
+  if (avatarSaveRequest) return;
   const submit = $('#avatar-form button[type="submit"]');
+  const saving = { generation:courseEntryGeneration, id:courseId, look:{...look}, editing:!!avatarReturn };
+  avatarSaveRequest = saving;
   submit.disabled = true; $('#cancel-avatar').disabled = true;
-  const generation = courseEntryGeneration, id = courseId;
+  submit.textContent = 'Guardando tu avatar…'; $('#avatar-form').setAttribute('aria-busy', 'true');
+  renderAvatarOptions();
+  const {generation,id} = saving;
   try {
-    await studentRpc('save_student_avatar', { p_course_id: id, p_avatar: look });
+    await studentRpc('save_student_avatar', { p_course_id: id, p_avatar: saving.look });
     if (!entryCurrent(generation) || courseId !== id) return;
     const nextProfile = await studentRpc('my_profile', { p_course_id: id });
     if (!entryCurrent(generation) || courseId !== id) return;
-    profile = nextProfile;
+    profile = nextProfile; look = {...saving.look};
     await enterRoom();
-  } finally { submit.disabled = false; $('#cancel-avatar').disabled = false; }
+    if (entryCurrent(generation) && courseId === id)
+      $(saving.editing ? '#edit-avatar' : '#tab-aula').focus();
+  } catch (error) {
+    if (avatarSaveRequest === saving && entryCurrent(generation) && courseId === id) throw error;
+  } finally {
+    if (avatarSaveRequest === saving) {
+      avatarSaveRequest = null;
+      submit.disabled = false; $('#cancel-avatar').disabled = false;
+      $('#avatar-form').removeAttribute('aria-busy');
+      submit.textContent = avatarReturn ? 'Guardar cambios y volver al aula' : 'Guardar y explorar el aula ↗';
+      if ($('#room').dataset.stage === 'avatar') { renderAvatarOptions(); submit.focus(); }
+    }
+  }
 }); });
 $('#edit-avatar').addEventListener('click', () => {
   if ($('#room').dataset.stage !== 'room') return;
@@ -700,8 +741,10 @@ function homePanel() {
   }
   nodes.push(list);
   const editorFocus = teamNameControl?.element.contains(document.activeElement) ? document.activeElement : null;
+  const phoneFocused = document.activeElement?.id === 'share-team-phone';
   $('#team-roster-host').replaceChildren(team ? teamRosterPanel(team) : element('p', 'Elige un grupo en «Aula y temas» para ver aquí a tus compañeros.', 'empty-team'));
   if (editorFocus?.isConnected) editorFocus.focus({ preventScroll: true });
+  else if (phoneFocused) $('#share-team-phone')?.focus({ preventScroll: true });
   updateTeamPresence();
   nodes.push(element('p', 'Consulta tus compañeros en Mi equipo y comparte mensajes y archivos en Chat.', 'field-hint'));
   side(...nodes);
@@ -738,7 +781,7 @@ function teamRosterPanel(team) {
   const sharingCard = element('div', '', 'share-contact-card');
   sharingCard.dataset.sharing = String(!!mine?.sharing);
   const sharingHeading = element('div', '', 'share-contact-heading');
-  const sharingIcon = element('span', '✉', 'share-contact-icon');
+  const sharingIcon = element('span', '☎', 'share-contact-icon');
   sharingIcon.setAttribute('aria-hidden', 'true');
   const sharingText = element('div');
   sharingText.append(element('span', 'TU PRIVACIDAD', 'share-contact-eyebrow'),
@@ -747,6 +790,7 @@ function teamRosterPanel(team) {
   const sharingDescription = element('p', 'Tu correo siempre es visible para los integrantes de tu equipo. Activa esta opción si también quieres compartir tu teléfono.', 'share-contact-description');
   const label = element('label', '', 'share-contact');
   const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = !!mine?.sharing;
+  toggle.id = 'share-team-phone'; toggle.name = 'sharePhone';
   const toggleText = element('span', 'Sí, compartir mi teléfono con mi equipo');
   label.append(toggle, toggleText);
   const sharingStatus = element('span', toggle.checked ? 'Teléfono visible para mi equipo' : 'Teléfono privado', 'share-contact-status');
@@ -1156,6 +1200,9 @@ reducedMotion.addEventListener('change', () => {
   draw(); updateAmbientAnimation();
 });
 function stopRoomPolling() {
+  avatarSaveRequest = null;
+  $('#avatar-form').removeAttribute('aria-busy');
+  $('#avatar-form button[type="submit"]').disabled = false; $('#cancel-avatar').disabled = false;
   teamNameControl = null; teamNameKey = '';
   $('#team-room-light').hidden = true;
   stopAmbientAnimation();
@@ -1184,7 +1231,7 @@ $('#logout').addEventListener('click', () => {
   localStorage.removeItem('aula-student-document-recovery');
   stopRoomPolling();
   courseId = ''; courseName = ''; profile = null; topics = []; selectedTopic = null;
-  completingProfile = false; registrationPending = false;
+  completingProfile = false; registrationPending = false; registrationRequest = null;
   for(const name of ['age','documentType','documentNumber','documentCountry','documentPrefix','documentTome','documentEntry']) registrationForm.elements.namedItem(name).disabled=false;
   $('#previous-question').disabled=false;
   registrationForm.reset(); documentType.value='cedula'; updateDocumentInput(true); questions = ['code', 'firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone'];

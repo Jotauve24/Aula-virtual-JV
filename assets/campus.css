@@ -158,7 +158,7 @@
 .campus-theme #room .in-room-dialog input,.campus-theme #room .in-room-dialog select{border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--muted)}
 .campus-theme #room .in-room-dialog input:focus{border-color:var(--accent);outline-color:color-mix(in srgb,var(--deep) 18.82%,transparent)}
 .campus-theme #room .in-room-dialog .button.primary{background:var(--accent);border-color:var(--accent);box-shadow:none;color:white;font-weight:900}
-.campus-theme #room[data-stage="avatar"] .avatar-preview{position:relative;isolation:isolate;overflow:hidden;border:1px solid var(--line);border-radius:19px;background:var(--accent-soft);box-shadow:none}
+.campus-theme #room[data-stage="avatar"] .avatar-preview{isolation:isolate;overflow:hidden;border:1px solid var(--line);border-radius:19px;background:var(--accent-soft);box-shadow:none}
 .campus-theme #room[data-stage="avatar"] .avatar-preview:before{bottom:34px;background:color-mix(in srgb,var(--deep) 33.33%,transparent);box-shadow:0 6px 0 color-mix(in srgb,var(--deep) 25.10%,transparent);filter:none}
 .campus-theme #room[data-stage="avatar"] .avatar-preview svg{filter:drop-shadow(4px 6px 0 color-mix(in srgb,var(--deep) 18.04%,transparent))}
 .campus-theme #room[data-stage="avatar"] .avatar-style-option{border-color:var(--line);background:var(--accent-soft);color:var(--muted);border-radius:12px}

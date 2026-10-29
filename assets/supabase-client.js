@@ -1,5 +1,5 @@
-import { openAuthPage } from './embed.js?v=0.23.0';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.23.0';
+import { openAuthPage } from './embed.js?v=0.24.0';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.24.0';
 
 const sessionKey = 'aula-supabase-session';
 const studentSessionKey = 'aula-student-session';
@@ -115,11 +115,14 @@ export async function studentAuthUser() {
   }
   return res.json();
 }
-let anonymousSignIn = null;
+let anonymousSignIn = null, studentSignInGeneration = 0;
 export async function signInStudentAnonymously() {
   if (session(studentSessionKey)?.access_token) return;
+  const generation = studentSignInGeneration;
   if (!anonymousSignIn) anonymousSignIn = (async () => {
     const data = await request('/auth/v1/signup', { data: {} });
+    if (generation !== studentSignInGeneration)
+      throw new Error('La sesión se cerró. Inicia sesión nuevamente.');
     if (!data.access_token || !data.refresh_token || data.user?.is_anonymous !== true)
       throw new Error('El acceso estudiantil sin correo aún no está habilitado.');
     // A verified email callback may have completed while signup was pending.
@@ -183,7 +186,10 @@ export async function studentRpc(name, body = {}) {
   return request(`/rest/v1/rpc/${name}`, body, token);
 }
 export function studentSignedIn() { return !!session(studentSessionKey)?.access_token; }
-export function studentSignOut() { saveSession(null, studentSessionKey); }
+export function studentSignOut() {
+  studentSignInGeneration++; anonymousSignIn = null;
+  saveSession(null, studentSessionKey);
+}
 export function signedIn() { return !!session()?.access_token; }
 export function signOut() { saveSession(null); }
 

@@ -4,8 +4,8 @@ export function buildTeacherPresenceStats(courses, rows) {
   if (!Array.isArray(courses) || !Array.isArray(rows)) {
     throw new TypeError('Los datos de presencia no tienen el formato esperado.');
   }
-  const byCourse = new Map(courses.map(course => [String(course.id), 0]));
-  const studentsByCourse = new Map([...byCourse.keys()].map(id => [id, []]));
+  const byCourse = new Map(courses.map(course => [String(course.id), null]));
+  const studentsByCourse = new Map([...byCourse.keys()].map(id => [id, null]));
   const observedAtByCourse = new Map();
   // Follow-up comes from the same owner-only snapshot, including offline students.
   // Missing/older responses remain unknown; they must never look like zero pending.
@@ -22,12 +22,12 @@ export function buildTeacherPresenceStats(courses, rows) {
       throw new TypeError('La cantidad de estudiantes conectados no es válida.');
     }
     seen.add(id);
-    const students = item.students ?? [];
-    if (!Array.isArray(students) || (item.students !== undefined && students.length !== online)) {
+    const students = item.students === undefined ? online === 0 ? [] : null : item.students;
+    if (students !== null && (!Array.isArray(students) || students.length !== online)) {
       throw new TypeError('La lista de estudiantes no coincide con el contador.');
     }
     const ids = new Set();
-    for (const student of students) {
+    for (const student of students || []) {
       if (!student || typeof student.id !== 'string' || !student.id ||
         typeof student.name !== 'string' || !student.name.trim() ||
         typeof student.group !== 'string' ||
@@ -58,7 +58,8 @@ export function buildTeacherPresenceStats(courses, rows) {
   return {
     courses: byCourse.size,
     enrolled: courses.reduce((sum, row) => sum + Number(row.student_count || 0), 0),
-    online: [...byCourse.values()].reduce((sum, count) => sum + count, 0),
+    online: [...byCourse.values()].some(count => count === null) ? null
+      : [...byCourse.values()].reduce((sum, count) => sum + count, 0),
     byCourse,
     studentsByCourse,
     observedAtByCourse,

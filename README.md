@@ -24,6 +24,18 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Revisión integral y estabilidad (0.24.0)
+
+Se refuerzan el guardado del avatar, la edición de temas y los formularios de
+acceso y recuperación ante solicitudes lentas o pantallas cerradas. Los cambios
+de piel, ropa y cabello conservan el foco del teclado; sus controles tienen
+44 px de altura y los campos del registro son más legibles en celular.
+
+Una materia sin respuesta de presencia aparece como dato no disponible, sin
+confundirlo con cero estudiantes conectados. También se ajustan las etiquetas de
+recuperación docente, se retiran dos variables sin uso y se sincroniza el archivo
+de versiones de npm. [Detalle de la revisión](docs/auditoria-integral-2026-10-28.md).
+
 ## Avatares Pixel moderno (0.23.0)
 
 Los avatares comparten un dibujo pixelado renovado: ojos expresivos con brillo,

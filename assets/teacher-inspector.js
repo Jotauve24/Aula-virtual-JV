@@ -1,7 +1,7 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.23.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.23.0';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.23.0';
-import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.23.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.24.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.24.0';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.24.0';
+import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.24.0';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);
@@ -207,7 +207,7 @@ function teamRosterPanel(topic){
   const sharingCard=el('div','','share-contact-card');
   sharingCard.dataset.sharing=String(demo.sharing);
   const heading=el('div','','share-contact-heading');
-  const icon=el('span','✉','share-contact-icon');icon.setAttribute('aria-hidden','true');
+  const icon=el('span','☎','share-contact-icon');icon.setAttribute('aria-hidden','true');
   const headingText=el('div');
   headingText.append(el('span','TU PRIVACIDAD','share-contact-eyebrow'),
     el('h4','¿Quieres compartir tu teléfono con tu equipo?','share-contact-title'));

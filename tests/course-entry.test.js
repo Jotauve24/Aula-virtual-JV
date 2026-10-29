@@ -107,7 +107,7 @@ class Element {
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
-  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, documentRequired = false, setDocument, uploadFile, sendMessage, renameTeam, search = '' } = {}) {
+  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, documentRequired = false, setDocument, uploadFile, sendMessage, renameTeam, saveAvatar, search = '' } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -173,7 +173,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     signInStudentAnonymously: async () => { localStorage.setItem(SESSION, 'existing-private-session'); },
     studentRpc: async (name, body) => {
       calls.push({ name, body: JSON.parse(JSON.stringify(body)) });
-      if (name === 'student_registration_email_hint') return emailHint;
+      if (name === 'student_registration_email_hint') return typeof emailHint==='function'?emailHint(body):emailHint;
       if (name === 'student_registration_phone_hint') { if(phoneHintError) throw Error('Servicio no disponible'); return typeof phoneHint==='function'?phoneHint(body):phoneHint; }
       if (name === 'enroll_student_profile') {
         if (enroll) await enroll(body);
@@ -182,7 +182,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       if (name === 'student_document_status') return {required:documentRequired};
       if (name === 'student_complete_registration') {if(setDocument) await setDocument(body); documentRequired=false; if(body.p_age!==undefined)profileData.age=body.p_age; return;}
       if (name === 'my_profile') return profileData;
-      if (name === 'save_student_avatar') { profileData.avatar = body.p_avatar; return; }
+      if (name === 'save_student_avatar') { if(saveAvatar)await saveAvatar(body);profileData.avatar = body.p_avatar; return; }
       if (name === 'team_contact_setting') {
         for(const team of roomFixture) for(const member of team.members) if(member.mine) {
           member.sharing=body.p_share; member.phone=body.p_share?'60000001':null;
@@ -1147,4 +1147,85 @@ test('una edad pendiente no envía dos solicitudes ni reabre el aula después de
  assert.equal(page.fields.age.disabled,false);assert.equal(page.get('#next-question').disabled,false);
  release();await page.settle();
  assert.equal(page.state('profile'),null);assert.equal(page.get('#room').dataset.stage,'registration');
+});
+test('las opciones de piel, ropa y cabello conservan el foco del teclado después de cambiar',async()=>{
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',avatar:{skin:1}}});
+ await page.get('#edit-avatar').click();
+ for(const [id,index] of [['skin-options',2],['shirt-options',6],['hair-options',2]]) {
+  const old=page.get('#'+id).children[index];await old.click();
+  const selected=page.get('#'+id).children[index];
+  assert.notEqual(selected,old);assert.equal(selected.focused,true);assert.equal(selected['aria-pressed'],'true');
+ }
+});
+test('guardar avatar bloquea otras elecciones y envía una sola apariencia hasta confirmar',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',avatar:{skin:1}},saveAvatar:()=>gate});
+ await page.get('#edit-avatar').click();await page.get('#shirt-options').children[6].click();
+ page.get('#avatar-form').dispatch('submit');await page.settle();
+ assert.equal(page.get('#avatar-form')['aria-busy'],'true');
+ for(const id of ['skin-options','shirt-options','hair-options','presentation-options'])
+  assert.ok(page.get('#'+id).children.every(button=>button.disabled));
+ await page.get('#shirt-options').children[0].click();await page.get('#cancel-avatar').click();
+ page.get('#avatar-form').dispatch('submit');await page.settle();
+ assert.equal(page.calls.filter(c=>c.name==='save_student_avatar').length,1);
+ assert.equal(page.state('look.outfit'),6);assert.equal(page.get('#room').dataset.stage,'avatar');
+ release();await page.settle();await page.settle();
+ assert.equal(page.state('profile.avatar.outfit'),6);assert.equal(page.state('look.outfit'),6);
+ assert.equal(page.get('#room').dataset.stage,'room');assert.equal(page.get('#edit-avatar').focused,true);
+});
+test('un error tardío al guardar avatar no aparece en el registro después de salir',async()=>{
+ let reject;const gate=new Promise((_,fail)=>reject=fail);
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',avatar:{skin:1}},saveAvatar:()=>gate});
+ await page.get('#edit-avatar').click();page.get('#avatar-form').dispatch('submit');await page.settle();
+ await page.get('#logout').click();reject(Error('Respuesta antigua de prueba'));await page.settle();
+ assert.equal(page.get('#room').dataset.stage,'registration');assert.equal(page.state('profile'),null);
+ assert.equal(page.get('#registration-error').hidden,true);
+ assert.equal(page.get('#avatar-form button[type="submit"]').disabled,false);
+});
+test('una consulta vieja de correo no bloquea ni adelanta una consulta nueva del mismo campo',async()=>{
+ const releases=[];
+ const page=await boot({signedIn:false,emailHint:()=>new Promise(resolve=>releases.push(resolve))});
+ page.fields.code.value=NEW;page.fields.firstName.value='Ana';page.fields.lastName.value='Prueba';page.fields.email.value='ana@example.test';
+ page.state("questionIndex=questions.indexOf('email');renderQuestion()");
+ const first=page.get('#next-question').click();await page.settle();
+ await page.get('#previous-question').click();await page.get('#next-question').click();
+ const second=page.get('#next-question').click();await page.settle();assert.equal(releases.length,2);
+ releases[0](true);await first;
+ assert.equal(page.get('#email-duplicate-notice').hidden,true);assert.equal(page.get('#next-question').disabled,true);
+ releases[1](false);await second;
+ assert.equal(page.state('questions[questionIndex]'),'phone');assert.equal(page.get('#email-duplicate-notice').hidden,true);
+});
+
+test('compartir el teléfono conserva el foco y actualiza solamente su visibilidad dentro del equipo',async()=>{
+ const room=[{id:'g1',name:'Coral',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true,email:'ana@example.test',sharing:false}]}];
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}},roomFixture:room});
+ page.state("setRoomTab('equipo');document.activeElement=$('#share-team-phone')");
+ const previous=page.get('#share-team-phone');previous.checked=true;await previous.dispatch('change');
+ const current=page.get('#share-team-phone');assert.notEqual(current,previous);assert.equal(current.focused,true);
+ assert.equal(current.checked,true);assert.equal(room[0].members[0].email,'ana@example.test');
+ assert.equal(page.calls.filter(c=>c.name==='team_contact_setting').length,1);
+ assert.deepEqual(page.calls.find(c=>c.name==='team_contact_setting').body,{p_course_id:'course-fixture',p_share:true});
+});
+
+test('una sesión revocada al completar datos deja el formulario y la recuperación disponibles',async()=>{
+ let page;page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',age:null,avatar:{skin:1}},
+  setDocument:()=>{page.localStorage.removeItem(SESSION);throw Error('Tu sesión venció. Recupera el acceso con tu correo.');}});
+ page.fields.age.value='24';page.get('#registration-form').dispatch('submit');await page.settle();
+ assert.equal(page.state('registrationPending'),false);assert.equal(page.fields.age.disabled,false);
+ assert.equal(page.get('#finish-registration').disabled,false);assert.equal(page.get('#student-sign-in').hidden,false);
+ assert.match(page.get('#registration-error').textContent,/Recupera el acceso/);
+});
+test('un registro anterior no habilita los controles de un intento nuevo después de salir',async()=>{
+ const releases=[];const page=await boot({signedIn:false,enroll:()=>new Promise(resolve=>releases.push(resolve))});
+ const fill=()=>{
+  for(const [name,value] of Object.entries({code:NEW,firstName:'Ana',lastName:'Prueba',age:'21',email:'ana@example.test',phone:'60000001',documentPrefix:'8',documentTome:'123',documentEntry:'45'}))page.fields[name].value=value;
+  page.state('updateDocumentInput();questionIndex=questions.length-1;renderQuestion()');
+ };
+ fill();page.get('#registration-form').dispatch('submit');await page.settle();assert.equal(releases.length,1);
+ page.get('#logout').click();fill();page.get('#registration-form').dispatch('submit');await page.settle();assert.equal(releases.length,2);
+ releases[0]();await page.settle();
+ assert.equal(page.state('registrationPending'),true);assert.equal(page.get('#finish-registration').disabled,true);
+ releases[1]();await page.settle();await page.settle();
+ assert.equal(page.state('registrationPending'),false);assert.equal(page.get('#room').dataset.stage,'avatar');
+ assert.equal(page.calls.filter(c=>c.name==='enroll_student_profile').length,2);
 });
