@@ -1,12 +1,12 @@
-import './embed.js?v=0.24.0';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.24.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.24.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.24.0';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.24.0';
+import './embed.js?v=0.25.0';
+import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.25.0';
+import { initTeacherAuth } from './teacher-auth.js?v=0.25.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.25.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.25.0';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.25.0';
 const $ = selector => document.querySelector(selector);
-let email = '', courseId = '', overview = null;
+let courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
-let loginRequest = null;
 let renamingCourseTarget = null;
 let editingTopic = null;
 let movingStudentTarget = null, movingStudent = false;
@@ -23,7 +23,7 @@ function stopDashboardPresence() {
   liveGeneration++;
 }
 function show(id) {
-  for (const name of ['login','verify','dashboard','detail']) $(`#${name}`).hidden = name !== id;
+  for (const name of ['login','verify','password','dashboard','detail']) $(`#${name}`).hidden = name !== id;
   if (id !== 'dashboard' && id !== 'detail') stopDashboardPresence();
 }
 function alertError(value) { $('#error').textContent = value; $('#error').hidden = !value; }
@@ -33,30 +33,13 @@ function newCourseCode() {
   const part = Array.from(bytes, n => chars[n % chars.length]).join('');
   return `MAT-${part.slice(0,5)}-${part.slice(5,10)}-${part.slice(10)}`;
 }
-if (!configured) { show('login'); $('#login').hidden = true; $('#setup').hidden = false; }
-else if (signedIn()) run(async () => { await loadCourses(); const target = new URLSearchParams(location.search).get('materia');
+const teacherAccess = initTeacherAuth({ show, onNotice: teacherSuccess, onSignedIn: async () => {
+  const generation = ++accountGeneration;
+  await loadCourses();
+  if (generation !== accountGeneration || !signedIn()) return;
+  const target = new URLSearchParams(location.search).get('materia');
   if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(target || '')) await openCourse(target);
-}); else show('login');
-if (configured) googleAvailable().then(available => { $('#google-login').hidden = !available; }).catch(() => {});
-$('#google-login').addEventListener('click', signInWithGoogle);
-$('#login').addEventListener('submit', event => { event.preventDefault(); run(async () => {
-  if (loginRequest) return;
-  const form = event.target, button = form.querySelector('button[type="submit"]');
-  const generation = accountGeneration;
-  const request = {}; loginRequest = request;
-  const label = button.innerHTML;
-  button.disabled = true; button.textContent = 'Enviando enlace…'; form.setAttribute('aria-busy','true');
-  try {
-    email = form.elements.email.value.trim().toLowerCase(); await sendCode(email);
-    if(generation !== accountGeneration)return;
-    show('verify'); $('#notice').textContent = 'Revisa el correo docente y abre el enlace de ingreso en este navegador.';
-  } finally {
-    if (loginRequest === request) {
-      loginRequest = null; button.disabled = false; button.innerHTML = label;
-      form.setAttribute('aria-busy','false');
-    }
-  }
-}); });
+} });
 async function loadCourses() {
   clearCourseRename();
   clearStudentMove();
@@ -797,7 +780,7 @@ $('#logout').addEventListener('click', () => {
   clearTopicEdit();
   for(const id of ['#edit-topic-dialog','#move-student-dialog','#delete-student-dialog','#delete-course-dialog']) { if($(id).open)$(id).close(); }
   courseId = ''; overview = null;
-  signOut(); show('login');
+  teacherAccess.signOut(); show('login');
 });
 
 function clearCourseRename() {

@@ -2,33 +2,64 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  <meta name="application-name" content="AulavirtualJV">
+  <meta name="apple-mobile-web-app-title" content="AulavirtualJV">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.webmanifest?v=0.25.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png?v=0.25.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png?v=0.25.0">
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fbf8ef">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
-  <title>Panel docente · AulaVirtualJv</title><script src="./assets/page-shell.js?v=0.24.0"></script>
-  <link rel="icon" href="./assets/favicon.svg?v=0.24.0" type="image/svg+xml">
+  <title>Panel docente · AulavirtualJV</title><script src="./assets/page-shell.js?v=0.25.0"></script>
+  <link rel="icon" href="./assets/favicon.svg?v=0.25.0" type="image/svg+xml">
   <link rel="preload" as="font" href="./assets/fonts/nunito-latin.woff" type="font/woff" crossorigin>
-  <link rel="stylesheet" href="./assets/palette.css?v=0.24.0"><link rel="stylesheet" href="./assets/live.css?v=0.24.0"><link rel="stylesheet" href="./assets/brand.css?v=0.24.0"><link rel="stylesheet" href="./assets/teacher-live.css?v=0.24.0"><link rel="stylesheet" href="./assets/student-account.css?v=0.24.0">
-  <link rel="modulepreload" data-aula-module href="./assets/teacher.js?v=0.24.0">
-<link rel="stylesheet" href="./assets/campus.css?v=0.24.0">
-<link rel="stylesheet" href="./assets/page-shell.css?v=0.24.0">
-<link rel="stylesheet" href="./assets/enrollment-review.css?v=0.24.0"></head>
+  <link rel="stylesheet" href="./assets/palette.css?v=0.25.0"><link rel="stylesheet" href="./assets/live.css?v=0.25.0"><link rel="stylesheet" href="./assets/brand.css?v=0.25.0"><link rel="stylesheet" href="./assets/teacher-live.css?v=0.25.0"><link rel="stylesheet" href="./assets/student-account.css?v=0.25.0">
+  <link rel="modulepreload" data-aula-module href="./assets/teacher.js?v=0.25.0">
+<link rel="stylesheet" href="./assets/campus.css?v=0.25.0">
+<link rel="stylesheet" href="./assets/page-shell.css?v=0.25.0">
+<link rel="stylesheet" href="./assets/enrollment-review.css?v=0.25.0"></head>
 <body class="campus-theme campus-panel">
   <a class="skip-link" href="#main">Ir al contenido</a>
   <header class="teacher-header">
-    <a class="brand" href="./" aria-label="AulaVirtualJv, volver al ingreso"><img class="brand-mark" src="./assets/favicon.svg?v=0.24.0" width="40" height="40" alt="" aria-hidden="true"><span><span class="brand-name">Aula<span class="brand-light">Virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.24.0" width="38" height="30" alt="Jv"></span><small>Un espacio para hacer equipo</small></span></a>
+    <a class="brand" href="./" aria-label="AulavirtualJV, volver al ingreso"><img class="brand-mark" src="./assets/favicon.svg?v=0.25.0" width="40" height="40" alt="" aria-hidden="true"><span><span class="brand-name">Aula<span class="brand-light">virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.25.0" width="38" height="30" alt="JV"></span><small>Un espacio para hacer equipo</small></span></a>
     <div class="teacher-header-tools"><span class="header-label">PANEL DOCENTE</span><button id="expand-aula" class="secondary aula-expand-icon" type="button" aria-label="Ampliar aula" title="Ampliar aula"><svg data-fullscreen-icon viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button></div>
   </header>
   <main id="main" class="teacher-main">
     <section id="setup" class="notice-card" hidden><h1>Conexión pendiente</h1><p>Configura el servicio del aula antes de utilizar el panel.</p></section>
     <form id="login" class="teacher-login">
       <div class="login-intro"><span class="eyebrow">ACCESO DOCENTE</span><h1>Tu materia,<br><em>en un solo lugar.</em></h1><p>Organiza los temas, consulta los equipos y acompaña a tus estudiantes desde aquí.</p><div class="login-steps"><span><b>01</b> Crea una materia</span><span><b>02</b> Comparte su código</span><span><b>03</b> Sigue los equipos</span></div></div>
-      <div class="access-card"><span class="eyebrow">ENTRAR AL PANEL</span><h2>Bienvenido, docente.</h2><p id="notice">Usa el correo autorizado para administrar tus materias.</p><label for="teacher-email">Correo docente</label><input id="teacher-email" name="email" type="email" autocomplete="email" spellcheck="false" placeholder="tu-correo@ejemplo.com" required><button class="primary" type="submit">Enviarme un enlace <span aria-hidden="true">↗</span></button><button id="google-login" class="secondary" type="button" hidden>Entrar con Google</button><small>El acceso al panel está reservado a la cuenta docente autorizada.</small></div>
+      <div class="access-card teacher-access-card">
+        <span class="eyebrow">ENTRAR AL PANEL</span><h2>Bienvenido, docente.</h2>
+        <p id="notice">Entra con tu correo y contraseña desde cualquier dispositivo.</p>
+        <label for="teacher-email">Correo docente</label>
+        <input id="teacher-email" name="email" type="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="tu-correo@ejemplo.com…" required>
+        <label for="teacher-password">Contraseña</label>
+        <div class="teacher-password-field"><input id="teacher-password" name="password" type="password" autocomplete="current-password" required><button class="teacher-password-toggle" type="button" data-password-toggle="teacher-password" aria-controls="teacher-password" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+        <p id="teacher-auth-error" class="teacher-auth-error" role="alert" hidden></p>
+        <button id="teacher-login-submit" class="primary" type="submit">Entrar al panel <span aria-hidden="true">→</span></button>
+        <button id="teacher-recover-password" class="teacher-auth-link" type="button">Crear o recuperar contraseña</button>
+        <details class="teacher-access-options"><summary>Otras formas de entrar</summary><button id="teacher-email-link" class="secondary" type="button">Enviarme un enlace de acceso</button><button id="google-login" class="secondary" type="button" hidden>Entrar con Google</button></details>
+        <small>Solo la cuenta docente autorizada puede administrar materias.</small>
+      </div>
     </form>
-    <section id="verify" class="notice-card" hidden><span class="eyebrow">REVISA TU CORREO</span><h1>Tu enlace está en camino.</h1><p>Abre el enlace recibido en este navegador. Después volverás al panel.</p></section>
-    <section id="dashboard" hidden><div class="section-heading"><div><span class="eyebrow">PANEL DOCENTE</span><h1>Mis materias</h1><p>Configura cada sección y consulta cómo se forman sus equipos.</p></div><button id="logout" class="secondary" type="button">Cerrar sesión</button></div>
+    <section id="verify" class="notice-card" hidden><span class="eyebrow">REVISA TU CORREO</span><h1 id="verify-title">Revisa tu correo.</h1><p id="verify-message"></p><button id="teacher-verify-back" class="secondary" type="button">Volver al acceso</button></section>
+    <section id="password" class="teacher-password-panel" hidden>
+      <form id="teacher-password-form" class="access-card teacher-access-card">
+        <span class="eyebrow">TU ACCESO DOCENTE</span><h1 id="teacher-password-title">Crea tu nueva contraseña.</h1>
+        <p id="teacher-password-help">Usa al menos 8 caracteres. Combina letras, números y símbolos para proteger tu cuenta docente.</p>
+        <label for="teacher-new-password">Nueva contraseña</label>
+        <div class="teacher-password-field"><input id="teacher-new-password" name="new_password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="teacher-password-help teacher-password-error"><button class="teacher-password-toggle" type="button" data-password-toggle="teacher-new-password" aria-controls="teacher-new-password" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+        <label for="teacher-confirm-password">Repite la contraseña</label><input id="teacher-confirm-password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="teacher-password-error">
+        <p id="teacher-password-error" class="teacher-auth-error" role="alert" hidden></p>
+        <button id="teacher-password-save" class="primary" type="submit">Guardar contraseña</button><button id="teacher-password-cancel" class="teacher-auth-link" type="button">Volver</button>
+      </form>
+    </section>
+    <section id="dashboard" hidden><div class="section-heading"><div><span class="eyebrow">PANEL DOCENTE</span><h1>Mis materias</h1><p>Configura cada sección y consulta cómo se forman sus equipos.</p></div><div class="teacher-account-tools"><details class="teacher-account-options"><summary>Mi acceso</summary><button id="open-teacher-password" class="secondary" type="button">Cambiar contraseña</button></details><button id="logout" class="secondary" type="button">Cerrar sesión</button></div></div>
       <div class="dashboard-grid"><form id="new-course" class="panel-card" autocomplete="off"><span class="eyebrow">NUEVA MATERIA</span><h2>Prepara una sección</h2><p>Recibirás un código único para compartir con esa clase.</p><label for="course-name">Materia y sección</label><input id="course-name" name="name" required maxlength="120" placeholder="Ej.: Sistema II · Sección A…"><div class="field-pair"><div><label for="initial-groups">Mesas / grupos</label><input id="initial-groups" name="groups" type="number" inputmode="numeric" value="4" min="1" max="40" required></div><div><label for="initial-capacity">Cupos por grupo</label><input id="initial-capacity" name="capacity" type="number" inputmode="numeric" value="5" min="1" max="100" required></div></div><p>El aula tendrá exactamente esa cantidad de mesas. Luego puedes cambiar los temas y los cupos.</p><button class="primary" type="submit">Crear materia y código</button><p id="new-code" class="code-result" role="status" hidden></p></form>
       <div class="course-area">
         <div class="area-heading teacher-activity-heading">
@@ -123,7 +154,7 @@
     <dialog id="delete-student-dialog" aria-labelledby="delete-student-title"><div class="panel-card"><span class="eyebrow">SIN EQUIPO</span><h2 id="delete-student-title">Eliminar estudiante</h2><p>¿Eliminar definitivamente a <strong id="delete-student-name"></strong> de <strong id="delete-student-course"></strong>?</p><p id="delete-student-details"></p><p>Se borrará su registro, mensajes y archivos de esta materia. Dejará de aparecer en el listado y perderá el acceso actual. Si conserva el código y las inscripciones están abiertas, podrá registrarse de nuevo.</p><p id="delete-student-progress" role="status"></p><p id="delete-student-error" role="alert" hidden></p><div class="delete-course-actions"><button id="cancel-delete-student" class="secondary" type="button">Cancelar</button><button id="confirm-delete-student" class="danger" type="button">Eliminar estudiante</button></div></div></dialog>
     <p id="teacher-success" role="status" hidden></p><p id="error" role="alert" hidden></p>
   </main>
-  <footer class="teacher-footer"><span>AulaVirtualJv / Aprender también es encontrarse.</span><a href="./">Volver al ingreso</a></footer>
+  <footer class="teacher-footer"><span>AulavirtualJV / Aprender también es encontrarse.</span><a href="./">Volver al ingreso</a></footer>
 </body>
 </html>
 

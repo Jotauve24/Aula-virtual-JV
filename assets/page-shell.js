@@ -54,7 +54,7 @@
     const frame = document.createElement('iframe');
     frame.id = 'aula-content-frame';
     frame.name = 'aula-content';
-    frame.title = 'Contenido de AulaVirtualJv';
+    frame.title = 'Contenido de AulavirtualJV';
     frame.setAttribute('data-aula-content', '');
     frame.setAttribute('data-aula-embedded', String(window.self !== window.top));
     frame.setAttribute('allow', 'fullscreen');
@@ -68,7 +68,7 @@
             !pages.has(next.pathname.slice(baseURL.pathname.length))) return;
         if (next.href !== location.href)
           history.replaceState(null, '', next.pathname + next.search + next.hash);
-        document.title = frame.contentDocument.title || 'AulaVirtualJv';
+        document.title = frame.contentDocument.title || 'AulavirtualJV';
       } catch { /* An external authentication provider is never inspected. */ }
     }
     frame.addEventListener('load', syncLocation);

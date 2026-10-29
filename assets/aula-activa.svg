@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
-  <title id="title">AulaVirtualJv — tu aula, tu equipo</title>
+  <title id="title">AulavirtualJV — tu aula, tu equipo</title>
   <desc id="desc">Una miniatura animada del aula interactiva con cuatro equipos, avatares, un pasillo central y chat privado.</desc>
   <defs><clipPath id="frame"><rect width="1280" height="360" rx="30"/></clipPath><clipPath id="map"><rect x="735" y="33" width="465" height="294" rx="20"/></clipPath></defs>
   <style>

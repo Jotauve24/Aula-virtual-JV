@@ -1,12 +1,12 @@
-# AulaVirtualJv
+# AulavirtualJV
 
 Aula web para organizar los equipos de una materia con un espacio visual por tema. El ingreso, el avatar, la pertenencia al equipo y el chat privado de cada grupo se guardan en Supabase. Las actividades y la mensajería académica continúan en la plataforma Educativa de la universidad.
 
 <div align="center">
-  <img src="./assets/aula-activa.svg" width="100%" alt="AulaVirtualJv — tu aula, tu equipo" />
+  <img src="./assets/aula-activa.svg" width="100%" alt="AulavirtualJV — tu aula, tu equipo" />
   <br /><br />
   <a href="https://jotauve24.github.io/Aula-virtual-JV/">
-    <img src="https://img.shields.io/badge/ENTRAR_AL_AULA-468189?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Entrar a AulaVirtualJv" />
+    <img src="https://img.shields.io/badge/ENTRAR_AL_AULA-468189?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Entrar a AulavirtualJV" />
   </a>
   <a href="https://jotauve24.github.io/Aula-virtual-JV/docente.html">
     <img src="https://img.shields.io/badge/PANEL_DOCENTE-2A363B?style=for-the-badge&logo=bookstack&logoColor=white" alt="Abrir panel docente" />
@@ -23,6 +23,26 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 - Interfaz accesible, adaptable y con movimiento reducido.
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
+
+## Icono de la app y acceso docente (0.25.0)
+
+La app se identifica como **AulavirtualJV** al agregarla al inicio del celular.
+El icono JV sobre un libro comparte los colores del aula; hay recursos PNG para
+iPhone, Android y favicon, además del manifiesto con inicio y alcance estables.
+Los cuatro puntos de entrada comparten los mismos metadatos de instalación.
+
+El acceso docente ofrece **correo y contraseña** como opción principal. En
+**Mi acceso → Cambiar contraseña**, una sesión abierta puede definir una nueva
+contraseña sin solicitar otro correo. **Crear o recuperar contraseña** envía un
+enlace verificado; al abrirlo, aparece el formulario para guardarla antes de
+cargar el panel. El enlace de acceso sigue en **Otras formas de entrar**.
+Los errores de límite de correos se explican en español junto al formulario.
+
+La app no guarda las contraseñas ni las incluye en la URL. La
+sesión docente permanece separada de la estudiantil y no concede nuevos roles.
+Los enlaces docentes solo permiten cuentas existentes. La recuperación por
+correo conserva los límites de envío del proveedor; el ingreso con contraseña
+y el cambio desde una sesión abierta no necesitan enviar correos.
 
 ## Revisión integral y estabilidad (0.24.0)
 
@@ -328,7 +348,7 @@ El código de materia no verifica la identidad individual. En la primera inscrip
 Comparte el enlace del aula y el código de la materia, sin incrustar la página:
 
 ```html
-<p><a href="https://jotauve24.github.io/Aula-virtual-JV/" target="_blank" rel="noopener">Entrar a AulaVirtualJv</a></p>
+<p><a href="https://jotauve24.github.io/Aula-virtual-JV/" target="_blank" rel="noopener">Entrar a AulavirtualJV</a></p>
 <p>Código de la materia: [código compartido por el docente]</p>
 ```
 

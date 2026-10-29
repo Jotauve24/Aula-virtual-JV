@@ -1,13 +1,13 @@
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.24.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.24.0';
-import './embed.js?v=0.24.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.24.0';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.24.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.24.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.24.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.24.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.24.0';
-import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.24.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.25.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.25.0';
+import './embed.js?v=0.25.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.25.0';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.25.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.25.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.25.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.25.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.25.0';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.25.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -71,7 +71,7 @@ function show(stage) {
   if (onboarding) setRoomTab('aula');
   $('#registration h2').id = stage === 'registration' ? 'dialog-title' : 'registration-title';
   $('#avatar h2').id = stage === 'avatar' ? 'dialog-title' : 'avatar-title';
-  document.title = 'Mi aula · AulaVirtualJv';
+  document.title = 'Mi aula · AulavirtualJV';
   renderChatNotice(onboarding ? 0 : unreadCount);
   draw();
   updateAmbientAnimation();
@@ -931,7 +931,7 @@ function renderChatNotice(count) {
   $('#chat-alert-text').textContent = count === 1
     ? 'Tienes 1 mensaje nuevo en el chat de tu equipo.'
     : `Tienes ${count} mensajes nuevos en el chat de tu equipo.`;
-  document.title = count ? `(${count}) Mensajes · Mi aula · AulaVirtualJv` : 'Mi aula · AulaVirtualJv';
+  document.title = count ? `(${count}) Mensajes · Mi aula · AulavirtualJV` : 'Mi aula · AulavirtualJV';
 }
 function updateChatNotice(messages, topicId) {
   const key = `aula-chat-seen:${courseId}:${profile.id}:${topicId}`;

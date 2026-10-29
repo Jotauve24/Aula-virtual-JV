@@ -29,7 +29,7 @@ class Element {
 const reviewText = node => String(node.textContent || '') + node.children.map(reviewText).join(' ');
 
 async function boot({ files = [], fileError = null, students = [], topics = [], extraCourses = [],
-  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null, operationError = {}, liveRows,sendCodeHandler } = {}) {
+  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null, operationError = {}, liveRows } = {}) {
   const nodes = new Map();
   const descendants = node => [node, ...node.children.flatMap(descendants)];
   const get = selector => {
@@ -130,7 +130,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
       return element;
     } },
     configured: true, signedIn: () => true, rpc, googleAvailable: async () => false,
-    sendCode:async email=>{calls.push(['sendCode',{email}]);if(sendCodeHandler)await sendCodeHandler(email);}, signInWithGoogle() {}, signOut() {}, confirm: () => true,
+    initTeacherAuth:({onSignedIn})=>{void onSignedIn().catch(()=>{});return {signOut(){}};}, location:{search:''}, URLSearchParams, confirm: () => true,
     Blob, URL: { createObjectURL(blob) { downloadedBlob = blob; return 'blob:roster'; }, revokeObjectURL() {} },
     allCoursesXlsx, TextEncoder, buildTeacherPresenceStats, presenceAgeLabel,
     setTimeout() {}, setInterval() { return 1; }, clearInterval() {},
@@ -967,15 +967,6 @@ test('una edición pendiente no reabre el panel después de cerrar sesión',asyn
  release();await pending;
  assert.equal(page.get('#edit-topic-dialog').open,false);assert.equal(page.get('#detail').hidden,true);assert.equal(page.get('#login').hidden,false);
  assert.doesNotMatch(page.get('#teacher-success').textContent,/Tema y cupos actualizados/);
-});
-test('el acceso docente evita envíos simultáneos del mismo enlace y restaura su botón',async()=>{
- let release;const gate=new Promise(resolve=>release=resolve);
- const page=await boot({sendCodeHandler:()=>gate});const form=page.get('#login'),button=new Element();
- button.innerHTML='Enviarme un enlace';form.querySelector=()=>button;form.elements={email:{value:' DOCENTE@EXAMPLE.TEST '}};
- form.dispatch('submit');await new Promise(setImmediate);form.dispatch('submit');await new Promise(setImmediate);
- assert.equal(page.calls.filter(([name])=>name==='sendCode').length,1);assert.equal(button.disabled,true);assert.equal(form['aria-busy'],'true');
- release();await new Promise(setImmediate);
- assert.equal(button.disabled,false);assert.equal(form['aria-busy'],'false');assert.equal(button.innerHTML,'Enviarme un enlace');assert.equal(page.get('#verify').hidden,false);
 });
 test('las recuperaciones docentes asocian las etiquetas a sus controles de identidad',async()=>{
  const page=await boot({recoveryRequests:[{id:'request-qa',email:'qa@example.test',requested_at:'2026-10-28T12:00:00Z'}]});
