@@ -1,6 +1,6 @@
 import { configured, signedIn, signOut, sendCode, googleAvailable, signInWithGoogle,
   signInTeacherWithPassword, resetTeacherPassword, teacherRecoveryPending,
-  teacherCallbackError, updateTeacherPassword, teacherAuthError } from './supabase-client.js?v=0.25.0';
+  teacherCallbackError, updateTeacherPassword, teacherAuthError } from './supabase-client.js?v=0.26.0';
 
 // Teacher credentials stay separate from student identities, including recovery.
 export function initTeacherAuth({ show, onSignedIn, onNotice }) {

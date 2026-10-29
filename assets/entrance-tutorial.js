@@ -1,5 +1,5 @@
-import { drawWorld, avatarSVG } from './world.js?v=0.25.0';
-import { createRoomLayout, findPath } from './world-layout.js?v=0.25.0';
+import { drawWorld, avatarSVG } from './world.js?v=0.26.0';
+import { createRoomLayout, findPath } from './world-layout.js?v=0.26.0';
 
 export const TUTORIAL_STEPS = [
   { id: 'code', short: 'Código', title: 'Primero, el código de tu materia.', emphasis: 'código', description: 'Escribe el código de tu docente y pulsa «Entrar a mi materia».', duration: 6000 },
@@ -190,7 +190,7 @@ export function mountEntranceTutorial(root) {
   }
   function sync() {
     stop(); lastPaint = -Infinity;
-    const state = clock.visibility(inView && !document.hidden);
+    const state = clock.visibility(inView && !document.hidden && document.documentElement?.dataset?.aulaGuideOpen !== 'true');
     paint();
     if (!state.paused && state.visible) frame = requestAnimationFrame(animate);
   }
@@ -216,6 +216,7 @@ export function mountEntranceTutorial(root) {
     sync();
   });
   document.addEventListener('visibilitychange', sync);
+  document.addEventListener('aulajv:guide-visibility', sync);
   // The map sits below the form on a phone: don't animate an off-screen canvas.
   const observer = typeof IntersectionObserver === 'function' ? new IntersectionObserver(entries => {
     inView = entries[0].isIntersecting; sync();

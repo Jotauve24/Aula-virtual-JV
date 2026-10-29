@@ -1,7 +1,7 @@
 import {
   SOUND_STORAGE_KEY, AMBIENT_VOLUME, EFFECT_VOLUME, SOUND_SOURCE,
   soundEnabled, shouldPlayAmbient, soundForAction
-} from './retro-audio-model.js?v=0.25.0';
+} from './retro-audio-model.js?v=0.26.0';
 
 const room = document.querySelector('#room');
 const button = document.querySelector('#retro-sound-toggle');
@@ -26,7 +26,7 @@ if (room && button) {
   });
 
   function active() {
-    return shouldPlayAmbient({
+    return document.documentElement?.dataset?.aulaGuideOpen !== 'true' && shouldPlayAmbient({
       enabled, stage:room.dataset.stage, hidden:room.hidden, pageHidden:document.hidden
     });
   }
@@ -46,7 +46,7 @@ if (room && button) {
   }
   // The effects are short, original 8-bit tones, not copied Mario samples.
   function notes(list, level = EFFECT_VOLUME) {
-    if (!enabled || document.hidden) return;
+    if (!enabled || document.hidden || document.documentElement?.dataset?.aulaGuideOpen === 'true') return;
     const engine = audioContext();
     if (!engine) return;
     if (engine.state === 'suspended') void engine.resume().catch(() => {});
@@ -158,6 +158,7 @@ if (room && button) {
   const observer = new MutationObserver(synchronize);
   observer.observe(room,{attributes:true,attributeFilter:['hidden','data-stage']});
   document.addEventListener('visibilitychange',synchronize);
+  document.addEventListener('aulajv:guide-visibility',synchronize);
   window.addEventListener('pagehide', () => {
     music.pause();
     stopFallback();
