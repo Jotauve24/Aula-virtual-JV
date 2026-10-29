@@ -19,18 +19,21 @@ test('shows enrolled count separately from connected students',()=>{
   assert.equal(value.online,7);
   assert.deepEqual([...value.byCourse.values()],[2,0,5]);
 });
-test('courses absent from response still display zero online and zero is valid',()=>{
+test('a missing course stays unknown while an explicit zero remains a valid observation',()=>{
   const value=buildTeacherPresenceStats(courses,[{course_id:'course-a',online_count:0}]);
-  assert.equal(value.online,0);
-  assert.equal(value.byCourse.get('course-b'),0);
-  assert.equal(value.byCourse.get('course-c'),0);
+  assert.equal(value.online,null);
+  assert.equal(value.byCourse.get('course-a'),0);
+  assert.equal(value.byCourse.get('course-b'),null);
+  assert.equal(value.byCourse.get('course-c'),null);
+  assert.equal(value.studentsByCourse.get('course-b'),null);
 });
 test('does not introduce unknown courses into another teacher dashboard',()=>{
   const value=buildTeacherPresenceStats(courses,[
     {course_id:'other-teacher-course',online_count:100},
     {course_id:'course-c',online_count:1}
   ]);
-  assert.equal(value.online,1);
+  assert.equal(value.online,null);
+  assert.equal(value.byCourse.get('course-c'),1);
   assert.equal(value.byCourse.has('other-teacher-course'),false);
 });
 test('invalid and duplicate presence reports are rejected rather than displayed as zero',()=>{
@@ -81,8 +84,8 @@ test('ignores another course roster in defense in depth',()=>{
       {id:'different',name:'Otro alumno',group:'Otro',seen_at:'2026-10-15T03:15:15.000Z'}
     ]}
   ]);
-  assert.equal(stats.online,0);
-  assert.deepEqual([...stats.studentsByCourse.values()],[[],[],[]]);
+  assert.equal(stats.online,null);
+  assert.deepEqual([...stats.studentsByCourse.values()],[null,null,null]);
 });
 test('formats last heartbeat time from server clock without trusting local time zone',()=>{
   const observed='2026-10-15T03:15:15.000Z';
@@ -96,7 +99,7 @@ test('formats last heartbeat time from server clock without trusting local time 
 test('el seguimiento cuenta todas las marcas independientemente de la conexión',()=>{
   const stats=buildTeacherPresenceStats(courses,[{course_id:'course-a',online_count:0,students:[],
     student_count:29,topic_count:6,pending_work_group_count:4,ready_work_group_count:2,enrollment_review_count:3}]);
-  assert.equal(stats.online,0);
+  assert.equal(stats.byCourse.get('course-a'),0);
   assert.deepEqual(stats.followUpByCourse.get('course-a'),{
     studentCount:29,topicCount:6,pendingWorkGroupCount:4,readyWorkGroupCount:2,enrollmentReviewCount:3
   });
@@ -114,7 +117,12 @@ test('el seguimiento inválido no se presenta como cero ni oculta la presencia v
     {ready_work_group_count:undefined},{ready_work_group_count:null},{ready_work_group_count:-1},
     {ready_work_group_count:'1'},{ready_work_group_count:2},{ready_work_group_count:0.5}]) {
     const stats=buildTeacherPresenceStats(courses,[{...row,...patch}]);
-    assert.equal(stats.followUpByCourse.get('course-a'),null);assert.equal(stats.online,2);
+    assert.equal(stats.followUpByCourse.get('course-a'),null);assert.equal(stats.byCourse.get('course-a'),2);
   }
   assert.equal(buildTeacherPresenceStats(courses,[{...row,course_id:'foreign'}]).followUpByCourse.has('foreign'),false);
+});
+test('a legacy count without its roster never fabricates an empty student list',()=>{
+  const stats=buildTeacherPresenceStats(courses,[{course_id:'course-a',online_count:2}]);
+  assert.equal(stats.byCourse.get('course-a'),2);
+  assert.equal(stats.studentsByCourse.get('course-a'),null);
 });

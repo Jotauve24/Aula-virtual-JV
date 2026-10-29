@@ -1,12 +1,14 @@
-import './embed.js?v=0.23.0';
-import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.23.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.23.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.23.0';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.23.0';
+import './embed.js?v=0.24.0';
+import { configured, sendCode, googleAvailable, signInWithGoogle, rpc, signedIn, signOut, deleteTeacherCourseFiles } from './supabase-client.js?v=0.24.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.24.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.24.0';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.24.0';
 const $ = selector => document.querySelector(selector);
 let email = '', courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
+let loginRequest = null;
 let renamingCourseTarget = null;
+let editingTopic = null;
 let movingStudentTarget = null, movingStudent = false;
 const pendingEnrollmentReviews = new Map();
 const pendingWorkGroups = new Map();
@@ -38,14 +40,27 @@ else if (signedIn()) run(async () => { await loadCourses(); const target = new U
 if (configured) googleAvailable().then(available => { $('#google-login').hidden = !available; }).catch(() => {});
 $('#google-login').addEventListener('click', signInWithGoogle);
 $('#login').addEventListener('submit', event => { event.preventDefault(); run(async () => {
+  if (loginRequest) return;
+  const form = event.target, button = form.querySelector('button[type="submit"]');
   const generation = accountGeneration;
-  email = event.target.elements.email.value.trim().toLowerCase(); await sendCode(email);
-  if(generation !== accountGeneration)return;
-  show('verify'); $('#notice').textContent = 'Revisa el correo docente y abre el enlace de ingreso en este navegador.';
+  const request = {}; loginRequest = request;
+  const label = button.innerHTML;
+  button.disabled = true; button.textContent = 'Enviando enlace…'; form.setAttribute('aria-busy','true');
+  try {
+    email = form.elements.email.value.trim().toLowerCase(); await sendCode(email);
+    if(generation !== accountGeneration)return;
+    show('verify'); $('#notice').textContent = 'Revisa el correo docente y abre el enlace de ingreso en este navegador.';
+  } finally {
+    if (loginRequest === request) {
+      loginRequest = null; button.disabled = false; button.innerHTML = label;
+      form.setAttribute('aria-busy','false');
+    }
+  }
 }); });
 async function loadCourses() {
   clearCourseRename();
   clearStudentMove();
+  clearTopicEdit();
   // An older dashboard fetch must not hide a more recently opened course.
   const requestId = ++courseRequestGeneration;
   const [courses, disabled] = await Promise.all([rpc('my_courses'), rpc('teacher_disabled_courses')]);
@@ -207,7 +222,13 @@ function renderCourseRoster(id, host) {
     const text = document.createElement('p'); text.className = 'teacher-online-empty';
     text.textContent = 'Esperando datos de presencia…'; host.replaceChildren(text); return;
   }
-  const students = liveRosterSnapshot.studentsByCourse.get(id) || [];
+  const students = liveRosterSnapshot.studentsByCourse.get(id);
+  if (!Array.isArray(students)) {
+    if (host.dataset.rosterSignature === 'unavailable') return;
+    const unavailable = document.createElement('p'); unavailable.className = 'teacher-online-empty';
+    unavailable.textContent = 'No se pudo comprobar esta lista. Reintentando…';
+    host.replaceChildren(unavailable); host.dataset.rosterSignature = 'unavailable'; return;
+  }
   if (!students.length) {
     if (host.dataset.rosterSignature === 'empty') return;
     const empty = document.createElement('p'); empty.className = 'teacher-online-empty';
@@ -241,7 +262,7 @@ function updateLiveRosterViews() {
     if (active) {
       const id = overview.course.id;
       const count = liveRosterSnapshot?.byCourse.get(id);
-      $('#detail-live-count').textContent = count === undefined ? '— en línea' : count + ' en línea';
+      $('#detail-live-count').textContent = count == null ? '— en línea' : count + ' en línea';
       renderCourseRoster(id, $('#detail-online-list'));
     }
   }
@@ -289,21 +310,22 @@ async function refreshDashboardPresence(generation = liveGeneration) {
     });
     $('#summary-enrolled').textContent = String(dashboardCourses.reduce((total, course) => total + Number(course.student_count), 0));
     lastLiveFetch = Date.now();
-    $('#summary-online').textContent = String(stats.online);
+    $('#summary-online').textContent = stats.online === null ? '—' : String(stats.online);
     document.querySelectorAll('[data-live-course-id]').forEach(label => {
-      const count = stats.byCourse.get(label.dataset.liveCourseId) ?? 0;
-      label.textContent = count + ' en línea';
-      label.parentElement.dataset.online = count > 0 ? 'true' : 'false';
+      const count = stats.byCourse.get(label.dataset.liveCourseId);
+      label.textContent = count == null ? '— en línea' : count + ' en línea';
+      label.parentElement.dataset.online = count == null ? 'pending' : count > 0 ? 'true' : 'false';
     });
     document.querySelectorAll('[data-roster-count-id]').forEach(label => {
-      const count = stats.byCourse.get(label.dataset.rosterCountId) ?? 0;
-      label.textContent = count ? count + ' conectados' : 'Nadie conectado';
+      const count = stats.byCourse.get(label.dataset.rosterCountId);
+      label.textContent = count == null ? 'Sin datos · reintentando…' : count ? count + (count === 1 ? ' conectado' : ' conectados') : 'Nadie conectado';
     });
     updateLiveRosterViews();
-    $('#live-monitor-status').dataset.state = 'ready';
+    $('#live-monitor-status').dataset.state = stats.online === null ? 'pending' : 'ready';
     const clock = new Intl.DateTimeFormat('es-PA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    $('#live-updated').textContent = 'Actualizado: ' + clock.format(new Date());
-    $('#live-error').hidden = true;
+    $('#live-updated').textContent = (stats.online === null ? 'Actualización parcial: ' : 'Actualizado: ') + clock.format(new Date());
+    $('#live-error').textContent = stats.online === null ? 'Algunas materias no devolvieron datos de presencia. Reintentaremos automáticamente.' : '';
+    $('#live-error').hidden = stats.online !== null;
   } catch (error) {
     if (generation === liveGeneration && (!$('#dashboard').hidden || !$('#detail').hidden)) markPresenceUnavailable();
   } finally { liveRefreshing = false; }
@@ -352,6 +374,7 @@ async function refreshStudentRecoveryRequests(id) {
       info.textContent = 'Selecciona el perfil correcto y verifica la identidad del estudiante por una vía independiente antes de aprobar.';
       const label = document.createElement('label'); label.textContent = 'Estudiante que recuperará su cuenta';
       const select = document.createElement('select'); select.className = 'student-recovery-select';
+      select.id = 'recovery-student-' + request.id; select.name = 'student'; label.htmlFor = select.id;
       const empty = document.createElement('option'); empty.value = ''; empty.textContent = 'Seleccionar estudiante…';
       select.append(empty);
       const students = [...overview.students].sort((a,b) => {
@@ -370,6 +393,7 @@ async function refreshStudentRecoveryRequests(id) {
       const confirmLabel = document.createElement('label');
       confirmLabel.textContent = 'Escribe el nombre completo del estudiante para confirmar';
       const confirmation = document.createElement('input'); confirmation.type = 'text';
+      confirmation.id = 'recovery-name-' + request.id; confirmation.name = 'confirmation'; confirmLabel.htmlFor = confirmation.id;
       confirmation.autocomplete = 'off'; confirmation.placeholder = 'Nombre y apellido';
       const actions = document.createElement('div'); actions.className = 'student-recovery-actions';
       const approve = document.createElement('button'); approve.type = 'button';
@@ -435,6 +459,7 @@ async function refreshStudentRecoveryRequests(id) {
 async function openCourse(id) {
   clearCourseRename();
   clearStudentMove();
+  clearTopicEdit();
   const keepToolsOpen = id === courseId && $('#course-tools').open;
   // Commit only the latest response: slow connections can finish out of order.
   const requestId = ++courseRequestGeneration;
@@ -769,6 +794,7 @@ $('#logout').addEventListener('click', () => {
   ++courseRequestGeneration; ++accountGeneration;
   clearCourseRename();
   clearStudentMove();
+  clearTopicEdit();
   for(const id of ['#edit-topic-dialog','#move-student-dialog','#delete-student-dialog','#delete-course-dialog']) { if($(id).open)$(id).close(); }
   courseId = ''; overview = null;
   signOut(); show('login');
@@ -1133,28 +1159,59 @@ $('#group-count-form').addEventListener('submit', event => { event.preventDefaul
     await openCourse(id); teacherSuccess('La cantidad de mesas quedó guardada.');
   } finally { button.disabled = false; }
 }); });
-let editingTopicId = '', editingTopicCourseId = '';
+function clearTopicEdit() {
+  editingTopic = null;
+  if ($('#edit-topic-dialog').open) $('#edit-topic-dialog').close();
+}
 function editTopic(topic) {
-  editingTopicId = topic.id; editingTopicCourseId = courseId;
+  if (editingTopic?.pending) return;
+  editingTopic = {id:topic.id,courseId,generation:courseRequestGeneration,pending:false};
   const form = $('#edit-topic-form');
+  form.setAttribute('aria-busy','false');
+  for (const name of ['name','instructions','capacity']) form.elements.namedItem(name).disabled = false;
+  form.querySelector('[type="submit"]').disabled = false;
+  form.querySelector('[type="submit"]').textContent = 'Guardar cambios';
+  $('#cancel-topic-edit').disabled = false;
   form.elements.namedItem('name').value = topic.name;
-  form.elements.namedItem('instructions').value = topic.instructions;
+  form.elements.namedItem('instructions').value = topic.instructions || '';
   form.elements.namedItem('capacity').value = topic.capacity;
   $('#edit-topic-error').hidden = true; $('#edit-topic-dialog').showModal();
 }
-$('#cancel-topic-edit').addEventListener('click', () => $('#edit-topic-dialog').close());
+$('#cancel-topic-edit').addEventListener('click', () => { if (!editingTopic?.pending) clearTopicEdit(); });
+$('#edit-topic-dialog').addEventListener('cancel', event => {
+  if (editingTopic?.pending) event.preventDefault();
+  else editingTopic = null;
+});
 $('#edit-topic-form').addEventListener('submit', async event => {
   event.preventDefault(); const f = event.target.elements, button = event.target.querySelector('[type="submit"]');
-  const id = editingTopicCourseId, generation = courseRequestGeneration;
-  if(!courseIsCurrent(id,generation))return;
-  button.disabled = true; $('#edit-topic-error').hidden = true;
-  try { await rpc('teacher_edit_topic', { p_course_id: id, p_topic_id: editingTopicId,
+  const target = editingTopic;
+  if (!target || target.pending || !courseIsCurrent(target.courseId,target.generation)) return;
+  const current = () => editingTopic === target && courseIsCurrent(target.courseId,target.generation);
+  const {courseId:id} = target;
+  const details = {
     p_name: f.namedItem('name').value.trim(), p_instructions: f.namedItem('instructions').value.trim(),
-    p_capacity: Number(f.namedItem('capacity').value) });
-    if(!courseIsCurrent(id,generation))return;
-    $('#edit-topic-dialog').close(); await openCourse(id); teacherSuccess('Tema y cupos actualizados.');
-  } catch(error) { $('#edit-topic-error').textContent = error.message; $('#edit-topic-error').hidden = false; }
-  finally { button.disabled = false; }
+    p_capacity: Number(f.namedItem('capacity').value) };
+  target.pending = true; button.disabled = true; button.textContent = 'Guardando…';
+  $('#cancel-topic-edit').disabled = true; $('#edit-topic-error').hidden = true;
+  event.target.setAttribute('aria-busy','true');
+  for (const name of ['name','instructions','capacity']) f.namedItem(name).disabled = true;
+  try {
+    await rpc('teacher_edit_topic', { p_course_id: id, p_topic_id: target.id, ...details });
+    if (!current()) return;
+    clearTopicEdit();
+    const refresh = openCourse(id), generation = courseRequestGeneration;
+    try { await refresh; }
+    catch { if (courseIsCurrent(id,generation)) alertError('Los cambios se guardaron. Vuelve a abrir la materia para actualizar el listado.'); return; }
+    if (courseIsCurrent(id,generation)) teacherSuccess('Tema y cupos actualizados.');
+  } catch(error) {
+    if (current()) { $('#edit-topic-error').textContent = error.message; $('#edit-topic-error').hidden = false; }
+  } finally {
+    if (editingTopic === target) {
+      target.pending = false; button.disabled = false; button.textContent = 'Guardar cambios';
+      $('#cancel-topic-edit').disabled = false; event.target.setAttribute('aria-busy','false');
+      for (const name of ['name','instructions','capacity']) f.namedItem(name).disabled = false;
+    }
+  }
 });
 function teacherSuccess(text) {
   $('#teacher-success').textContent = text; $('#teacher-success').hidden = false;

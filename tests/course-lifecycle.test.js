@@ -29,7 +29,7 @@ class Element {
 const reviewText = node => String(node.textContent || '') + node.children.map(reviewText).join(' ');
 
 async function boot({ files = [], fileError = null, students = [], topics = [], extraCourses = [],
-  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null, operationError = {}, liveRows } = {}) {
+  disabledCourses = [], overviewById = {}, studentFiles = {}, recoveryRequests = [], delays = {}, renameError = null, operationError = {}, liveRows,sendCodeHandler } = {}) {
   const nodes = new Map();
   const descendants = node => [node, ...node.children.flatMap(descendants)];
   const get = selector => {
@@ -74,6 +74,11 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
       course.name = body.p_name;
       return { id: course.id, name: course.name };
     }
+    if (name === 'teacher_edit_topic') {
+      const topic=topics.find(row=>row.id===body.p_topic_id);
+      assert.ok(topic);assert.equal(body.p_course_id,course.id);
+      Object.assign(topic,{name:body.p_name,instructions:body.p_instructions,capacity:body.p_capacity});return;
+    }
     if (name === 'teacher_release_student') {students.find(s=>s.id===body.p_student_id).topicId=null;return;}
     if (name === 'teacher_set_topic_locked') {
       const topic=topics.find(row=>row.id===body.p_topic_id);
@@ -116,7 +121,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     if (name === 'teacher_delete_course') { assert.equal(course.active, false); course = null; return; }
     throw new Error('RPC inesperado: ' + name);
   };
-  const pageActions = vm.runInNewContext(teamUiSource+'\n'+source+'\n({openCourse,loadCourses,refreshDashboardPresence})', {
+  const pageActions = vm.runInNewContext(teamUiSource+'\n'+source+'\n({openCourse,loadCourses,refreshDashboardPresence,editTopic})', {
     document: { querySelector: get, querySelectorAll: () => [], hidden: false,
       createTextNode: text => { const node = new Element(); node.textContent = text; return node; },
       body: { append() {} }, createElement: tag => {
@@ -125,7 +130,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
       return element;
     } },
     configured: true, signedIn: () => true, rpc, googleAvailable: async () => false,
-    sendCode() {}, signInWithGoogle() {}, signOut() {}, confirm: () => true,
+    sendCode:async email=>{calls.push(['sendCode',{email}]);if(sendCodeHandler)await sendCodeHandler(email);}, signInWithGoogle() {}, signOut() {}, confirm: () => true,
     Blob, URL: { createObjectURL(blob) { downloadedBlob = blob; return 'blob:roster'; }, revokeObjectURL() {} },
     allCoursesXlsx, TextEncoder, buildTeacherPresenceStats, presenceAgeLabel,
     setTimeout() {}, setInterval() { return 1; }, clearInterval() {},
@@ -135,7 +140,7 @@ async function boot({ files = [], fileError = null, students = [], topics = [], 
     }
   }, { filename: 'assets/teacher.js' });
   await new Promise(resolve => setImmediate(resolve));
-  return { get, calls, downloads, current: () => course, openCourse: pageActions.openCourse, loadCourses: pageActions.loadCourses, refresh:pageActions.refreshDashboardPresence };
+  return { get, calls, downloads, current: () => course, openCourse: pageActions.openCourse, loadCourses: pageActions.loadCourses, refresh:pageActions.refreshDashboardPresence,editTopic:pageActions.editTopic };
 }
 
 test('Mis materias muestra grupos sin check y matrícula por verificar aunque nadie esté conectado',async()=>{
@@ -919,4 +924,85 @@ test('una lectura fallida tras guardar un candado o traslado informa al docente 
  if(lockAction)assert.equal(topics[0].locked,true);
  else {assert.equal(students[0].topicId,'g1');assert.match(page.get('#error').textContent,/asignación se guardó/);}
  }
+});
+
+function topicEditor(page) {
+ const form=page.get('#edit-topic-form');
+ const fields=Object.fromEntries(['name','instructions','capacity'].map(name=>[name,new Element()]));
+ form.elements={namedItem:name=>fields[name]};
+ form.querySelector=()=>page.get('#edit-topic-submit');
+ return {form,fields};
+}
+test('editar tema congela sus datos y evita cerrar o abrir otra edición durante el guardado',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const topics=[{id:'a',name:'Coral',capacity:5,position:0},{id:'b',name:'Teal',capacity:5,position:1}];
+ const page=await boot({topics,delays:{teacher_edit_topic:()=>gate}});await page.openCourse('course-1');
+ const {form,fields}=topicEditor(page);page.editTopic(topics[0]);fields.name.value='Coral actualizado';
+ const pending=form.dispatch('submit');await new Promise(setImmediate);
+ assert.ok(Object.values(fields).every(field=>field.disabled));assert.equal(form['aria-busy'],'true');
+ page.get('#cancel-topic-edit').click();assert.equal(page.get('#edit-topic-dialog').open,true);
+ let prevented=false;page.get('#edit-topic-dialog').listeners.get('cancel')({preventDefault(){prevented=true;}});assert.equal(prevented,true);
+ page.editTopic(topics[1]);assert.equal(fields.name.value,'Coral actualizado');
+ await form.dispatch('submit');assert.equal(page.calls.filter(([name])=>name==='teacher_edit_topic').length,1);
+ release();await pending;assert.equal(topics[0].name,'Coral actualizado');assert.equal(topics[1].name,'Teal');
+ assert.equal(page.get('#edit-topic-dialog').open,false);
+ page.editTopic(topics[1]);assert.equal(fields.name.value,'Teal');assert.ok(Object.values(fields).every(field=>!field.disabled));
+});
+test('un error de edición permite reintentar con los datos escritos y no afecta una sesión cerrada',async()=>{
+ let release,fail=true;const gate=new Promise(resolve=>release=resolve);
+ const topics=[{id:'a',name:'Coral',capacity:5,position:0}];
+ const page=await boot({topics,delays:{teacher_edit_topic:()=>gate},operationError:{teacher_edit_topic:()=>fail}});
+ await page.openCourse('course-1');const {form,fields}=topicEditor(page);page.editTopic(topics[0]);fields.name.value='Mi tema corregido';
+ const pending=form.dispatch('submit');release();await pending;
+ assert.equal(fields.name.value,'Mi tema corregido');assert.equal(fields.name.disabled,false);
+ assert.equal(page.get('#edit-topic-error').hidden,false);assert.equal(form['aria-busy'],'false');
+ fail=false;await form.dispatch('submit');assert.equal(topics[0].name,'Mi tema corregido');
+});
+test('una edición pendiente no reabre el panel después de cerrar sesión',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const topics=[{id:'a',name:'Coral',capacity:5,position:0}];
+ const page=await boot({topics,delays:{teacher_edit_topic:()=>gate}});await page.openCourse('course-1');
+ const {form,fields}=topicEditor(page);page.editTopic(topics[0]);fields.name.value='Guardado anterior';
+ const pending=form.dispatch('submit');await new Promise(setImmediate);page.get('#logout').click();
+ release();await pending;
+ assert.equal(page.get('#edit-topic-dialog').open,false);assert.equal(page.get('#detail').hidden,true);assert.equal(page.get('#login').hidden,false);
+ assert.doesNotMatch(page.get('#teacher-success').textContent,/Tema y cupos actualizados/);
+});
+test('el acceso docente evita envíos simultáneos del mismo enlace y restaura su botón',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=await boot({sendCodeHandler:()=>gate});const form=page.get('#login'),button=new Element();
+ button.innerHTML='Enviarme un enlace';form.querySelector=()=>button;form.elements={email:{value:' DOCENTE@EXAMPLE.TEST '}};
+ form.dispatch('submit');await new Promise(setImmediate);form.dispatch('submit');await new Promise(setImmediate);
+ assert.equal(page.calls.filter(([name])=>name==='sendCode').length,1);assert.equal(button.disabled,true);assert.equal(form['aria-busy'],'true');
+ release();await new Promise(setImmediate);
+ assert.equal(button.disabled,false);assert.equal(form['aria-busy'],'false');assert.equal(button.innerHTML,'Enviarme un enlace');assert.equal(page.get('#verify').hidden,false);
+});
+test('las recuperaciones docentes asocian las etiquetas a sus controles de identidad',async()=>{
+ const page=await boot({recoveryRequests:[{id:'request-qa',email:'qa@example.test',requested_at:'2026-10-28T12:00:00Z'}]});
+ await page.openCourse('course-1');await new Promise(setImmediate);
+ const item=page.get('#student-recovery-requests').children[0];
+ assert.equal(item.children[2].htmlFor,item.children[3].id);assert.equal(item.children[3].name,'student');
+ assert.equal(item.children[5].htmlFor,item.children[6].id);assert.equal(item.children[6].name,'confirmation');
+});
+test('una respuesta parcial muestra presencia desconocida hasta recibir un cero confirmado',async()=>{
+ let available=false;const page=await boot({liveRows:()=>available?[{course_id:'course-1',online_count:0,students:[]}]:[]});
+ assert.equal(page.get('#summary-online').textContent,'—');assert.match(page.get('#live-updated').textContent,/parcial/);
+ assert.equal(page.get('#live-error').hidden,false);await page.openCourse('course-1');
+ assert.equal(page.get('#detail-live-count').textContent,'— en línea');
+ assert.match(reviewText(page.get('#detail-online-list')),/No se pudo comprobar/);
+ available=true;await page.refresh();assert.equal(page.get('#summary-online').textContent,'0');assert.equal(page.get('#live-error').hidden,true);
+ assert.match(reviewText(page.get('#detail-online-list')),/No hay estudiantes conectados/);
+});
+
+test('volver a materias descarta la edición anterior y deja iniciar otra aunque su respuesta siga pendiente',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const topics=[{id:'a',name:'Coral',capacity:5,position:0},{id:'b',name:'Teal',capacity:5,position:1}];
+ const page=await boot({topics,delays:{teacher_edit_topic:()=>gate}});await page.openCourse('course-1');
+ const {form,fields}=topicEditor(page);page.editTopic(topics[0]);fields.name.value='Cambio anterior';
+ const old=form.dispatch('submit');await new Promise(setImmediate);await page.loadCourses();
+ assert.equal(page.get('#edit-topic-dialog').open,false);await page.openCourse('course-1');page.editTopic(topics[1]);
+ assert.equal(fields.name.value,'Teal');assert.equal(fields.name.disabled,false);
+ release();await old;
+ assert.equal(page.get('#edit-topic-dialog').open,true);assert.equal(fields.name.value,'Teal');
+ assert.doesNotMatch(page.get('#teacher-success').textContent,/Tema y cupos actualizados/);
 });

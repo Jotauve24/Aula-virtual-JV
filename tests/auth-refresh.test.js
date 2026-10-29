@@ -161,3 +161,22 @@ test('a pending anonymous signup cannot overwrite a verified session',async()=>{
   app.resolveNext();await attempt;
   assert.equal(JSON.parse(app.localStorage.getItem('aula-student-session')).access_token,verified.access_token);
 });
+test('signing out discards a pending anonymous signup without restoring the session',async()=>{
+  const app=browser({student:false,teacher:true});
+  const pending=app.api.signInStudentAnonymously();
+  await settle(); app.api.studentSignOut(); app.resolveNext();
+  await assert.rejects(pending,/La sesión se cerró/);
+  assert.equal(app.api.studentSignedIn(),false);
+  assert.equal(app.api.signedIn(),true);
+});
+test('a new anonymous attempt after logout does not reuse the cancelled signup',async()=>{
+  const app=browser({student:false});
+  const old=app.api.signInStudentAnonymously();
+  await settle(); app.api.studentSignOut();
+  const fresh=app.api.signInStudentAnonymously();
+  await settle(); assert.equal(app.signupCount,2);
+  app.resolveNext(); await assert.rejects(old,/La sesión se cerró/);
+  assert.equal(app.api.studentSignedIn(),false);
+  app.resolveNext(); await fresh;
+  assert.equal(app.api.studentSignedIn(),true);
+});

@@ -18,7 +18,7 @@ class Element {
   showModal(){this.open=true;}
   close(){this.open=false;}
 }
-function browser({pending={status:'pending'},own=[],search='',storedCode='',recoveryCode='',documentRecovery=false,confirmed=true,anonymous=false,hasEnrollment=false,authFailure='',expireSession=false}={}){
+function browser({pending={status:'pending'},own=[],search='',storedCode='',recoveryCode='',documentRecovery=false,confirmed=true,anonymous=false,hasEnrollment=false,authFailure='',expireSession=false,authWait,rpcWait,loginWait}={}){
   const elements=new Map();
   const get=selector=>{if(!elements.has(selector))elements.set(selector,new Element());return elements.get(selector);};
   const memory=new Map(storedCode?[['aula-student-course-code',storedCode]]:[]);
@@ -35,6 +35,7 @@ function browser({pending={status:'pending'},own=[],search='',storedCode='',reco
   };
   const studentRpc=async(name,args)=>{
     rpcCalls.push({name,args});
+    if(rpcWait)await rpcWait(name,args);
     if(name==='student_recover_document_account')return {recovered:own.length};
     if(name==='student_has_any_enrollment')return hasEnrollment;
     if(name==='student_owned_courses')return own;
@@ -47,11 +48,12 @@ function browser({pending={status:'pending'},own=[],search='',storedCode='',reco
     document:{querySelector:get,createElement:tag=>new Element(tag)},
     studentSignedIn:()=>signedIn,studentRpc,
     studentAuthUser:async()=>{
+      if(authWait)await authWait();
       if(authFailure){if(expireSession)signedIn=false;throw Error(authFailure);}
       return {id:'verified',email:'alumno@ejemplo.com',is_anonymous:anonymous,email_confirmed_at:confirmed&&!anonymous?'2026-10-15':null};
     },
     protectStudentAccount:async()=>{},
-    emailStudentLogin:async()=>{},
+    emailStudentLogin:async()=>{if(loginWait)await loginWait();},
     localStorage,sessionStorage,location,URL,URLSearchParams,
     MutationObserver:class{observe(){}},
   });
@@ -213,4 +215,33 @@ test('document recovery flag never bypasses the verified email requirement',asyn
  await page.settle();
  assert.equal(page.rpcCalls.some(c=>c.name==='student_recover_document_account'),false);
  assert.equal(page.navigations.length,0);
+});
+test('cerrar la protección descarta su respuesta sin insertar el formulario en otro diálogo',async()=>{
+ let release,reads=0;const gate=new Promise(resolve=>release=resolve);
+ const page=browser({authWait:()=>++reads===1?gate:undefined});
+ const old=vm.runInContext('openProtection()',page.context);
+ page.get('#student-account-close').listeners.get('click')();
+ await vm.runInContext('openRecoveryRequest()',page.context);
+ const before=[...page.get('#account-dialog-content').children];
+ release();await old;
+ assert.equal(page.get('#account-dialog-title').textContent,'Recuperar mi perfil');
+ assert.deepEqual(page.get('#account-dialog-content').children,before);
+});
+test('cerrar una recuperación pendiente impide navegar cuando llega su respuesta',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=browser({pending:{status:'recovered',course_id:ownedCourse},rpcWait:name=>name==='student_request_profile_recovery'?gate:undefined});
+ await vm.runInContext('openRecoveryRequest()',page.context);
+ const form=page.get('#account-dialog-content').children.find(node=>node.tagName==='form');
+ form.children.find(node=>node.tagName==='input').value='MAT-AAAAA-BBBBB-CCCCC';
+ form.listeners.get('submit')({preventDefault(){}});await page.settle();
+ page.get('#student-account-close').listeners.get('click')();release();await page.settle();
+ assert.equal(page.navigations.length,0);assert.equal(page.get('#student-account-dialog').open,false);
+});
+test('comprobar recuperación no reabre el aula después de cerrar sesión',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const page=browser({pending:{status:'recovered',course_id:ownedCourse},rpcWait:name=>name==='student_complete_profile_recovery'?gate:undefined});
+ await vm.runInContext('openRecoveryRequest()',page.context);
+ const pending=page.check();await page.settle();page.get('#logout').listeners.get('click')();
+ release();await pending;
+ assert.equal(page.navigations.length,0);assert.equal(page.get('#student-account-dialog').open,false);
 });

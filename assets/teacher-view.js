@@ -1,9 +1,9 @@
-import './embed.js?v=0.23.0';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.23.0';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.23.0';
-import { drawWorld, roomTheme } from './world.js?v=0.23.0';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.23.0';
-import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.23.0';
+import './embed.js?v=0.24.0';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.24.0';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.24.0';
+import { drawWorld, roomTheme } from './world.js?v=0.24.0';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.24.0';
+import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.24.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -14,7 +14,6 @@ let courseId = '', topics = [], layout = createRoomLayout(0), player = { x: 400,
 let seated = [], peers = [], path = [], animation = 0, previousFrame = 0, lastDraw = 0;
 let lastPresence = 0, state = 'pending', pingRunning = false, roomRunning = false;
 let pingTimer = 0, roomTimer = 0, destroyed = false;
-let selectedTeamId = '';
 
 function status(value) { $('#room-status').textContent = value; }
 function fail(value) {
@@ -28,7 +27,7 @@ function sortTopics(values) {
 }
 function onlineIds() { return new Set(peers.map(peer => peer.id)); }
 function renderRoster() {
-  const online = onlineIds(), host = $('#teacher-topics');
+  const host = $('#teacher-topics');
   const nodes = topics.map(topic => {
     const details = document.createElement('details'); details.className = 'teacher-view-topic';
     details.dataset.topicId = topic.id;
