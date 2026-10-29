@@ -17,7 +17,7 @@ function start(saved=null){
   };
   const room={dataset:{stage:'registration'},hidden:false};
   const document={
-    hidden:false,
+    hidden:false,documentElement:{dataset:{}},
     querySelector:s=>s==='#room'?room:s==='#retro-sound-toggle'?button:null,
     addEventListener:(name,fn)=>{events[name]=fn;}
   };
@@ -111,4 +111,25 @@ test('incoming sounds do not play in a hidden tab or outside a room',()=>{
   app.document.hidden=true;
   app.events['aulajv:chat-received']();
   assert.equal(app.tones.length,0);
+});
+
+
+test('a video guide temporarily silences ambient music and chat sounds without changing preference',async()=>{
+  const app=start();app.room.dataset.stage='room';app.update();
+  await Promise.resolve();await Promise.resolve();
+  assert.equal(app.music.paused,false);
+  app.document.documentElement.dataset.aulaGuideOpen='true';
+  app.events['aulajv:guide-visibility']();
+  assert.equal(app.music.paused,true);
+  app.events['aulajv:chat-received']();
+  assert.equal(app.tones.length,0);
+  assert.equal(app.button.attributes['aria-pressed'],'true');
+  delete app.document.documentElement.dataset.aulaGuideOpen;
+  app.events['aulajv:guide-visibility']();
+  assert.equal(app.music.paused,false);
+  app.button.listeners.click();
+  app.document.documentElement.dataset.aulaGuideOpen='true';app.events['aulajv:guide-visibility']();
+  delete app.document.documentElement.dataset.aulaGuideOpen;app.events['aulajv:guide-visibility']();
+  assert.equal(app.music.paused,true);
+  assert.equal(app.button.attributes['aria-pressed'],'false');
 });

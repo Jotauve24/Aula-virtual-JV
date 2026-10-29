@@ -24,6 +24,18 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Guías con voz y subtítulos (0.26.0)
+
+«Cómo funciona» en la portada abre el video del estudiante. Un icono de ayuda
+permite consultarlo dentro del aula; el panel y la sala docente tienen una
+guía específica. La versión para celular se presenta en vertical y puede
+descargarse para compartirla.
+
+Los videos se cargan al solicitar ayuda y se reproducen al pulsar los controles.
+Incluyen voz femenina sintética, subtítulos en español y pasos escritos.
+La música del aula se pausa durante la ayuda y conserva su preferencia de
+sonido al salir. [Comportamiento y verificación](docs/guias-video-2026-10-29.md).
+
 ## Icono de la app y acceso docente (0.25.0)
 
 La app se identifica como **AulavirtualJV** al agregarla al inicio del celular.

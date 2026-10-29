@@ -1,0 +1,48 @@
+.aula-guide-trigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:9px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-weight:750;cursor:pointer;touch-action:manipulation;transition:background-color .15s,color .15s}
+.aula-guide-trigger:hover{background:var(--accent-soft);color:var(--deep)}
+.aula-guide-trigger svg{flex:none}
+.campus-entrance .entry-nav .aula-guide-trigger{color:var(--champagne)}
+.campus-entrance .entry-nav .aula-guide-trigger:hover{background:var(--charcoal);color:var(--white)}
+.entry-video-shortcut{display:none}
+.aula-guide-icon{width:44px;height:44px;padding:0;flex:none}
+.aula-guide-trigger:focus-visible,.aula-guide-dialog :is(button,a,summary,video):focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.tour-heading .aula-guide-trigger{margin-left:auto;font-size:14px;white-space:nowrap}
+.aula-guide-dialog{box-sizing:border-box;width:calc(100% - 32px);max-width:1040px;max-height:calc(100dvh - 32px);margin:auto;padding:0;border:0;border-radius:18px;background:var(--surface);color:var(--ink);overscroll-behavior:contain;box-shadow:0 20px 70px #03192633} /* taste-skill-ignore: floating native modal */
+.aula-guide-dialog::backdrop{background:#031926b3}
+.aula-guide-body{padding:24px}
+.aula-guide-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:18px}
+.aula-guide-heading>div{min-width:0}
+.aula-guide-heading h2{margin:0;font-size:24px;line-height:1.2;color:var(--deep);text-wrap:balance}
+.aula-guide-heading p{margin:8px 0 0;font-size:16px;line-height:1.5;color:var(--muted)}
+.aula-guide-close{display:grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:0;border-radius:8px;background:var(--accent-soft);color:var(--deep);cursor:pointer;touch-action:manipulation}
+.aula-guide-close:hover{background:var(--opal)}
+.aula-guide-screen{display:flex;justify-content:center;background:var(--deep);border-radius:10px;overflow:hidden}
+.aula-guide-screen video{display:block;width:100%;max-height:62dvh;aspect-ratio:16/9;object-fit:contain;background:var(--deep)}
+.aula-guide-screen video.is-portrait{width:auto;height:min(62dvh,740px);max-width:100%;aspect-ratio:9/16}
+.aula-guide-screen video::cue{font-family:Nunito,sans-serif;background:#031926e6;color:white}
+.aula-guide-actions{display:flex;align-items:center;flex-wrap:wrap;gap:4px 20px;margin-top:8px}
+.aula-guide-actions p{flex:1 1 230px;margin:0;padding:10px 0;color:var(--muted);font-size:14px;line-height:1.5}
+.aula-guide-actions a{display:inline-flex;align-items:center;min-height:44px;color:var(--accent);font-size:14px;font-weight:750;text-underline-offset:3px;touch-action:manipulation}
+.aula-guide-actions a:hover{color:var(--deep)}
+.aula-guide-actions [hidden],.aula-guide-error[hidden]{display:none}
+.aula-guide-transcript{margin-top:12px;padding:0 16px;background:var(--paper);border-radius:10px}
+.aula-guide-transcript summary{min-height:44px;padding:12px 0;box-sizing:border-box;cursor:pointer;font-size:16px;font-weight:750;touch-action:manipulation}
+.aula-guide-transcript ol{margin:0;padding:0 0 16px 24px;font-size:16px;line-height:1.6}
+.aula-guide-transcript li+li{margin-top:10px}
+.aula-guide-credit{margin:14px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.aula-guide-error{margin:12px 0 0;padding:12px;background:var(--red-soft);color:var(--red);font-size:14px;line-height:1.5}
+@media(max-width:600px){
+ .aula-guide-dialog{width:calc(100% - 16px);max-height:calc(100dvh - 16px);border-radius:12px}
+ .aula-guide-body{padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+ .aula-guide-heading{gap:8px;margin-bottom:12px}
+ .aula-guide-heading h2{font-size:22px}
+ .aula-guide-heading p{font-size:14px}
+ .aula-guide-screen video,.aula-guide-screen video.is-portrait{max-height:58dvh}
+ .tour-heading{flex-wrap:wrap}
+ .tour-heading .aula-guide-trigger{margin-left:0}
+ .aula-guide-actions{column-gap:16px}
+ .aula-guide-actions p{flex-basis:100%;padding-bottom:0}
+}
+@media(prefers-reduced-motion:reduce){.aula-guide-trigger{transition:none}}
+
+@media(max-width:800px){.entry-video-shortcut{display:inline-flex;margin:-10px 0 16px;padding-left:0;color:var(--accent)}}
