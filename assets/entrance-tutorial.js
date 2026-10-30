@@ -1,5 +1,5 @@
-import { drawWorld, avatarSVG } from './world.js?v=0.27.3';
-import { createRoomLayout, findPath } from './world-layout.js?v=0.27.3';
+import { drawWorld, avatarSVG } from './world.js?v=0.27.4';
+import { createRoomLayout, findPath } from './world-layout.js?v=0.27.4';
 
 export const TUTORIAL_STEPS = [
   { id: 'code', short: 'Código', title: 'Primero, el código de tu materia.', emphasis: 'código', description: 'Escribe el código de tu docente y pulsa «Entrar a mi materia».', duration: 6000 },
@@ -135,8 +135,8 @@ export function mountEntranceTutorial(root) {
     root.style.setProperty('--tour-progress', state.progress);
     if (renderedPaused !== state.paused) {
       renderedPaused = state.paused;
-      $('#tour-toggle-label').textContent = state.paused ? 'Reproducir' : 'Pausar';
-      $('#tour-toggle').setAttribute('aria-label', state.paused ? 'Reproducir tutorial' : 'Pausar tutorial');
+      $('#tour-toggle-label').textContent = state.paused ? 'Animar pasos' : 'Pausar pasos';
+      $('#tour-toggle').setAttribute('aria-label', state.paused ? 'Reproducir animación de los pasos' : 'Pausar animación de los pasos');
       $('#tour-toggle').setAttribute('aria-pressed', String(!state.paused));
     }
     if (renderedStep !== state.step) {
