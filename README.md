@@ -452,6 +452,12 @@ La [auditoría del 23 de octubre](docs/auditoria-tecnica-2026-10-23.md) describe
 los hallazgos, las 192 pruebas automatizadas, las siete comprobaciones SQL y
 los límites de la revisión con navegador.
 
+## Códigos recientes en la portada
+
+La portada recuerda hasta cinco códigos recientes y deja el último escrito para
+entrar directamente. Tocar el campo o la flecha permite elegir otra materia.
+Consulta [códigos recientes y alcance del historial](docs/codigos-recientes.md).
+
 ## Chat flotante y avisos en el celular
 
 La versión 0.27.0 incorpora una ventana sobre el aula, ampliación, minimizado

@@ -1,18 +1,20 @@
-import './video-guide.js?v=0.27.4';
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.27.4';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.4';
-import './embed.js?v=0.27.4';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.27.4';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.27.4';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.27.4';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.27.4';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.4';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.27.4';
-import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.4';
-import { createChatPushSettings } from './chat-push.js?v=0.27.4';
-import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.4';
+import './video-guide.js?v=0.27.5';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.27.5';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.5';
+import './embed.js?v=0.27.5';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.27.5';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.27.5';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.27.5';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.27.5';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.5';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.27.5';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.5';
+import { createChatPushSettings } from './chat-push.js?v=0.27.5';
+import { createRecentCourses } from './recent-courses.js?v=0.27.5';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.5';
 
 const $ = selector => document.querySelector(selector);
+const recentCourses = createRecentCourses();
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let courseId = '', profile = null, topics = [], selectedTopic = null;
 let courseEntryGeneration = 0;
@@ -333,6 +335,7 @@ async function enterCourse(code, details = {}) {
     // Forget only the rejected shortcut. The anonymous session owns the profile and team.
     if (normalizeCode(localStorage.getItem('aula-student-course-code') || '') === code)
       localStorage.removeItem('aula-student-course-code');
+    recentCourses.forget(code);
     questions = ['code', 'firstName', 'lastName', 'age', 'documentNumber', 'email', 'phone'];
     questionIndex = 0; show('registration'); renderQuestion(true);
     throw new Error('No encontramos una materia con ese código. Revisa el código actual que te compartió tu docente.');
@@ -352,6 +355,7 @@ async function openStudentCourse(result, code = null, generation = ++courseEntry
   if (code) {
     localStorage.setItem('aula-student-course-code', code);
     localStorage.removeItem('aula-student-resume-id');
+    recentCourses.remember(code, result.course_name);
   } else {
     localStorage.setItem('aula-student-resume-id', result.course_id);
   }
