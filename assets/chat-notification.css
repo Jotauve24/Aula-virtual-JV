@@ -1,22 +1,4 @@
-/* New teammate message: a single gentle visual pulse, never a persistent blink. */
-#room .chat-alert.chat-just-arrived {
-  border-color:var(--red);
-  background:var(--warning-soft);
-  animation:retro-inbox-arrival 1.1s ease-out both;
-}
-#room .chat-alert.chat-just-arrived #chat-alert-open {
-  box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 12.55%,transparent);
-}
-@keyframes retro-inbox-arrival {
-  0% { box-shadow:0 0 0 0 color-mix(in srgb,var(--red) 33.33%,transparent),0 4px 14px color-mix(in srgb,var(--red) 9.41%,transparent); }
-  45% { box-shadow:0 0 0 8px color-mix(in srgb,var(--red) 4.71%,transparent),0 7px 23px color-mix(in srgb,var(--red) 15.29%,transparent); }
-  100% { box-shadow:0 0 0 0 color-mix(in srgb,var(--red) 0.00%,transparent),0 5px 18px color-mix(in srgb,var(--red) 11.76%,transparent); }
-}
-@media(prefers-reduced-motion:reduce){
-  #room .chat-alert.chat-just-arrived{animation:none}
-}
-
-/* ZombieAdmin gets the same in-room notification, using only local demo data. */
+/* The simulator uses fictional arrivals and shares the floating unread bubble. */
 #demo-chat-unread {
   display:inline-flex;align-items:center;justify-content:center;
   min-width:22px;margin-left:6px;padding:3px 7px;
@@ -24,5 +6,5 @@
   box-shadow:0 2px 6px color-mix(in srgb,var(--red) 26.67%,transparent);
   font-size:12px;font-weight:800;
 }
-#demo-chat-unread[hidden],#demo-chat-alert[hidden],
+#demo-chat-unread[hidden],
 #demo-message-trigger[hidden]{display:none}

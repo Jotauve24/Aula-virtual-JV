@@ -1,4 +1,5 @@
-import { fileSizeLabel } from './attachments.js?v=0.26.1';
+import { fileSizeLabel } from './attachments.js?v=0.27.0';
+import { avatarSVG } from './world.js?v=0.27.0';
 // Stable student IDs distinguish participants who share a display name.
 // Share one palette between the roster and the conversation, scoped to a team.
 const TONES = [
@@ -53,11 +54,17 @@ export function applyParticipantColor(node, color) {
   node.style.setProperty('--chat-border', color.border);
 }
 
-export function participantAvatar(name) {
+export function participantAvatar(name, look) {
   const words = String(name || 'Integrante').trim().split(/\s+/);
   const avatar = document.createElement('span');
   avatar.className = 'chat-avatar';
   avatar.setAttribute('aria-hidden', 'true');
+  if (look && typeof look === 'object') {
+    avatar.classList.add('has-pixel-avatar');
+    // avatarSVG uses the existing bounded pixel-avatar renderer, not user HTML.
+    avatar.innerHTML = avatarSVG(look);
+    return avatar;
+  }
   avatar.textContent = (Array.from(words[0])[0] + (words.length > 1 ? Array.from(words.at(-1))[0] : '')).toLocaleUpperCase('es');
   return avatar;
 }
@@ -104,7 +111,7 @@ export function chatMessage(msg, color, downloadAttachment) {
     });
     bubble.append(file);
   }
-  entry.append(participantAvatar(msg.name), bubble);
+  entry.append(participantAvatar(msg.name, msg.avatar), bubble);
   return entry;
 }
 

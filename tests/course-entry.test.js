@@ -17,6 +17,7 @@ const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', 
 const source = readFileSync(new URL('../assets/live.js', import.meta.url), 'utf8')
   .replace(/^import .*;\r?\n/gm, '');
 const teamUiSource = readFileSync(new URL('../assets/team-ui.js', import.meta.url), 'utf8').replace(/^export /gm, '');
+const floatingSource = readFileSync(new URL('../assets/floating-chat.js', import.meta.url), 'utf8').replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '');
 const OLD = 'MAT-AAAAA-BBBBB-CCCCC';
 const NEW = 'MAT-DDDDD-EEEEE-FFFFF';
 const LAST_CODE = 'aula-student-course-code';
@@ -78,27 +79,30 @@ class Element {
   get textContent() { return (this._textContent || '') + (this.children || []).map(node => node.textContent).join(''); }
   set textContent(value) { this._textContent = value; this.children = []; }
   constructor() {
-    this.value = ''; this.className=''; this.textContent = ''; this.hidden = false;
+    this.scrollTop=0;this.scrollHeight=0;this.clientHeight=0;this.value = ''; this.className=''; this.textContent = ''; this.hidden = false;
     this.dataset = {}; this.style = { setProperty(name, value) { this[name] = value; } };
-    this.classList = { add() {}, remove() {} }; this.offsetWidth = 0;
+    this.classList = { add() {}, remove() {}, toggle() {} }; this.offsetWidth = 0;
     this.listeners = new Map(); this.children = []; this.isConnected = true;
   }
   addEventListener(name, handler) { this.listeners.set(name, handler); }
   setAttribute(name, value) { this[name] = value; }
   removeAttribute(name) { delete this[name]; }
-  append(...nodes) { this.children.push(...nodes); }
+  append(...nodes) { this.children.push(...nodes); nodes.forEach(node=>{node.parentElement=this;}); }
   contains(node) { return this === node || this.children.some(child => child.contains(node)); }
   replaceChildren(...nodes) { this.children = nodes; }
   querySelector(selector) {
-    const id = selector.startsWith('#') ? selector.slice(1) : '';
-    const find = node => node.id === id ? node : node.children.map(find).find(Boolean);
+    const match=node=>selector.startsWith('#')?node.id===selector.slice(1):selector.startsWith('.')?node.className.split(' ').includes(selector.slice(1))
+      :selector==='[name="message"]'?node.name==='message':selector==='[type="submit"]'?node.type==='submit':false;
+    const find = node => match(node) ? node : node.children.map(find).find(Boolean);
     return this.children.map(find).find(Boolean) || null;
   }
   focus() { this.focused = true; }
   select() { this.selected = true; }
   reportValidity() { return true; }
   close() { this.open = false; }
-  showModal() { this.open = true; }
+  show() { this.open = true; this.modal=false; }
+  showModal() { this.open = true; this.modal=true; }
+  matches(selector) { return selector===':modal' && this.modal; }
   dispatch(name, extra = {}) {
     return this.listeners.get(name)?.({ target: this, currentTarget: this, preventDefault() {}, ...extra });
   }
@@ -125,7 +129,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   get('#registration-form').elements = { namedItem: key => fields[key] };
   get('#registration-form').reset = () => Object.values(fields).forEach(field=>{field.value='';});
   const steps = Object.keys(fields).map(key => Object.assign(new Element(), { dataset: { step: key } }));
-  const tabs = ['aula', 'equipo', 'chat'].map(key => Object.assign(new Element(), { dataset: { roomTab: key } }));
+  const tabs = ['aula', 'equipo'].map(key => Object.assign(new Element(), { dataset: { roomTab: key } }));
   const localStorage = storage({ ...(remembered ? { [LAST_CODE]: remembered } : {}),
     ...(signedIn ? { [SESSION]: 'existing-private-session' } : {}) });
   const sessionStorage = storage(submitted ? { [HANDOFF]: submitted } : {});
@@ -142,18 +146,19 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     .filter(node => Object.hasOwn(node.dataset, 'memberPresence'));
   class PageDate extends Date { static now() { return clock; } }
   const context = vm.createContext({
-    document: { querySelector: get, querySelectorAll: selector => selector === '.dialog-step' ? steps
+    document: { body:get('body'),documentElement:get('html'),querySelector: get, querySelectorAll: selector => selector === '.dialog-step' ? steps
       : selector === '[data-room-tab]' ? tabs : selector === '[data-member-presence]' ? presenceNodes() : [], createElement: () => new Element(), hidden: false,
-      addEventListener: (name, handler) => documentListeners.set(name, handler), dispatchEvent() {} },
+      createElementNS:()=>new Element(),addEventListener: (name, handler) => documentListeners.set(name, handler), dispatchEvent() {} },
     window: { addEventListener: (name, handler) => windowListeners.set(name, handler) }, localStorage, sessionStorage, Date: PageDate,
     location:{search,pathname:'/Aula-virtual-JV/live.html'},history:{replaceState(){}},confirm:()=>true,URLSearchParams,
     configured: true, SKINS, SHIRTS, normalizeCode, normalizeStudentAge, ATTACHMENT_ACCEPT: '.pdf',
-    matchMedia: () => motionPreference,
+    matchMedia: query => query.includes('max-width') ? Object.assign(new Element(),{matches:false}) : motionPreference,
     cancelAnimationFrame: id => pendingFrames.delete(id),
     requestAnimationFrame: handler => { pendingFrames.set(++frameId, handler); return frameId; },
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
     CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
     createIncomingMessageTracker, normalizeStudentDocument, DOCUMENT_COUNTRIES, attachmentInfo, fileSizeLabel,
+    createChatPushSettings:()=>({mount(){},setContext(){},logout(){}}),
     uploadTeamFile:async(id,team,file,info)=>{calls.push({name:'upload_file',body:{id,team,name:info.name}});return uploadFile?uploadFile():id+'/'+team+'/qa/file.pdf';},
     cancelTeamFile:async path=>calls.push({name:'cancel_file',body:{path}}),
     avatarSVG, drawWorld: (_canvas, options) => { frames.push(options); },
@@ -215,6 +220,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       throw new Error('Unexpected RPC: ' + name);
     }
   });
+  vm.runInContext(floatingSource, context);
   vm.runInContext(teamUiSource, context, { filename: 'assets/team-ui.js' });
   vm.runInContext(source, context, { filename: 'assets/live.js' });
   const settle = () => new Promise(resolve => setImmediate(resolve));
@@ -450,22 +456,60 @@ test('unread alert counts teammates, survives background refresh and clears only
     members: [{ id: 'student-a', name: 'Ana Prueba', mine: true }], capacity: 5 }];
   const page = await boot({ submitted: NEW, profileFixture, roomFixture, messages });
   assert.equal(page.get('#chat-unread').textContent, '1');
-  assert.equal(page.get('#chat-alert').hidden, false);
+  assert.equal(page.get('#chat-unread').hidden, false);
   assert.match(page.state('document.title'), /^\(1\) Mensajes/);
   await page.state('refreshChat()');
-  assert.equal(page.get('#chat-alert').hidden, false);
-  page.get('#chat-alert-open').click();
+  assert.equal(page.get('#chat-unread').hidden, false);
+  page.get('#tab-chat').click();
   await page.settle();
-  assert.equal(page.get('#chat-alert').hidden, true);
   assert.equal(page.get('#chat-unread').hidden, true);
   assert.equal(page.localStorage.getItem('aula-chat-seen:course-fixture:student-a:team-1'), '2');
-  page.state('setRoomTab("aula")');
+  page.get('#floating-team-chat').children[0].children[3].click();
   messages.push({ id: 3, senderId: 'other', body: 'Mensaje nuevo', mine: false });
   await page.state('refreshChat()');
   assert.equal(page.get('#chat-unread').textContent, '1');
   messages.push({ id: 4, senderId: 'self', body: 'Yo también', mine: true });
   await page.state('refreshChat()');
   assert.equal(page.get('#chat-unread').textContent, '1');
+});
+
+test('el chat flota sobre el aula y conserva el borrador al minimizar, cerrar y cambiar de pestaña',async()=>{
+ const profileFixture={id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}};
+ const roomFixture=[{id:'g1',name:'Equipo de ejemplo',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true}]}];
+ const page=await boot({submitted:NEW,profileFixture,roomFixture});
+ page.state('setRoomTab("chat")');
+ assert.equal(page.state('activeTab'),'aula');assert.equal(page.get('#panel-aula').hidden,false);
+ const dialog=page.get('#floating-team-chat'),input=page.get('#team-chat-input'),form=page.get('#team-chat-form');
+ assert.equal(dialog.open,true);input.value='Borrador pendiente';
+ dialog.children[0].children[3].click();assert.equal(dialog.open,false);
+ page.state('setRoomTab("equipo")');page.state('setRoomTab("chat")');
+ assert.equal(page.state('activeTab'),'equipo');assert.equal(dialog.open,true);
+ assert.equal(page.get('#team-chat-input'),input);assert.equal(input.value,'Borrador pendiente');
+ dialog.children[0].children[5].click();assert.equal(dialog.open,false);
+ page.get('#tab-chat').click();assert.equal(page.get('#team-chat-form'),form);assert.equal(input.value,'Borrador pendiente');
+});
+
+test('los mensajes nuevos no se marcan leídos mientras se consulta el historial anterior',async()=>{
+ const messages=[{id:1,senderId:'other',body:'Primero',mine:false}];
+ const page=await boot({submitted:NEW,messages,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}},
+  roomFixture:[{id:'g1',name:'Ejemplo',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true}]}]});
+ page.state('setRoomTab("chat")');await page.settle();
+ const box=page.get('#team-chat-messages');box.scrollHeight=1000;box.clientHeight=200;box.scrollTop=100;
+ messages.push({id:2,senderId:'other',body:'Nuevo',mine:false});await page.state('refreshChat()');
+ assert.equal(page.get('#chat-unread').hidden,false);assert.equal(box.scrollTop,100);
+ box.scrollTop=800;page.state('markChatRead()');assert.equal(page.get('#chat-unread').hidden,true);
+});
+
+test('editar el avatar oculta el chat y un cambio de equipo descarta el formulario anterior',async()=>{
+ const person={id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}};
+ const room=[{id:'g1',name:'Equipo uno',capacity:5,members:[{id:'self',name:'Ana',mine:true}]},{id:'g2',name:'Equipo dos',capacity:5,members:[]}];
+ const page=await boot({submitted:NEW,profileFixture:person,roomFixture:room});
+ page.state('setRoomTab("chat")');const old=page.get('#team-chat-form');
+ await page.get('#edit-avatar').click();assert.equal(page.get('#floating-team-chat').open,false);
+ await page.get('#cancel-avatar').click();assert.equal(page.get('#team-chat-form'),old);
+ page.state('profile.topicId="g2";renderTopics()');
+ assert.notEqual(page.get('#team-chat-form'),old);assert.equal(page.get('#floating-team-chat').open,false);
+ assert.equal(page.get('#team-chat-input').value,'');
 });
 
 test('editing the avatar can be cancelled or saved without losing the position or tab', async () => {
@@ -1228,4 +1272,18 @@ test('un registro anterior no habilita los controles de un intento nuevo despué
  releases[1]();await page.settle();await page.settle();
  assert.equal(page.state('registrationPending'),false);assert.equal(page.get('#room').dataset.stage,'avatar');
  assert.equal(page.calls.filter(c=>c.name==='enroll_student_profile').length,2);
+});
+
+test('minimizar conserva el archivo seleccionado y el envío lo publica una sola vez en el equipo actual',async()=>{
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}},
+  roomFixture:[{id:'g1',name:'Ejemplo',capacity:5,members:[{id:'self',name:'Ana',mine:true}]}]});
+ page.state('setRoomTab("chat")');
+ const picker=page.get('#team-chat-file');picker.files=[{name:'actividad-ficticia.pdf',size:128,type:'application/pdf'}];
+ await picker.dispatch('change');
+ page.get('#floating-team-chat').children[0].children[3].click();page.get('#tab-chat').click();
+ assert.equal(page.get('#team-chat-file'),picker);
+ await page.get('#team-chat-form').dispatch('submit');
+ assert.equal(page.calls.filter(call=>call.name==='upload_file').length,1);
+ assert.equal(page.calls.filter(call=>call.name==='team_chat_send_file').length,1);
+ assert.equal(page.calls.find(call=>call.name==='team_chat_send_file').body.p_topic_id,'g1');
 });

@@ -29,8 +29,8 @@ function shell({ content = false } = {}) {
       assert.equal(tag, 'iframe');
       const attrs = new Map(), frame = Object.assign(new Events(), {
         setAttribute: (key, value) => attrs.set(key, value), getAttribute: key => attrs.get(key),
-        hasAttribute: key => attrs.has(key), contentWindow: { location: new URL(BASE) },
-        contentDocument: { title: 'AulaVirtualJv' }, attrs
+        hasAttribute: key => attrs.has(key), contentWindow: { location: new URL(BASE),postMessage:(data,origin)=>messages.push({data,origin}) },
+        contentDocument: { title: 'AulaVirtualJv',body:{dataset:{}} }, attrs
       });
       return frame;
     }
@@ -39,10 +39,11 @@ function shell({ content = false } = {}) {
   const window = Object.assign(new Events(), { document, history, location, parent,
     frameElement: content ? { hasAttribute: key => key === 'data-aula-content' } : null });
   window.self = window; window.top = window;
-  const context = vm.createContext({ document, window, history, location, URL });
+  const serviceWorker=new Events();
+  const context = vm.createContext({ document, window, history, location, URL,navigator:{serviceWorker} });
   vm.runInContext(shellCode, context);
   const frame = children[0];
-  return { window, document, location, history, messages, children, frame, context,
+  return { window, document, location, history, messages, children, frame, context,serviceWorker,
     async load(path, title = 'Otra pantalla') { frame.contentWindow.location = new URL(path, BASE); frame.contentDocument.title = title; await frame.fire('load'); },
     async notify(overrides = {}) { await window.fire('message', { origin: ORIGIN, source: frame.contentWindow, data: { type: 'aula:location' }, ...overrides }); } };
 }
@@ -214,4 +215,21 @@ test('Google keeps the existing teacher redirect URL while leaving the internal 
   assert.equal(opened[0].pathname,'/auth/v1/authorize');
   assert.equal(opened[0].searchParams.get('provider'),'google');
   assert.equal(opened[0].searchParams.get('redirect_to'),BASE+'docente.html');
+});
+
+test('las notificaciones abren el chat de la misma materia conservando el documento y el borrador',async()=>{
+ const page=shell(),courseId='11111111-1111-4111-8111-111111111111',topicId='22222222-2222-4222-8222-222222222222';
+ await page.load('live.html');page.frame.contentDocument.body.dataset={chatCourse:courseId,chatTopic:topicId};
+ const src=page.frame.src;
+ await page.serviceWorker.fire('message',{source:{scriptURL:BASE+'chat-worker.js'},data:{type:'aula:chat-notification',courseId,topicId}});
+ assert.equal(page.frame.src,src);assert.equal(page.children[0],page.frame);
+ assert.equal(page.messages.at(-1).data.topicId,topicId);assert.equal(page.messages.at(-1).origin,ORIGIN);
+});
+test('una notificación de otra materia usa una ruta local y rechaza workers o identificadores ajenos',async()=>{
+ const page=shell(),courseId='11111111-1111-4111-8111-111111111111',topicId='22222222-2222-4222-8222-222222222222';
+ const message={source:{scriptURL:BASE+'chat-worker.js'},data:{type:'aula:chat-notification',courseId,topicId,url:'https://evil.invalid'}};
+ await page.serviceWorker.fire('message',{...message,source:{scriptURL:'https://evil.invalid/sw.js'}});assert.equal(page.frame.src,BASE);
+ await page.serviceWorker.fire('message',{...message,data:{...message.data,courseId:'https://evil.invalid'}});assert.equal(page.frame.src,BASE);
+ await page.serviceWorker.fire('message',message);
+ assert.equal(page.frame.src,BASE+'live.html?resume_id='+courseId+'&chat='+topicId);
 });
