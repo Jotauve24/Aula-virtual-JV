@@ -1,6 +1,6 @@
 import {
   studentSignedIn, studentRpc, studentAuthUser, protectStudentAccount, emailStudentLogin
-} from './supabase-client.js?v=0.27.1';
+} from './supabase-client.js?v=0.27.2';
 
 const $ = selector => document.querySelector(selector);
 const dialog = $('#student-account-dialog'), area = $('#account-dialog-content');

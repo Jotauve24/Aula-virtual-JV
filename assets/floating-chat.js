@@ -1,4 +1,4 @@
-import { participantAvatar } from './chat-ui.js?v=0.27.1';
+import { participantAvatar } from './chat-ui.js?v=0.27.2';
 
 const node = (tag, css = '', text = '') => {
   const result = document.createElement(tag);
@@ -52,10 +52,10 @@ export function createFloatingChat({ host, launcher, onRead = () => {}, onOpen =
   const title = node('h2', '', 'Chat del equipo'); title.id = 'floating-chat-title';
   const presence = node('p', 'floating-chat-presence', 'Solo tu equipo');
   heading.append(title, presence);
-  const minimize = iconButton('minimize', 'Minimizar chat');
+  const minimize = iconButton('minimize', 'Minimizar chat', 'floating-chat-minimize');
   const expand = iconButton('expand', 'Ampliar chat', 'floating-chat-expand'); expand.setAttribute('aria-pressed', 'false');
-  const close = iconButton('close', 'Cerrar chat');
-  header.append(back, avatars, heading, minimize, expand, close);
+  const close = iconButton('close', 'Cerrar chat', 'floating-chat-close');
+  header.append(back, avatars, heading, close, expand, minimize);
   const tools = node('div', 'floating-chat-tools');
   const privacy = node('span', '', demo ? 'Demostración · mensajes ficticios' : 'Conversación privada del equipo');
   privacy.id = 'floating-chat-privacy';
@@ -184,7 +184,7 @@ export function createFloatingChat({ host, launcher, onRead = () => {}, onOpen =
       conversation = team ? { ...team, id: nextId } : null;
       title.textContent = team?.name || 'Chat del equipo'; title.title = title.textContent;
       const members = team?.members || [];
-      const faces = members.slice(0, 3).map(member => participantAvatar(member.name, member.avatar));
+      const faces = members.slice(0, 2).map(member => participantAvatar(member.name, member.avatar));
       avatars.replaceChildren(...faces);
       bubbleAvatars.replaceChildren(...members.slice(0, 2).map(member => participantAvatar(member.name, member.avatar)));
       if (!members.length) bubbleAvatars.append(chatIcon('bell'));

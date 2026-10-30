@@ -158,7 +158,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
     CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
     createIncomingMessageTracker, normalizeStudentDocument, DOCUMENT_COUNTRIES, attachmentInfo, fileSizeLabel,
-    createChatPushSettings:()=>({mount(){},setContext(){},logout(){}}),
+    createChatPushSettings:()=>({mount(){},setContext(){},setUnread(){},logout(){}}),
     uploadTeamFile:async(id,team,file,info)=>{calls.push({name:'upload_file',body:{id,team,name:info.name}});return uploadFile?uploadFile():id+'/'+team+'/qa/file.pdf';},
     cancelTeamFile:async path=>calls.push({name:'cancel_file',body:{path}}),
     avatarSVG, drawWorld: (_canvas, options) => { frames.push(options); },
@@ -464,13 +464,17 @@ test('unread alert counts teammates, survives background refresh and clears only
   await page.settle();
   assert.equal(page.get('#chat-unread').hidden, true);
   assert.equal(page.localStorage.getItem('aula-chat-seen:course-fixture:student-a:team-1'), '2');
-  page.get('#floating-team-chat').children[0].children[3].click();
+  page.get('#floating-team-chat').querySelector('.floating-chat-minimize').click();
   messages.push({ id: 3, senderId: 'other', body: 'Mensaje nuevo', mine: false });
   await page.state('refreshChat()');
   assert.equal(page.get('#chat-unread').textContent, '1');
   messages.push({ id: 4, senderId: 'self', body: 'Yo también', mine: true });
   await page.state('refreshChat()');
   assert.equal(page.get('#chat-unread').textContent, '1');
+  const bubble=page.get('body').querySelector('.floating-chat-bubble');
+  assert.equal(bubble.hidden,false);
+  assert.equal(bubble.querySelector('.floating-chat-count').hidden,false);
+  assert.equal(bubble.querySelector('.floating-chat-count').textContent,'1');
 });
 
 test('el chat flota sobre el aula y conserva el borrador al minimizar, cerrar y cambiar de pestaña',async()=>{
@@ -481,11 +485,11 @@ test('el chat flota sobre el aula y conserva el borrador al minimizar, cerrar y 
  assert.equal(page.state('activeTab'),'aula');assert.equal(page.get('#panel-aula').hidden,false);
  const dialog=page.get('#floating-team-chat'),input=page.get('#team-chat-input'),form=page.get('#team-chat-form');
  assert.equal(dialog.open,true);input.value='Borrador pendiente';
- dialog.children[0].children[3].click();assert.equal(dialog.open,false);
+ dialog.querySelector('.floating-chat-minimize').click();assert.equal(dialog.open,false);
  page.state('setRoomTab("equipo")');page.state('setRoomTab("chat")');
  assert.equal(page.state('activeTab'),'equipo');assert.equal(dialog.open,true);
  assert.equal(page.get('#team-chat-input'),input);assert.equal(input.value,'Borrador pendiente');
- dialog.children[0].children[5].click();assert.equal(dialog.open,false);
+ dialog.querySelector('.floating-chat-close').click();assert.equal(dialog.open,false);
  page.get('#tab-chat').click();assert.equal(page.get('#team-chat-form'),form);assert.equal(input.value,'Borrador pendiente');
 });
 
@@ -1280,7 +1284,7 @@ test('minimizar conserva el archivo seleccionado y el envío lo publica una sola
  page.state('setRoomTab("chat")');
  const picker=page.get('#team-chat-file');picker.files=[{name:'actividad-ficticia.pdf',size:128,type:'application/pdf'}];
  await picker.dispatch('change');
- page.get('#floating-team-chat').children[0].children[3].click();page.get('#tab-chat').click();
+ page.get('#floating-team-chat').querySelector('.floating-chat-minimize').click();page.get('#tab-chat').click();
  assert.equal(page.get('#team-chat-file'),picker);
  await page.get('#team-chat-form').dispatch('submit');
  assert.equal(page.calls.filter(call=>call.name==='upload_file').length,1);

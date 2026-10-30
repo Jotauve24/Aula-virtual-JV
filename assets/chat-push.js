@@ -15,7 +15,20 @@ const keyBytes = value => Uint8Array.from(atob(value.replace(/-/g, '+').replace(
 
 export function createChatPushSettings({ rpc, signedIn }) {
   let host, state, enable, disable, context = null, registration = null, subscription = null;
-  let config = null, preparing = null, busy = false, active = false, generation = 0, error = '';
+  let config = null, preparing = null, busy = false, active = false, generation = 0, error = '', latestUnread = null;
+  function sendBadge() {
+    if (!active || !context || latestUnread === null) return;
+    try {
+      const worker = registration?.active || navigator.serviceWorker?.controller;
+      worker?.postMessage({type:'aula:chat-badge',courseId:context.courseId,topicId:context.topicId,
+        unread:latestUnread.count > 0,lastMessageId:latestUnread.lastMessageId,lastSeenId:latestUnread.lastSeenId});
+    } catch { /* Badge failure must not affect the conversation. */ }
+  }
+  function resetBadges() {
+    try { (registration?.active || navigator.serviceWorker?.controller)?.postMessage({type:'aula:chat-badge-reset'}); } catch { /* Best effort. */ }
+    try { navigator.clearAppBadge?.()?.catch(() => {}); } catch { /* Unsupported by some platforms. */ }
+  }
+  navigator.serviceWorker?.addEventListener?.('controllerchange',sendBadge);
   const status = text => { if (state) state.textContent = text; };
   const availability = () => pushAvailability({secure:window.isSecureContext,
     supported:'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
@@ -53,7 +66,7 @@ export function createChatPushSettings({ rpc, signedIn }) {
           active = requestGeneration === generation;
         }
       } catch { error = 'No pudimos preparar los avisos. Cierra y abre la campana para reintentar.'; }
-      finally { preparing = null; paint(); if (requestGeneration !== generation && context) prepare(); }
+      finally { preparing = null; paint(); sendBadge(); if (requestGeneration !== generation && context) prepare(); }
     })();
     return preparing;
   }
@@ -74,7 +87,7 @@ export function createChatPushSettings({ rpc, signedIn }) {
     } catch {
       active = false;
       error = 'No se activaron los avisos. Comprueba el permiso y la conexión y vuelve a intentarlo.';
-    } finally { busy = false; paint(); }
+    } finally { busy = false; paint(); sendBadge(); }
   }
   async function deactivate() {
     if (busy) return;
@@ -83,6 +96,7 @@ export function createChatPushSettings({ rpc, signedIn }) {
       if (subscription && signedIn()) await rpc('student_push_unsubscribe', {p_endpoint:subscription.endpoint});
       if (subscription) await subscription.unsubscribe();
       subscription = null; active = false; error = 'Notificaciones desactivadas en este dispositivo.';
+      resetBadges();
     } catch { error = 'No pudimos desactivar los avisos. Revisa tu conexión y vuelve a intentarlo.'; }
     finally { busy = false; paint(); }
   }
@@ -91,21 +105,28 @@ export function createChatPushSettings({ rpc, signedIn }) {
       host = container;
       const title = document.createElement('h3'); title.textContent = 'Avisos del equipo';
       const text = document.createElement('p'); text.textContent = 'La notificación indica que llegó un mensaje. Su contenido queda dentro del chat.';
+      const badgeHint = document.createElement('p'); badgeHint.className = 'notification-state';
+      badgeHint.textContent = 'El icono de la app puede mostrar un indicador de pendientes. En iPhone activa también Globos en Ajustes → Notificaciones → AulavirtualJV. En Android revisa los indicadores de iconos; el aspecto depende del teléfono.';
       state = document.createElement('p'); state.className = 'notification-state'; state.setAttribute('role', 'status');
       enable = document.createElement('button'); enable.type = 'button'; enable.className = 'button primary'; enable.textContent = 'Activar notificaciones';
       disable = document.createElement('button'); disable.type = 'button'; disable.className = 'button secondary'; disable.textContent = 'Desactivar en este dispositivo';
       enable.addEventListener('click', activate); disable.addEventListener('click', deactivate);
-      host.append(title, text, state, enable, disable);
+      host.append(title, text, state, enable, disable, badgeHint);
       host.parentElement?.addEventListener('toggle', () => { if (host.parentElement.open) prepare(); });
       paint();
     },
     setContext(next) {
       if (context?.courseId === next?.courseId && context?.topicId === next?.topicId) return;
-      context = next; ++generation;
+      context = next; latestUnread = null; ++generation;
       if (next) prepare(); else { active = false; config = null; paint(); }
+    },
+    setUnread(value, details = {}) {
+      latestUnread = {count:Math.max(0, Number(value) || 0),lastMessageId:String(details.lastMessageId || '0'),lastSeenId:String(details.lastSeenId || '0')};
+      sendBadge();
     },
     async logout() {
       ++generation; context = null;
+      latestUnread = null; resetBadges();
       try {
         const current = subscription || await registration?.pushManager.getSubscription();
         if (current) {

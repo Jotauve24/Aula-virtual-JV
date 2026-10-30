@@ -1,5 +1,5 @@
-import { openAuthPage } from './embed.js?v=0.27.1';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.27.1';
+import { openAuthPage } from './embed.js?v=0.27.2';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.27.2';
 
 const sessionKey = 'aula-supabase-session';
 const studentSessionKey = 'aula-student-session';
