@@ -1,10 +1,10 @@
-import './video-guide.js?v=0.27.0';
-import './embed.js?v=0.27.0';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.27.0';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.27.0';
-import { drawWorld, roomTheme } from './world.js?v=0.27.0';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.27.0';
-import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.0';
+import './video-guide.js?v=0.27.1';
+import './embed.js?v=0.27.1';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.27.1';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.27.1';
+import { drawWorld, roomTheme } from './world.js?v=0.27.1';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.27.1';
+import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.1';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');

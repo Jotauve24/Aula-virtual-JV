@@ -1,10 +1,10 @@
-import './video-guide.js?v=0.27.0';
-import './embed.js?v=0.27.0';
-import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.27.0';
-import { initTeacherAuth } from './teacher-auth.js?v=0.27.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.27.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.27.0';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.0';
+import './video-guide.js?v=0.27.1';
+import './embed.js?v=0.27.1';
+import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.27.1';
+import { initTeacherAuth } from './teacher-auth.js?v=0.27.1';
+import { allCoursesXlsx } from './teacher-export.js?v=0.27.1';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.27.1';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.1';
 const $ = selector => document.querySelector(selector);
 let courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;

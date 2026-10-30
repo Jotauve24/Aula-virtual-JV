@@ -1,5 +1,5 @@
-import { drawWorld, avatarSVG } from './world.js?v=0.27.0';
-import { createRoomLayout, findPath } from './world-layout.js?v=0.27.0';
+import { drawWorld, avatarSVG } from './world.js?v=0.27.1';
+import { createRoomLayout, findPath } from './world-layout.js?v=0.27.1';
 
 export const TUTORIAL_STEPS = [
   { id: 'code', short: 'Código', title: 'Primero, el código de tu materia.', emphasis: 'código', description: 'Escribe el código de tu docente y pulsa «Entrar a mi materia».', duration: 6000 },

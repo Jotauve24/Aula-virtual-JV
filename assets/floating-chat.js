@@ -1,4 +1,4 @@
-import { participantAvatar } from './chat-ui.js?v=0.27.0';
+import { participantAvatar } from './chat-ui.js?v=0.27.1';
 
 const node = (tag, css = '', text = '') => {
   const result = document.createElement(tag);
@@ -40,7 +40,7 @@ export function decorateChatForm(form) {
 // One mounted conversation: hiding the window never recreates its form or file.
 export function createFloatingChat({ host, launcher, onRead = () => {}, onOpen = () => {}, settings, demo = false }) {
   const mobile = matchMedia('(max-width: 650px)');
-  let conversation = null, enabled = false, mode = 'minimized', expanded = false, unread = 0;
+  let conversation = null, enabled = false, mode = 'minimized', expanded = false, unread = 0, messageCount = null;
   let returnFocus = null, readFrame = 0;
   const dialog = node('dialog', 'floating-chat'); dialog.id = 'floating-team-chat';
   dialog.setAttribute('aria-labelledby', 'floating-chat-title');
@@ -85,10 +85,21 @@ export function createFloatingChat({ host, launcher, onRead = () => {}, onOpen =
     [...document.querySelectorAll('dialog[open]')].some(other => other !== dialog && other.matches(':modal'));
   const isReading = () => enabled && mode === 'open' && dialog.open && !document.hidden && !covered() && atEnd();
   function readIfVisible() { if (conversation && isReading()) onRead(); }
+  function fitPreferences() {
+    if (!preferences.open) return;
+    const rect = summary.getBoundingClientRect(), view = window.visualViewport;
+    const top = view?.offsetTop || 0, bottom = top + (view?.height || window.innerHeight);
+    const above = Math.max(0, rect.top - top - 12), below = Math.max(0, bottom - rect.bottom - 12);
+    const upward = below < 260 && above > below;
+    preferences.classList.toggle('opens-up', upward);
+    settingsBody.style.setProperty('--chat-notification-max-height', Math.max(44, upward ? above : below) + 'px');
+  }
+  preferences.addEventListener('toggle', fitPreferences);
   function viewport() {
     const view = window.visualViewport;
     dialog.style.setProperty('--chat-viewport-height', (view?.height || window.innerHeight) + 'px');
     dialog.style.setProperty('--chat-viewport-top', (view?.offsetTop || 0) + 'px');
+    fitPreferences();
   }
   function paint() {
     const open = enabled && mode === 'open';
@@ -99,6 +110,7 @@ export function createFloatingChat({ host, launcher, onRead = () => {}, onOpen =
     }
     dialog.classList.toggle('is-expanded', expanded);
     dialog.classList.toggle('is-mobile', mobile.matches);
+    dialog.classList.toggle('is-empty-conversation', !conversation || messageCount === 0);
     empty.hidden = !!conversation;
     bubble.hidden = !enabled || !conversation || mode !== 'minimized';
     launcher.setAttribute('aria-expanded', String(open));
@@ -160,9 +172,15 @@ export function createFloatingChat({ host, launcher, onRead = () => {}, onOpen =
   return {
     open, isReading,
     setEnabled(value) { enabled = !!value; paint(); },
+    setMessageCount(value) {
+      const next = Number.isInteger(value) && value >= 0 ? value : null;
+      const changed = messageCount !== next;
+      messageCount = next; paint();
+      if (changed && preferences.open) requestAnimationFrame(fitPreferences);
+    },
     setConversation(team) {
       const nextId = team?.key || team?.id || null;
-      if (nextId !== conversation?.id) { mode = 'minimized'; expanded = false; unread = 0; preferences.open = false; }
+      if (nextId !== conversation?.id) { mode = 'minimized'; expanded = false; unread = 0; messageCount = null; preferences.open = false; }
       conversation = team ? { ...team, id: nextId } : null;
       title.textContent = team?.name || 'Chat del equipo'; title.title = title.textContent;
       const members = team?.members || [];
@@ -184,6 +202,6 @@ export function createFloatingChat({ host, launcher, onRead = () => {}, onOpen =
       }
       paint();
     },
-    reset() { conversation = null; mode = 'minimized'; expanded = false; unread = 0; enabled = false; paint(); }
+    reset() { conversation = null; mode = 'minimized'; expanded = false; unread = 0; messageCount = null; enabled = false; paint(); }
   };
 }
