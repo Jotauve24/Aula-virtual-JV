@@ -8,10 +8,12 @@ La cabecera cuenta integrantes presentes usando la presencia verificada del aula
 
 ## Activación de avisos
 
-Dentro del chat, la campana abre Avisos del equipo. Activar notificaciones solicita el permiso inmediatamente desde ese gesto. No se solicita al abrir la página ni se muestra Activas hasta que la suscripción del navegador esté guardada en el servidor. Desactivar elimina la suscripción de este dispositivo. Salir intenta revocarla tanto en el servidor como en el proveedor del navegador.
+Al pulsar Chat o la burbuja por primera vez, se solicita el permiso del dispositivo desde ese mismo gesto. La ventana se abre sin esperar la respuesta; rechazar o descartar permite seguir conversando y no repite la solicitud automáticamente, incluso tras recargar. No se pide permiso al cargar la página, elegir un equipo ni restaurar un chat desde un aviso. Si la preparación de los avisos sigue pendiente al hacer clic, se pide permiso antes de esperarla para conservar el gesto requerido por Safari. No se muestra Activas hasta que la suscripción del navegador esté guardada en el servidor.
+
+La campana abre Avisos del equipo y mantiene Activar notificaciones como reintento voluntario. Desactivar elimina la suscripción de este dispositivo y recuerda esa decisión para que abrir Chat no reactive los avisos. Se guarda únicamente una preferencia local sin identidad ni contenido del chat. Salir intenta revocar la suscripción tanto en el servidor como en el proveedor del navegador.
 
 - Android: navegador compatible y actualizado, conexión HTTPS y permiso de notificaciones del navegador y del sistema.
-- iPhone o iPad: iOS/iPadOS 16.4 o posterior; agregar AulavirtualJV a inicio desde Safari, abrirla desde ese icono y activar los avisos con la campana.
+- iPhone o iPad: iOS/iPadOS 16.4 o posterior; agregar AulavirtualJV a inicio desde Safari, abrirla desde ese icono y pulsar Chat para aceptar o rechazar los avisos.
 - Permiso bloqueado: la interfaz explica que se debe cambiar en ajustes; no repite la solicitud.
 - Navegador incompatible o conexión insegura: explica el requisito y mantiene disponibles los avisos dentro del aula.
 

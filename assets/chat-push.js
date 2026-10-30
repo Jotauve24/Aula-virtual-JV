@@ -1,4 +1,5 @@
-// Permission is requested only by the activation button, never on page load.
+// Permission is requested by a chat-opening gesture or the activation button, never on page load.
+const PROMPT_CHOICE = 'aula-chat-push-prompt';
 export function pushAvailability({ secure, supported, appleMobile, standalone, permission }) {
   if (!secure) return 'insecure';
   if (appleMobile && !standalone) return 'install';
@@ -16,6 +17,12 @@ const keyBytes = value => Uint8Array.from(atob(value.replace(/-/g, '+').replace(
 export function createChatPushSettings({ rpc, signedIn }) {
   let host, state, enable, disable, context = null, registration = null, subscription = null;
   let config = null, preparing = null, busy = false, active = false, generation = 0, error = '', latestUnread = null;
+  let promptChoice = '';
+  try { promptChoice = localStorage.getItem(PROMPT_CHOICE) || ''; } catch { /* Private browsing may block storage. */ }
+  function rememberChoice(value) {
+    promptChoice = value;
+    try { localStorage.setItem(PROMPT_CHOICE, value); } catch { /* Keep the choice for this page if storage is unavailable. */ }
+  }
   function sendBadge() {
     if (!active || !context || latestUnread === null) return;
     try {
@@ -61,7 +68,7 @@ export function createChatPushSettings({ rpc, signedIn }) {
         if (requestGeneration !== generation) return;
         registration = ready;
         subscription = await registration.pushManager.getSubscription();
-        if (subscription && Notification.permission === 'granted') {
+        if (subscription && Notification.permission === 'granted' && promptChoice !== 'off') {
           await rpc('student_push_subscribe', { p_subscription:subscription.toJSON() });
           active = requestGeneration === generation;
         }
@@ -71,14 +78,21 @@ export function createChatPushSettings({ rpc, signedIn }) {
     return preparing;
   }
   async function activate() {
-    if (busy || !context || !signedIn() || !config?.enabled || !registration || availability() !== 'available') return;
+    if (busy || active || !context || !signedIn() || config?.enabled === false || availability() !== 'available') return;
     const requestGeneration = generation;
     busy = true; error = ''; paint();
     try {
       // Invoke before any await: Safari requires the activation gesture.
+      if (Notification.permission !== 'granted') rememberChoice('asked');
       const permission = Notification.permission === 'granted' ? Promise.resolve('granted') : Notification.requestPermission();
       if (await permission !== 'granted') { error = 'No activaste los avisos. Puedes seguir usando el chat.'; return; }
       if (requestGeneration !== generation || !signedIn()) return;
+      rememberChoice('on');
+      // Preparation may still be in flight when Chat is pressed for the first time.
+      if (preparing) await preparing;
+      else if (!registration || !config?.enabled) await prepare();
+      if (requestGeneration !== generation || !signedIn() || active) return;
+      if (!config?.enabled || !registration) { error = 'No pudimos preparar los avisos. Abre la campana para volver a intentarlo.'; return; }
       const next = await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:keyBytes(config.publicKey)});
       if (requestGeneration !== generation || !signedIn()) { await next.unsubscribe(); return; }
       subscription = next;
@@ -96,11 +110,18 @@ export function createChatPushSettings({ rpc, signedIn }) {
       if (subscription && signedIn()) await rpc('student_push_unsubscribe', {p_endpoint:subscription.endpoint});
       if (subscription) await subscription.unsubscribe();
       subscription = null; active = false; error = 'Notificaciones desactivadas en este dispositivo.';
+      rememberChoice('off');
       resetBadges();
     } catch { error = 'No pudimos desactivar los avisos. Revisa tu conexión y vuelve a intentarlo.'; }
     finally { busy = false; paint(); }
   }
   return {
+    requestFromChat() {
+      // A dismissed request stays dismissed; explicit deactivation also survives a reload.
+      // The bell remains available for an intentional retry.
+      if (promptChoice === 'off' || (window.Notification?.permission === 'default' && promptChoice)) return;
+      return activate();
+    },
     mount(container) {
       host = container;
       const title = document.createElement('h3'); title.textContent = 'Avisos del equipo';

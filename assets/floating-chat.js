@@ -1,4 +1,4 @@
-import { participantAvatar } from './chat-ui.js?v=0.27.2';
+import { participantAvatar } from './chat-ui.js?v=0.27.3';
 
 const node = (tag, css = '', text = '') => {
   const result = document.createElement(tag);
@@ -130,7 +130,12 @@ export function createFloatingChat({ host, launcher, onRead = () => {}, onOpen =
     (mobile.matches ? back : minimize).focus({ preventScroll: true });
     readIfVisible();
   }
-  bubble.addEventListener('click', open);
+  function openFromGesture() {
+    if (!enabled) return;
+    if (conversation) settings?.requestFromChat?.();
+    open();
+  }
+  bubble.addEventListener('click', openFromGesture);
   minimize.addEventListener('click', () => hide('minimized'));
   back.addEventListener('click', () => hide('minimized'));
   close.addEventListener('click', () => hide('closed'));
@@ -170,7 +175,7 @@ export function createFloatingChat({ host, launcher, onRead = () => {}, onOpen =
     }
   });
   return {
-    open, isReading,
+    open, openFromGesture, isReading,
     setEnabled(value) { enabled = !!value; paint(); },
     setMessageCount(value) {
       const next = Number.isInteger(value) && value >= 0 ? value : null;
