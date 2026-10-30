@@ -32,3 +32,11 @@ Las claves VAPID y el token del webhook se guardan exclusivamente en Supabase Va
 - Revisión visual en navegador con datos ficticios y anchos de computadora, tableta y celular. Los ajustes del sistema operativo, las restricciones de batería y la entrega con el teléfono bloqueado requieren una prueba física en iPhone y Android; no se afirman comprobados mediante la emulación de anchos.
 
 Referencias oficiales: [Web Push de Apple](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers), [WebKit en iOS y iPadOS](https://webkit.org/blog/13878/), [suscripción Web Push](https://web.dev/articles/push-notifications-subscribing-a-user), [pg_net](https://supabase.com/docs/guides/database/extensions/pg_net) y [web-push](https://github.com/web-push-libs/web-push/tree/v3.6.7).
+
+## Ajuste visual 0.27.1
+
+Las capturas del uso real mostraron que la altura anterior ocupaba casi todo el espacio disponible en una ventana de poca altura. El chat normal pasa a 344 × 464 px como máximo; una conversación sin mensajes se reduce a 336 px de alto. Si el alto disponible es de 620 px o menos, usa 320 × 400 px como máximo y 300 px de alto cuando está vacío. Ampliar conserva la vista grande elegida expresamente. La burbuja pasa a 56 px, los controles mantienen sus áreas de 44 px y el celular conserva su pantalla completa.
+
+El tamaño se basa en el número de mensajes de la respuesta ya autorizada; una actualización fallida no se presenta como una conversación vacía. El primer mensaje permite crecer al tamaño normal y los borradores y archivos conservan el mismo formulario. El menú de avisos elige abrir hacia arriba o abajo según el espacio disponible, y su contenido admite desplazamiento dentro de la pantalla. Los bordes inferiores del historial siguen la ventana redondeada.
+
+Verificación con datos ficticios: pantalla de 1260 × 520 px, tamaños de escritorio y móvil, conversación vacía, primer envío, ampliación, menú de avisos y borrador. La comparación de escala del 150 % usa un marco de prueba; no cambia el zoom del navegador ni el zoom elegido por el usuario. Se conserva la suite de pruebas de la versión anterior.

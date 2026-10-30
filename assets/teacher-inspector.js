@@ -1,8 +1,8 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.0';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.27.0';
-import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.0';
-import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.1';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.1';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.27.1';
+import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.1';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.1';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);
@@ -290,6 +290,7 @@ function demoChatPanel(topic){
     const nearBottom=messages.scrollHeight-messages.scrollTop-messages.clientHeight<55;
     const members=demo.members(topic);
     messages.replaceChildren(...list.map(msg=>chatMessage({...msg,avatar:members.find(member=>member.id===msg.senderId)?.avatar},palette(msg.senderId||msg.name),downloadExample)));
+    floatingChat.setMessageCount(list.length);
     if(nearBottom)messages.scrollTop=messages.scrollHeight;
   };
   paint();
