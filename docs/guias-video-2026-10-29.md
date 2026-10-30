@@ -1,9 +1,13 @@
 # Ayuda con video · 0.26.0
 
-La portada abre una guía narrada desde «Cómo funciona» y «Video con voz».
-En celular, el acceso breve queda junto a la explicación de ingreso. El aula
+La portada abre una guía narrada desde un único botón «Ver video · 37 s»,
+junto al título del tutorial, tanto en computadora como en celular. El aula
 estudiantil tiene un icono de ayuda; el panel y la sala docente abren su guía
 específica. Son recursos estáticos, sin solicitudes a cuentas o materias.
+
+Desde 0.27.4 se retiran los accesos repetidos de la cabecera y de la introducción
+móvil, junto con sus estilos. «Animar pasos» y «Pausar pasos» controlan únicamente
+el recorrido interactivo, y se distinguen del video narrado.
 
 ## Comportamiento
 
@@ -25,7 +29,7 @@ específica. Son recursos estáticos, sin solicitudes a cuentas o materias.
 
 No se cambia el ingreso, registro, recuperación, identidad, permisos, equipos,
 chat, datos de Supabase ni el documento persistente de pantalla completa.
-Las referencias compartidas del runtime, manifiesto e iconos usan 0.26.0.
+Las referencias compartidas del runtime, manifiesto e iconos siguen la versión de package.json.
 
 ## Verificación
 
@@ -82,3 +86,10 @@ Puntuación editorial del alcance: diseño 8/10, usabilidad 8,5/10, creatividad
 
 Validación local final: 335 pruebas aprobadas, sintaxis correcta en 30 módulos,
 y 0 FAIL / 0 WARN en el linter de Taste para los dos archivos nuevos.
+
+
+## Acceso único · 0.27.4
+
+La portada contiene un único botón que abre el video estudiantil, junto a «Así funciona el aula». Se retiraron los otros dos disparadores y las reglas de estilo que solo usaban ellos. El recorrido interactivo conserva sus controles y distingue «Animar pasos» de «Pausar pasos», con nombres accesibles que mencionan la animación.
+
+Verificación: 365 pruebas existentes aprobadas y sintaxis de 33 módulos. Se comprobó un disparador de video en escritorio y en los marcos de 768, 390 y 320 px; los anchos útiles y desplazables coinciden en 753, 375 y 305 px. El botón abre la guía correspondiente al ancho, con subtítulos y pasos escritos, y cerrar devuelve el foco al mismo botón. El control de animación inicia y pausa el recorrido sin abrir el video. La revisión usa los ejemplos de la portada y no accede a cuentas o materias.

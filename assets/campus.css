@@ -39,9 +39,8 @@
 .campus-entrance .brand-script{filter:brightness(0) invert(1)}
 .campus-entrance .brand small{color:var(--opal);font-size:12px}
 .campus-entrance #main{max-width:1440px}
-.entry-nav{margin-left:auto;margin-right:24px}
-.entry-nav a,.entry-teacher{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:8px 2px;font-size:14px;font-weight:750;text-decoration:none;color:var(--champagne)}
-.entry-nav a:hover,.entry-teacher:hover{color:#fff;text-decoration:underline;text-underline-offset:5px}
+.entry-teacher{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:8px 2px;font-size:14px;font-weight:750;text-decoration:none;color:var(--champagne)}
+.entry-teacher:hover{color:#fff;text-decoration:underline;text-underline-offset:5px}
 .campus-entrance .entry-tools{gap:20px}
 .campus-entrance .entry-tools .entry-expand{width:44px;min-height:44px;padding:0;border-radius:50%;background:transparent;border-color:var(--teal);color:#fff}
 .campus-entrance .entry-tools .entry-expand:hover{background:#28555d;border-color:var(--seafoam);transform:none}
@@ -210,7 +209,7 @@
  .campus-values{margin-inline:30px;gap:24px}.campus-values strong{font-size:14px}
 }
 @media(max-width:800px){
- .campus-entrance .site-header{padding:17px 24px;min-height:80px}.entry-nav{display:none}
+ .campus-entrance .site-header{padding:17px 24px;min-height:80px}
  .campus-entrance .login-layout{grid-template-columns:1fr;max-width:650px;margin:auto;padding:30px 26px;gap:38px}
  .campus-entrance .login-content{max-width:100%;padding:0}.campus-entrance .login-content h1{font-size:64px}
  .campus-entrance .login-content .intro{max-width:460px}.campus-entrance #course-form{max-width:none}
