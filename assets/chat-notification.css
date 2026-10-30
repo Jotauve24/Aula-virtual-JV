@@ -8,3 +8,4 @@
 }
 #demo-chat-unread[hidden],
 #demo-message-trigger[hidden]{display:none}
+#chat-unread,#demo-chat-unread{background:var(--notification);color:var(--surface)}

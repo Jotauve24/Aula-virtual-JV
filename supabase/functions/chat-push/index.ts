@@ -34,7 +34,7 @@ Deno.serve(async (request:Request) => {
   try {
     const job = await rpc('chat_push_claim', {p_message_id:String(input.message_id),p_hook_token:input.token});
     if (!job) return reply(200,{sent:0});
-    const payload = JSON.stringify({courseId:job.courseId,topicId:job.topicId});
+    const payload = JSON.stringify({courseId:job.courseId,topicId:job.topicId,messageId:String(input.message_id)});
     const expired:string[] = [];
     let sent = 0, failed = 0;
     const subscriptions = job.subscriptions || [];

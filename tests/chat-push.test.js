@@ -14,15 +14,69 @@ test('iPhone requiere instalación, Android usa capacidades y un permiso bloquea
  assert.equal(pushAvailability({...base,secure:false}),'insecure');
 });
 
-function worker({existing=false}={}){
- const listeners={},notices=[],actions=[];
+function worker({existing=false,noBadging=false,badgingFails=false,indexedDB}={}){
+ const listeners={},notices=[],actions=[],badges=[],visible=[];
  const client={frameType:'top-level',url:'https://aula.example/Aula-virtual-JV/live.html',focus:async()=>actions.push('focus'),postMessage:value=>actions.push(value)};
- const self={registration:{scope:'https://aula.example/Aula-virtual-JV/',showNotification:async(...args)=>notices.push(args)},
+ const self={indexedDB,navigator:noBadging?{}:{setAppBadge:async()=>{if(badgingFails)throw Error('Denied');badges.push('set');},clearAppBadge:async()=>badges.push('clear')},
+  registration:{scope:'https://aula.example/Aula-virtual-JV/',showNotification:async(...args)=>{notices.push(args);visible.push({...args[1],closed:false,close(){this.closed=true;}});},getNotifications:async()=>visible.filter(n=>!n.closed)},
   clients:{claim:async()=>{},matchAll:async()=>existing?[client]:[],openWindow:async url=>actions.push(url)},
   skipWaiting(){},addEventListener:(type,fn)=>{listeners[type]=fn;}};
  vm.runInNewContext(readFileSync(new URL('../chat-worker.js',import.meta.url),'utf8'),{self,URL});
- return {notices,actions,async fire(type,data){let pending;listeners[type]({...data,waitUntil:p=>pending=p});await pending;}};
+ return {notices,actions,badges,visible,async fire(type,data){let pending;listeners[type]({...data,waitUntil:p=>pending=p});await pending;}};
 }
+
+const badgeCourse='11111111-1111-4111-8111-111111111111',badgeTeam='22222222-2222-4222-8222-222222222222',otherBadgeTeam='33333333-3333-4333-8333-333333333333';
+const badgePush=(id,topicId=badgeTeam)=>({data:{json:()=>({courseId:badgeCourse,topicId,messageId:String(id)})}});
+const badgeRead=(id,topicId=badgeTeam)=>({source:{url:'https://aula.example/Aula-virtual-JV/live.html'},data:{type:'aula:chat-badge',courseId:badgeCourse,topicId,unread:false,lastSeenId:String(id)}});
+test('un mensaje nuevo activa el indicador del icono sin sustituir la notificación visible',async()=>{
+ const w=worker();await w.fire('push',badgePush(10));assert.equal(w.badges.at(-1),'set');assert.equal(w.notices.length,1);
+});
+test('leer un equipo conserva la alerta de otro y al leer ambos se limpia el icono',async()=>{
+ const w=worker();await w.fire('push',badgePush(10));await w.fire('push',badgePush(11,otherBadgeTeam));
+ await w.fire('message',badgeRead(10));assert.equal(w.badges.at(-1),'set');assert.equal(w.visible[0].closed,true);assert.equal(w.visible[1].closed,false);
+ await w.fire('message',badgeRead(11,otherBadgeTeam));assert.equal(w.badges.at(-1),'clear');assert.equal(w.visible[1].closed,true);
+});
+test('una respuesta atrasada no quita el indicador ni cierra la notificación de un mensaje posterior',async()=>{
+ const w=worker();await w.fire('push',badgePush(20));await w.fire('message',badgeRead(19));
+ assert.equal(w.badges.at(-1),'set');assert.equal(w.visible[0].closed,false);
+ await w.fire('message',badgeRead(20));assert.equal(w.badges.at(-1),'clear');
+});
+test('un push retrasado de un mensaje ya leído no restaura el indicador',async()=>{
+ const w=worker();await w.fire('message',badgeRead(30));await w.fire('push',badgePush(29));
+ assert.equal(w.badges.at(-1),'clear');assert.equal(w.notices.length,1);
+});
+test('un mensaje propio más reciente no activa por sí solo el indicador',async()=>{
+ const w=worker();await w.fire('message',{...badgeRead(70),data:{...badgeRead(70).data,lastMessageId:'71'}});
+ assert.equal(w.badges.at(-1),'clear');
+});
+test('salir limpia todos los indicadores y no acepta órdenes desde otro sitio',async()=>{
+ const w=worker();await w.fire('push',badgePush(40));
+ await w.fire('message',{source:{url:'https://other.invalid/'},data:{type:'aula:chat-badge-reset'}});
+ assert.equal(w.badges.at(-1),'set');assert.equal(w.visible[0].closed,false);
+ await w.fire('message',{source:{url:'https://aula.example/Aula-virtual-JV/live.html'},data:{type:'aula:chat-badge-reset'}});
+ assert.equal(w.badges.at(-1),'clear');assert.equal(w.visible[0].closed,true);
+});
+test('Android sin Badging API conserva el aviso del sistema y lo cierra al leer',async()=>{
+ const w=worker({noBadging:true});await w.fire('push',badgePush(50));assert.equal(w.notices.length,1);
+ await w.fire('message',badgeRead(50));assert.equal(w.visible[0].closed,true);
+ const blocked=worker({badgingFails:true});await blocked.fire('push',badgePush(51));assert.equal(blocked.notices.length,1);
+});
+function badgeDatabaseFixture(){
+ const rows=new Map();
+ const db={createObjectStore(){},transaction(){
+  const tx={};tx.objectStore=()=>({clear:()=>rows.clear(),put:value=>rows.set(value.key,{...value}),getAll(){
+   const request={};queueMicrotask(()=>{request.result=[...rows.values()].map(r=>({...r}));request.onsuccess();queueMicrotask(()=>tx.oncomplete());});return request;
+  }});return tx;
+ }};
+ return {rows,open(){const request={};queueMicrotask(()=>{request.result=db;request.onupgradeneeded?.();request.onsuccess();});return request;}};
+}
+test('el indicador de otra materia sobrevive al reinicio del service worker',async()=>{
+ const database=badgeDatabaseFixture(),before=worker({indexedDB:database});
+ await before.fire('push',badgePush(60));await before.fire('push',badgePush(61,otherBadgeTeam));
+ const after=worker({indexedDB:database});await after.fire('message',badgeRead(60));assert.equal(after.badges.at(-1),'set');
+ await after.fire('message',badgeRead(61,otherBadgeTeam));assert.equal(after.badges.at(-1),'clear');
+ assert.doesNotMatch(JSON.stringify([...database.rows.values()]),/body|name|email|phone/);
+});
 test('un push siempre muestra un aviso visible y no expone el contenido privado del mensaje',async()=>{
  const w=worker();await w.fire('push',{data:{json:()=>({courseId:'11111111-1111-4111-8111-111111111111',topicId:'22222222-2222-4222-8222-222222222222',body:'Texto confidencial'})}});
  assert.equal(w.notices.length,1);assert.equal(w.notices[0][0],'AulavirtualJV');
@@ -40,10 +94,10 @@ test('al tocar un aviso se reutiliza la ventana existente y se conserva el borra
 });
 
 function settingsHarness({permission='default',saveFailure=false}={}){
- const events=[],calls=[];let subscribed=false;
+ const events=[],calls=[],badgeMessages=[];let subscribed=false;
  class Element{constructor(){this.children=[];this.handlers={};this.parentElement={addEventListener(){}};}append(...items){this.children.push(...items);}setAttribute(){}addEventListener(type,fn){this.handlers[type]=fn;}}
  const subscription={endpoint:'https://fcm.googleapis.com/fcm/send/qa-only',toJSON:()=>({endpoint:'qa'}),unsubscribe:async()=>{events.push('unsubscribe');return true;}};
- const registration={pushManager:{getSubscription:async()=>subscribed?subscription:null,subscribe:async()=>{events.push('subscribe');subscribed=true;return subscription;}}};
+ const registration={active:{postMessage:value=>badgeMessages.push(value)},pushManager:{getSubscription:async()=>subscribed?subscription:null,subscribe:async()=>{events.push('subscribe');subscribed=true;return subscription;}}};
  const Notification={permission,requestPermission(){events.push('permission');this.permission='granted';return Promise.resolve('granted');}};
  const navigator={userAgent:'Android',platform:'Linux',maxTouchPoints:1,serviceWorker:{register:async()=>registration,ready:Promise.resolve(registration)}};
  const window={Notification,PushManager:function(){},isSecureContext:true};window.top={navigator,matchMedia:()=>({matches:false})};
@@ -52,7 +106,7 @@ function settingsHarness({permission='default',saveFailure=false}={}){
  const rpc=async(name,body)=>{calls.push({name,body});if(name==='student_push_config')return {enabled:true,publicKey:'BAAAAAAAAAAAAAAAAAAAAA'};if(saveFailure&&name==='student_push_subscribe')throw Error('offline');};
  const settings=api({rpc,signedIn:()=>true}),host=new Element();settings.mount(host);
  const settle=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
- return {events,calls,settings,host,settle};
+ return {events,calls,badgeMessages,settings,host,settle};
 }
 test('el permiso solo se pide desde Activar y antes de esperar otra operación',async()=>{
  const h=settingsHarness();h.settings.setContext({courseId:'c',topicId:'t'});await h.settle();
@@ -69,4 +123,11 @@ test('desactivar elimina la suscripción del servidor y del navegador',async()=>
  const h=settingsHarness();h.settings.setContext({courseId:'c',topicId:'t'});await h.settle();await h.host.children[3].handlers.click();
  await h.host.children[4].handlers.click();assert.equal(h.calls.at(-1).name,'student_push_unsubscribe');assert.equal(h.events.at(-1),'unsubscribe');
  assert.equal(h.host.children[4].hidden,true);
+});
+test('el indicador usa la conversación actual y su lectura solo después de activar los avisos',async()=>{
+ const h=settingsHarness();h.settings.setContext({courseId:badgeCourse,topicId:badgeTeam});await h.settle();
+ h.settings.setUnread(2,{lastMessageId:'72',lastSeenId:'70'});assert.equal(h.badgeMessages.length,0);
+ await h.host.children[3].handlers.click();assert.equal(h.badgeMessages.at(-1).unread,true);assert.equal(h.badgeMessages.at(-1).lastMessageId,'72');
+ h.settings.setUnread(0,{lastMessageId:'72',lastSeenId:'72'});assert.equal(h.badgeMessages.at(-1).unread,false);assert.equal(h.badgeMessages.at(-1).lastSeenId,'72');
+ await h.settings.logout();assert.equal(h.badgeMessages.at(-1).type,'aula:chat-badge-reset');
 });

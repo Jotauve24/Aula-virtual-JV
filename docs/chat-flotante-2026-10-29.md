@@ -40,3 +40,15 @@ Las capturas del uso real mostraron que la altura anterior ocupaba casi todo el 
 El tamaño se basa en el número de mensajes de la respuesta ya autorizada; una actualización fallida no se presenta como una conversación vacía. El primer mensaje permite crecer al tamaño normal y los borradores y archivos conservan el mismo formulario. El menú de avisos elige abrir hacia arriba o abajo según el espacio disponible, y su contenido admite desplazamiento dentro de la pantalla. Los bordes inferiores del historial siguen la ventana redondeada.
 
 Verificación con datos ficticios: pantalla de 1260 × 520 px, tamaños de escritorio y móvil, conversación vacía, primer envío, ampliación, menú de avisos y borrador. La comparación de escala del 150 % usa un marco de prueba; no cambia el zoom del navegador ni el zoom elegido por el usuario. Se conserva la suite de pruebas de la versión anterior.
+
+## Ajuste de controles 0.27.2
+
+A petición del usuario, minimizar ocupa la esquina derecha y cerrar pasa al interior de la cabecera, antes de ampliar. La X usa un icono discreto de 14 px y mantiene una zona de interacción de 44 px. La ventana normal pasa a 320 × 400 px como máximo y a 288 px de alto vacía. Con poco alto disponible usa 304 × 352 px y 264 px de alto vacía. La ampliación y la pantalla completa del celular siguen disponibles. Las pruebas existentes encuentran los controles por su clase, sin depender de su antigua posición.
+
+## Indicadores de mensajes pendientes
+
+La burbuja y el botón Chat muestran su contador rojo al recibir mensajes que aún no se han leído. La app instalada usa el Badging API cuando está disponible; Android obtiene su indicador del aviso del sistema. El color, el punto o número y su presentación dependen del sistema y de los permisos de notificaciones e indicadores del teléfono.
+
+El service worker guarda exclusivamente identificadores de conversación, marcas de lectura y estado pendiente en IndexedDB. Conserva el aviso de otras materias al leer una sola conversación, ignora respuestas atrasadas que no cubren un mensaje nuevo y evita restaurar un aviso cuando llega tarde un push de un mensaje ya leído. No se guarda el texto del chat ni se agrega caché de archivos. Al leer se cierran los avisos correspondientes; al salir o desactivar notificaciones se limpian los indicadores del dispositivo. La prueba física del icono en iPhone/Android sigue pendiente.
+
+Fuentes oficiales: [Globos en iPhone/iPad](https://webkit.org/blog/14112/badging-for-home-screen-web-apps/) y [badging y comportamiento de Android](https://developer.chrome.com/docs/capabilities/web-apis/badging-api).
