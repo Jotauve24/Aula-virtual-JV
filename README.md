@@ -18,7 +18,7 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 - Perfiles y avatares para estudiantes.
 - Equipos con cupos, mapa interactivo y espacios visuales por tema.
 - Chat privado flotante por grupo, avatares pixel, burbuja de pendientes y archivos adjuntos en almacenamiento protegido.
-- Avisos Web Push opcionales para Android y para la app agregada a inicio en iPhone/iPad; permisos y desactivación desde la campana del chat.
+- Avisos Web Push opcionales para Android y para la app agregada a inicio en iPhone/iPad; la primera apertura de Chat solicita permiso y la campana permite ajustar o desactivar los avisos.
 - Panel docente para materias, grupos, inscripciones y presencia reciente.
 - Recuperación voluntaria mediante correo verificado.
 - Interfaz accesible, adaptable y con movimiento reducido.
@@ -315,7 +315,8 @@ contador de mensajes de la burbuja flotante. Los mensajes propios y los pendient
 ya existían al entrar no hacen sonar otra vez la notificación. Si está leyendo
 el chat, el mensaje se incorpora sin interrupción sonora. El control «Sin
 sonido» desactiva estos efectos dentro del aula. Los avisos del sistema se activan
-por separado desde la campana del chat, con permiso del dispositivo. Web Push
+con permiso del dispositivo al pulsar Chat o su burbuja por primera vez. La campana
+permite reintentar o desactivarlos. Web Push
 permite recibirlos con el aula cerrada; el buzón visible sigue actualizándose
 periódicamente mientras el aula está abierta.
 
@@ -456,6 +457,9 @@ los límites de la revisión con navegador.
 La versión 0.27.0 incorpora una ventana sobre el aula, ampliación, minimizado
 en burbuja, lectura de pendientes y un formulario que conserva su borrador y
 archivo entre vistas. El simulador docente usa el mismo diseño con mensajes
-ficticios. La campana permite activar o desactivar Web Push en cada dispositivo.
+ficticios. Desde 0.27.3, pulsar Chat o su burbuja solicita permiso en ese mismo
+gesto, sin pasar antes por la campana. Descartar o rechazar la solicitud permite
+seguir conversando y no la repite automáticamente. La campana permite reintentar
+o desactivar Web Push en cada dispositivo; desactivarlo se respeta al volver a entrar.
 En iPhone/iPad se requiere abrir la app agregada a inicio e iOS 16.4 o posterior.
 Consulta [comportamiento, servidor y verificación](docs/chat-flotante-2026-10-29.md).

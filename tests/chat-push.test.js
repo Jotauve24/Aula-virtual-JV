@@ -93,27 +93,79 @@ test('al tocar un aviso se reutiliza la ventana existente y se conserva el borra
  assert.equal(w.actions[0],'focus');assert.equal(w.actions[1].type,'aula:chat-notification');assert.equal(w.actions.length,2);
 });
 
-function settingsHarness({permission='default',saveFailure=false}={}){
- const events=[],calls=[],badgeMessages=[];let subscribed=false;
+function settingsHarness({permission='default',permissionResult='granted',saveFailure=false,
+ configReady,enabled=true,appleMobile=false,installed=false,existingSubscription=false,preferences=new Map()}={}){
+ const events=[],calls=[],badgeMessages=[];let subscribed=existingSubscription;
  class Element{constructor(){this.children=[];this.handlers={};this.parentElement={addEventListener(){}};}append(...items){this.children.push(...items);}setAttribute(){}addEventListener(type,fn){this.handlers[type]=fn;}}
  const subscription={endpoint:'https://fcm.googleapis.com/fcm/send/qa-only',toJSON:()=>({endpoint:'qa'}),unsubscribe:async()=>{events.push('unsubscribe');return true;}};
  const registration={active:{postMessage:value=>badgeMessages.push(value)},pushManager:{getSubscription:async()=>subscribed?subscription:null,subscribe:async()=>{events.push('subscribe');subscribed=true;return subscription;}}};
- const Notification={permission,requestPermission(){events.push('permission');this.permission='granted';return Promise.resolve('granted');}};
- const navigator={userAgent:'Android',platform:'Linux',maxTouchPoints:1,serviceWorker:{register:async()=>registration,ready:Promise.resolve(registration)}};
- const window={Notification,PushManager:function(){},isSecureContext:true};window.top={navigator,matchMedia:()=>({matches:false})};
+ const Notification={permission,requestPermission(){events.push('permission');this.permission=permissionResult;return Promise.resolve(permissionResult);}};
+ const navigator={userAgent:appleMobile?'iPhone':'Android',platform:'Linux',maxTouchPoints:1,serviceWorker:{register:async()=>registration,ready:Promise.resolve(registration)}};
+ const window={Notification,PushManager:function(){},isSecureContext:true};window.top={navigator,matchMedia:()=>({matches:installed})};
+ const localStorage={getItem:key=>preferences.get(key),setItem:(key,value)=>preferences.set(key,value)};
  const source=readFileSync(new URL('../assets/chat-push.js',import.meta.url),'utf8').replaceAll('import.meta.url',"'https://aula.example/Aula-virtual-JV/assets/chat-push.js'").replace(/^export /gm,'');
- const api=vm.runInNewContext(source+'\ncreateChatPushSettings;',{document:{createElement:()=>new Element()},window,navigator,Notification,matchMedia:()=>({matches:false}),URL,Uint8Array,atob});
- const rpc=async(name,body)=>{calls.push({name,body});if(name==='student_push_config')return {enabled:true,publicKey:'BAAAAAAAAAAAAAAAAAAAAA'};if(saveFailure&&name==='student_push_subscribe')throw Error('offline');};
+ const api=vm.runInNewContext(source+'\ncreateChatPushSettings;',{document:{createElement:()=>new Element()},window,navigator,Notification,localStorage,matchMedia:()=>({matches:false}),URL,Uint8Array,atob});
+ const rpc=async(name,body)=>{calls.push({name,body});if(name==='student_push_config')return configReady||{enabled,publicKey:'BAAAAAAAAAAAAAAAAAAAAA'};if(saveFailure&&name==='student_push_subscribe')throw Error('offline');};
  const settings=api({rpc,signedIn:()=>true}),host=new Element();settings.mount(host);
  const settle=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
- return {events,calls,badgeMessages,settings,host,settle};
+ return {events,calls,badgeMessages,settings,host,settle,preferences};
 }
-test('el permiso solo se pide desde Activar y antes de esperar otra operación',async()=>{
+test('preparar no pide permiso y la activación manual lo solicita antes de esperar otra operación',async()=>{
  const h=settingsHarness();h.settings.setContext({courseId:'c',topicId:'t'});await h.settle();
  assert.deepEqual(h.events,[],'preparar no pide permiso');
  const click=h.host.children[3].handlers.click();assert.equal(h.events[0],'permission');await click;
  assert.deepEqual(h.events,['permission','subscribe']);assert.equal(h.calls.at(-1).name,'student_push_subscribe');
  assert.match(h.host.children[2].textContent,/Activas en este dispositivo/);
+});
+test('abrir Chat pide permiso en el mismo gesto aunque la preparación esté pendiente, sin duplicar clics',async()=>{
+ let release;const configReady=new Promise(resolve=>{release=resolve;});
+ const h=settingsHarness({configReady});h.settings.setContext({courseId:'c',topicId:'t'});
+ assert.deepEqual(h.events,[]);
+ const requested=h.settings.requestFromChat();assert.deepEqual(h.events,['permission']);
+ await h.settings.requestFromChat();assert.deepEqual(h.events,['permission']);
+ release({enabled:true,publicKey:'BAAAAAAAAAAAAAAAAAAAAA'});await requested;
+ assert.deepEqual(h.events,['permission','subscribe']);
+ assert.equal(h.calls.filter(call=>call.name==='student_push_subscribe').length,1);
+ await h.settings.requestFromChat();assert.deepEqual(h.events,['permission','subscribe']);
+});
+test('descartar el permiso no interrumpe el chat ni vuelve a preguntar al reabrir o recargar; la campana permite reintentar',async()=>{
+ const h=settingsHarness({permissionResult:'default'});h.settings.setContext({courseId:'c',topicId:'t'});await h.settle();
+ await h.settings.requestFromChat();await h.settings.requestFromChat();
+ assert.deepEqual(h.events,['permission']);assert.match(h.host.children[2].textContent,/Puedes seguir usando el chat/);
+ const reloaded=settingsHarness({preferences:h.preferences});reloaded.settings.setContext({courseId:'c',topicId:'t'});await reloaded.settle();
+ await reloaded.settings.requestFromChat();assert.deepEqual(reloaded.events,[]);
+ await reloaded.host.children[3].handlers.click();assert.deepEqual(reloaded.events,['permission','subscribe']);
+});
+test('un permiso rechazado no se vuelve a pedir y deja disponible el uso del chat',async()=>{
+ const h=settingsHarness({permissionResult:'denied'});h.settings.setContext({courseId:'c',topicId:'t'});await h.settle();
+ await h.settings.requestFromChat();await h.settings.requestFromChat();
+ assert.deepEqual(h.events,['permission']);assert.match(h.host.children[2].textContent,/permiso está bloqueado/);
+});
+test('sin equipo, con el servicio deshabilitado o sin instalar en iPhone no pide permisos',async()=>{
+ const noTeam=settingsHarness();await noTeam.settings.requestFromChat();assert.deepEqual(noTeam.events,[]);
+ for(const options of [{enabled:false},{appleMobile:true}]){
+  const h=settingsHarness(options);h.settings.setContext({courseId:'c',topicId:'t'});await h.settle();
+  await h.settings.requestFromChat();assert.deepEqual(h.events,[]);
+ }
+});
+test('un iPhone instalado solicita permiso desde Chat y activa los avisos si se acepta',async()=>{
+ const h=settingsHarness({appleMobile:true,installed:true});h.settings.setContext({courseId:'c',topicId:'t'});await h.settle();
+ await h.settings.requestFromChat();assert.deepEqual(h.events,['permission','subscribe']);
+});
+test('un permiso ya concedido no se vuelve a pedir y desactivar evita reactivar al abrir o recargar',async()=>{
+ const h=settingsHarness({permission:'granted'});h.settings.setContext({courseId:'c',topicId:'t'});await h.settle();
+ await h.settings.requestFromChat();assert.deepEqual(h.events,['subscribe']);
+ await h.host.children[4].handlers.click();await h.settings.requestFromChat();assert.deepEqual(h.events,['subscribe','unsubscribe']);
+ const reloaded=settingsHarness({permission:'granted',existingSubscription:true,preferences:h.preferences});reloaded.settings.setContext({courseId:'c',topicId:'t'});await reloaded.settle();
+ await reloaded.settings.requestFromChat();assert.deepEqual(reloaded.events,[]);
+ assert.equal(reloaded.calls.some(call=>call.name==='student_push_subscribe'),false);
+ await reloaded.host.children[3].handlers.click();assert.deepEqual(reloaded.events,['subscribe']);
+});
+test('salir mientras se prepara la primera activación cancela la suscripción del contexto anterior',async()=>{
+ let release;const h=settingsHarness({configReady:new Promise(resolve=>{release=resolve;})});
+ h.settings.setContext({courseId:'c',topicId:'t'});const requested=h.settings.requestFromChat();await h.settings.logout();
+ release({enabled:true,publicKey:'BAAAAAAAAAAAAAAAAAAAAA'});await requested;
+ assert.deepEqual(h.events,['permission']);assert.equal(h.calls.some(call=>call.name==='student_push_subscribe'),false);
 });
 test('si falla el registro del dispositivo, no muestra notificaciones activas',async()=>{
  const h=settingsHarness({saveFailure:true});h.settings.setContext({courseId:'c',topicId:'t'});await h.settle();await h.host.children[3].handlers.click();

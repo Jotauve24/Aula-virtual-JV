@@ -158,7 +158,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
     CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
     createIncomingMessageTracker, normalizeStudentDocument, DOCUMENT_COUNTRIES, attachmentInfo, fileSizeLabel,
-    createChatPushSettings:()=>({mount(){},setContext(){},setUnread(){},logout(){}}),
+    createChatPushSettings:()=>({mount(){},setContext(){},setUnread(){},logout(){},requestFromChat(){calls.push({name:'request_push_from_chat'});}}),
     uploadTeamFile:async(id,team,file,info)=>{calls.push({name:'upload_file',body:{id,team,name:info.name}});return uploadFile?uploadFile():id+'/'+team+'/qa/file.pdf';},
     cancelTeamFile:async path=>calls.push({name:'cancel_file',body:{path}}),
     avatarSVG, drawWorld: (_canvas, options) => { frames.push(options); },
@@ -491,6 +491,19 @@ test('el chat flota sobre el aula y conserva el borrador al minimizar, cerrar y 
  assert.equal(page.get('#team-chat-input'),input);assert.equal(input.value,'Borrador pendiente');
  dialog.querySelector('.floating-chat-close').click();assert.equal(dialog.open,false);
  page.get('#tab-chat').click();assert.equal(page.get('#team-chat-form'),form);assert.equal(input.value,'Borrador pendiente');
+});
+
+test('Chat y la burbuja solicitan avisos solo al abrir por un gesto, nunca al restaurar automáticamente',async()=>{
+ const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}},
+  roomFixture:[{id:'g1',name:'Equipo de prueba',capacity:5,members:[{id:'self',name:'Ana',mine:true}]}]});
+ const requests=()=>page.calls.filter(call=>call.name==='request_push_from_chat').length;
+ assert.equal(requests(),0);
+ page.get('#tab-chat').click();assert.equal(requests(),1);assert.equal(page.get('#floating-team-chat').open,true);
+ page.get('#floating-team-chat').querySelector('.floating-chat-minimize').click();
+ page.get('body').querySelector('.floating-chat-bubble').click();assert.equal(requests(),2);
+ page.state('floatingChat.open()');assert.equal(requests(),2);
+ const noTeam=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:null,avatar:{skin:1}}});
+ noTeam.get('#tab-chat').click();assert.equal(noTeam.calls.some(call=>call.name==='request_push_from_chat'),false);
 });
 
 test('los mensajes nuevos no se marcan leídos mientras se consulta el historial anterior',async()=>{
