@@ -1,7 +1,8 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.26.1';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.26.1';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.26.1';
-import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.26.1';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.0';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.27.0';
+import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.0';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.0';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);
@@ -13,9 +14,12 @@ const el=(tag,value='',css='')=>{
 };
 const demo=createDemoExperience();
 let context=()=>({}), activeTab='aula', demoUnread=0;
-let demoChatPaint=null, noticeTimer=0, nameControl=null, nameControlKey='';
+let demoChatPaint=null, nameControl=null, nameControlKey='';
 const namedTopic=topic=>topic?{...topic,name:demo.nameOf(topic)}:null;
 const selectedTeam=()=>namedTopic(context().topics.find(t=>t.id===demo.chosenId));
+const floatingChat=createFloatingChat({host:$('#team-chat-host'),launcher:$('#tab-chat'),demo:true,
+  onRead:()=>{demoUnread=0;renderDemoNotice();},onOpen:closeTopic});
+$('#tab-chat').addEventListener('click',()=>changeTab('chat'));
 
 export const isDemoTeam=id=>demo.chosenId===id;
 export const demoTopicName=topic=>demo.nameOf(topic);
@@ -23,10 +27,10 @@ export function configureTeacherInspector(getContext) {
   context=getContext;
   $('#restart-demo')?.addEventListener('click',resetDemonstration);
   $('#demo-message-trigger')?.addEventListener('click',simulateIncomingMessage);
-  $('#demo-chat-alert-open')?.addEventListener('click',()=>changeTab('chat'));
 }
 function renderDemoNotice() {
   const active=!!selectedTeam();
+  floatingChat.setUnread(demoUnread);
   const button=$('#demo-message-trigger');
   if(button)button.hidden=!active;
   const pill=$('#demo-chat-unread');
@@ -34,28 +38,14 @@ function renderDemoNotice() {
     pill.hidden=!demoUnread;
     pill.textContent=demoUnread>99?'99+':String(demoUnread);
   }
-  const alert=$('#demo-chat-alert');
-  if(alert){
-    alert.hidden=!demoUnread || activeTab==='chat';
-    $('#demo-chat-alert-text').textContent=demoUnread===1?
-      'Tienes 1 mensaje nuevo de un compañero de ejemplo.':
-      'Tienes '+demoUnread+' mensajes nuevos de tu compañero de ejemplo.';
-  }
+
 }
 function simulateIncomingMessage(){
   const topic=selectedTeam();
   if(!topic||!demo.receive(topic.id))return;
-  if(activeTab!=='chat'){
+  if(!floatingChat.isReading()){
     demoUnread++;
     renderDemoNotice();
-    const banner=$('#demo-chat-alert');
-    if(banner && !banner.hidden){
-      banner.classList.remove('chat-just-arrived');
-      void banner.offsetWidth;
-      banner.classList.add('chat-just-arrived');
-      clearTimeout(noticeTimer);
-      noticeTimer=setTimeout(()=>banner.classList.remove('chat-just-arrived'),1150);
-    }
     document.dispatchEvent(new CustomEvent('aulajv:chat-received',{detail:{count:1,demo:true}}));
   }
   demoChatPaint?.();
@@ -67,18 +57,14 @@ function closeTopic(){
   dialog.hidden=true;
 }
 function changeTab(tab) {
-  if(!['aula','equipo','chat'].includes(tab))return;
+  if(tab==='chat'){floatingChat.open();return;}
+  if(!['aula','equipo'].includes(tab))return;
   activeTab=tab;
   for(const button of document.querySelectorAll('[data-admin-tab]')) {
     const selected=button.dataset.adminTab===tab;
     button.setAttribute('aria-selected',String(selected));
     button.tabIndex=selected?0:-1;
     $('#panel-'+button.dataset.adminTab).hidden=!selected;
-  }
-  if(tab==='chat'){
-    demoUnread=0;
-    clearTimeout(noticeTimer);
-    $('#demo-chat-alert')?.classList.remove('chat-just-arrived');
   }
   renderDemoNotice();
   if(tab==='aula')context().draw?.();
@@ -101,11 +87,11 @@ function refreshDemo() {
   renderSelectedTeam();
 }
 export function resetDemonstration(){
+  floatingChat.reset();
   demo.reset();
   nameControl=null;nameControlKey='';
   demoUnread=0;
   demoChatPaint=null;
-  clearTimeout(noticeTimer);
   closeTopic();
   changeTab('aula');
   refreshDemo();
@@ -301,8 +287,10 @@ function demoChatPanel(topic){
   const paint=()=>{
     const palette=createParticipantPalette([...demo.members(topic),{id:'sample-peer',name:'Compañero de ejemplo'}]);
     const list=demo.messages(topic.id);
-    messages.replaceChildren(...list.map(msg=>chatMessage(msg,palette(msg.senderId||msg.name),downloadExample)));
-    messages.scrollTop=messages.scrollHeight;
+    const nearBottom=messages.scrollHeight-messages.scrollTop-messages.clientHeight<55;
+    const members=demo.members(topic);
+    messages.replaceChildren(...list.map(msg=>chatMessage({...msg,avatar:members.find(member=>member.id===msg.senderId)?.avatar},palette(msg.senderId||msg.name),downloadExample)));
+    if(nearBottom)messages.scrollTop=messages.scrollHeight;
   };
   paint();
   demoChatPaint=paint;
@@ -340,6 +328,7 @@ function demoChatPanel(topic){
     }
   });
   form.append(label,input,attach,send,attachment,preview,help,error);
+  decorateChatForm(form);
   form.addEventListener('submit',event=>{
     event.preventDefault();
     const body=input.value.trim();
@@ -359,6 +348,9 @@ function demoChatPanel(topic){
 }
 export function renderSelectedTeam(){
   const topic=selectedTeam();
+  floatingChat.setEnabled(!$('#room').hidden);
+  floatingChat.setConversation(topic?{...topic,key:context().courseId+'/'+topic.id,members:demo.members(topic)}:null);
+  floatingChat.setPresence('Demostración · sin mensajes reales');
   $('#group-badge').textContent=topic?'Tu equipo: '+topic.name:'Tu equipo: sin asignar';
   renderDemoNotice();
   const nodes=$('#teacher-topics').querySelectorAll('details');
@@ -371,6 +363,7 @@ export function renderSelectedTeam(){
     button.onclick=()=>inspectTopic(context().topics.find(t=>t.id===detail.dataset.topicId));
   }
   const roster=$('#team-roster-host'),chat=$('#team-chat-host');
+  chat.hidden=!topic;
   if(!topic){
     roster.replaceChildren(el('p','Elige un grupo en «Aula y temas» para ver aquí a tus compañeros.','empty-team'));
     chat.replaceChildren(el('p','Elige un equipo en «Aula y temas» para conversar.','empty-team'));

@@ -1,5 +1,9 @@
 /* The two user-selected palettes, shared by every public and internal screen. */
 :root{
+ --sans:AulaNunito,'Nunito',system-ui,sans-serif;
+  --chat-sent: #deeeea;
+  --chat-received: #f7f2e7;
+  --notification: #b9344b;
  --deep:#031926;--teal:#468189;--seafoam:#77aca2;--opal:#9dbebb;--champagne:#f4e9cd;
  --sage:#99b898;--peach:#fecea8;--salmon:#ff847c;--coral:#e84a5f;--charcoal:#2a363b;
  --paper:#fbf8ef;--surface:#fff;--ink:var(--charcoal);--muted:#53615f;

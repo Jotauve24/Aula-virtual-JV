@@ -76,6 +76,25 @@
       if (event.origin === location.origin && event.source === frame.contentWindow &&
           event.data?.type === 'aula:location') syncLocation();
     });
+    if (typeof navigator !== 'undefined') navigator.serviceWorker?.addEventListener('message', event => {
+      if (event.data?.type !== 'aula:chat-notification' ||
+          event.source?.scriptURL !== new URL('chat-worker.js', baseURL).href) return;
+      const { courseId, topicId } = event.data;
+      const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuid.test(courseId || '') || !uuid.test(topicId || '')) return;
+      try {
+        const current = new URL(frame.contentWindow.location.href);
+        const sameCourse = frame.contentDocument.body.dataset.chatCourse === courseId;
+        const sameTeam = frame.contentDocument.body.dataset.chatTopic === topicId;
+        if (current.origin === baseURL.origin && current.pathname === new URL('live.html',baseURL).pathname && sameCourse && sameTeam) {
+          frame.contentWindow.postMessage({type:'aula:chat-notification',courseId,topicId},baseURL.origin);
+        } else {
+          const target = new URL('live.html',baseURL);
+          target.searchParams.set('resume_id',courseId);target.searchParams.set('chat',topicId);
+          frame.src = target.href;
+        }
+      } catch { /* An external sign-in is never inspected or interrupted. */ }
+    });
     document.body.replaceChildren(frame);
   }
 
