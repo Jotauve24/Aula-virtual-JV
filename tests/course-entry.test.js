@@ -7,6 +7,7 @@ import vm from 'node:vm';
 import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from '../assets/model.js';
 import { memberSeat, createRoomLayout, isWalkable, findPath, canWalkSegment } from '../assets/world-layout.js';
 import { createIncomingMessageTracker } from '../assets/chat-notification.js';
+import { createRecentCourses, RECENT_COURSES_KEY } from '../assets/recent-courses.js';
 
 const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', import.meta.url), 'utf8')
   .split('function rect(ctx')[0].replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '')
@@ -157,7 +158,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     requestAnimationFrame: handler => { pendingFrames.set(++frameId, handler); return frameId; },
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
     CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
-    createIncomingMessageTracker, normalizeStudentDocument, DOCUMENT_COUNTRIES, attachmentInfo, fileSizeLabel,
+    createIncomingMessageTracker, createRecentCourses:()=>createRecentCourses(localStorage), normalizeStudentDocument, DOCUMENT_COUNTRIES, attachmentInfo, fileSizeLabel,
     createChatPushSettings:()=>({mount(){},setContext(){},setUnread(){},logout(){},requestFromChat(){calls.push({name:'request_push_from_chat'});}}),
     uploadTeamFile:async(id,team,file,info)=>{calls.push({name:'upload_file',body:{id,team,name:info.name}});return uploadFile?uploadFile():id+'/'+team+'/qa/file.pdf';},
     cancelTeamFile:async path=>calls.push({name:'cancel_file',body:{path}}),
@@ -241,6 +242,7 @@ test('a newly entered code takes precedence over the remembered old code', async
   assert.equal(page.calls[0].body.p_code, NEW);
   assert.equal(page.fields.code.value, NEW);
   assert.equal(page.localStorage.getItem(LAST_CODE), NEW);
+  assert.deepEqual(JSON.parse(page.localStorage.getItem(RECENT_COURSES_KEY))[0],{code:NEW,name:'Materia de prueba'});
   assert.equal(page.sessionStorage.getItem(HANDOFF), null);
   assert.equal(page.get('#room').dataset.stage, 'avatar');
   assert.equal(page.state('profile.topicId'), 'existing-team');
@@ -271,6 +273,7 @@ test('student logout clears obsolete resume and recovery shortcuts along with th
 test('an obsolete remembered code exposes the code field and preserves the student identity', async () => {
   const page = await boot({ remembered: OLD, enroll: () => { throw new Error('Materia no encontrada'); } });
   assert.equal(page.localStorage.getItem(LAST_CODE), null);
+  assert.equal(createRecentCourses(page.localStorage).list().some(row=>row.code===OLD),false);
   assert.equal(page.localStorage.getItem(SESSION), 'existing-private-session');
   assert.equal(page.signOutCount(), 0);
   assert.equal(page.state('questions[questionIndex]'), 'code');

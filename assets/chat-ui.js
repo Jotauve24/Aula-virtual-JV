@@ -1,5 +1,5 @@
-import { fileSizeLabel } from './attachments.js?v=0.27.4';
-import { avatarSVG } from './world.js?v=0.27.4';
+import { fileSizeLabel } from './attachments.js?v=0.27.5';
+import { avatarSVG } from './world.js?v=0.27.5';
 // Stable student IDs distinguish participants who share a display name.
 // Share one palette between the roster and the conversation, scoped to a team.
 const TONES = [

@@ -6,30 +6,30 @@
   <meta name="apple-mobile-web-app-title" content="AulavirtualJV">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="./manifest.webmanifest?v=0.27.4">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png?v=0.27.4">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png?v=0.27.4">
+  <link rel="manifest" href="./manifest.webmanifest?v=0.27.5">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png?v=0.27.5">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png?v=0.27.5">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fbf8ef">
   <meta name="description" content="AulavirtualJV: ingresa con el código de tu materia, crea tu avatar y encuentra tu equipo.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>Ingreso de estudiantes · AulavirtualJV</title><script src="./assets/page-shell.js?v=0.27.4"></script>
-  <link rel="icon" href="./assets/favicon.svg?v=0.27.4" type="image/svg+xml">
+  <title>Ingreso de estudiantes · AulavirtualJV</title><script src="./assets/page-shell.js?v=0.27.5"></script>
+  <link rel="icon" href="./assets/favicon.svg?v=0.27.5" type="image/svg+xml">
   <link rel="preload" as="font" href="./assets/fonts/nunito-latin.woff" type="font/woff" crossorigin>
-  <link rel="stylesheet" href="./assets/palette.css?v=0.27.4"><link rel="stylesheet" href="./assets/styles.css?v=0.27.4"><link rel="stylesheet" href="./assets/brand.css?v=0.27.4">
-  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.27.4">
-  <link rel="stylesheet" href="./assets/campus.css?v=0.27.4">
-  <link rel="modulepreload" data-aula-module href="./assets/app.js?v=0.27.4">
-<link rel="stylesheet" href="./assets/page-shell.css?v=0.27.4">
-  <link rel="stylesheet" href="./assets/video-guide.css?v=0.27.4">
+  <link rel="stylesheet" href="./assets/palette.css?v=0.27.5"><link rel="stylesheet" href="./assets/styles.css?v=0.27.5"><link rel="stylesheet" href="./assets/brand.css?v=0.27.5">
+  <link rel="stylesheet" href="./assets/entrance-tutorial.css?v=0.27.5">
+  <link rel="stylesheet" href="./assets/campus.css?v=0.27.5">
+  <link rel="modulepreload" data-aula-module href="./assets/app.js?v=0.27.5">
+<link rel="stylesheet" href="./assets/page-shell.css?v=0.27.5">
+  <link rel="stylesheet" href="./assets/video-guide.css?v=0.27.5">
 </head>
 <body class="campus-theme campus-panel campus-entrance">
   <a class="skip-link" href="#main">Ir al contenido</a>
   <header class="site-header">
     <a class="brand" href="./" aria-label="AulavirtualJV, volver al ingreso">
-      <img class="brand-mark" src="./assets/favicon.svg?v=0.27.4" width="40" height="40" alt="" aria-hidden="true">
-      <span><span class="brand-name">Aula<span class="brand-light">virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.27.4" width="38" height="30" alt="JV"></span><small>Un espacio para hacer equipo</small></span>
+      <img class="brand-mark" src="./assets/favicon.svg?v=0.27.5" width="40" height="40" alt="" aria-hidden="true">
+      <span><span class="brand-name">Aula<span class="brand-light">virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.27.5" width="38" height="30" alt="JV"></span><small>Un espacio para hacer equipo</small></span>
     </a>
     <div class="entry-tools"><a class="entry-teacher" href="./docente.html">Acceso docente <span aria-hidden="true">↗</span></a><button id="expand-aula" class="button secondary entry-expand" type="button" aria-label="Ampliar aula" title="Ampliar aula"><svg data-fullscreen-icon viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button></div>
   </header>
@@ -40,8 +40,9 @@
         <p class="intro">Ingresa con el código de tu materia, crea tu personaje y encuentra a tus compañeros.</p>
         <form id="course-form" novalidate autocomplete="off">
           <div class="entry-form-heading"><label for="course-code">Código de la materia</label><button class="entry-help-button" id="code-help" type="button" aria-label="¿Dónde encuentro mi código?" aria-haspopup="dialog" title="¿Dónde encuentro mi código?"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 .5c0 1.5-2.5 2-2.5 3.5m0 3h.01"/></svg></button></div>
-          <div class="code-field"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 7 21M17 3l-2 18M3 9h18M2 15h18"/></svg><input id="course-code" name="course-code" translate="no" aria-label="Código de la materia" placeholder="MAT-XXXXX-XXXXX-XXXXX" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint code-error" required></div>
-          <p class="field-hint" id="code-hint">Puedes pegar el código completo, con sus guiones.</p>
+          <div class="code-field"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3 7 21M17 3l-2 18M3 9h18M2 15h18"/></svg><input id="course-code" name="course-code" translate="no" aria-label="Código de la materia" placeholder="MAT-XXXXX-XXXXX-XXXXX" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint code-error" required><button id="recent-code-toggle" class="recent-code-toggle" type="button" aria-label="Ver códigos recientes" aria-controls="recent-code-panel" aria-expanded="false" title="Ver códigos recientes" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div id="recent-code-panel" class="recent-code-panel" role="group" aria-labelledby="recent-code-title" hidden><p id="recent-code-title">Códigos recientes</p><div id="recent-code-list"></div><button id="forget-recent-codes" class="recent-code-forget" type="button">Olvidar recientes</button></div>
+          <p class="field-hint" id="code-hint" aria-live="polite">Puedes pegar el código completo, con sus guiones.</p>
           <p class="field-error" id="code-error" role="alert" hidden></p>
           <button class="button primary enter-button" id="enter-course" type="submit" disabled>Entrar a mi materia <span aria-hidden="true">↗</span></button>
           <a class="text-button help-button recovery-link" href="./live.html?login=1"><span>¿Ya estabas inscrito?</span><strong>Recupera tu cuenta <span aria-hidden="true">↗</span></strong></a>

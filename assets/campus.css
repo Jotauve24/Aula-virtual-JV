@@ -61,7 +61,22 @@
 .campus-entrance .login-content .code-field:hover{border-color:var(--teal)}
 .campus-entrance .login-content .code-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--teal) 16%,transparent)}
 .campus-entrance .login-content .code-field:has([aria-invalid=true]){border-color:var(--red)}
-.campus-entrance .code-field input{padding:16px 10px;font-size:16px;letter-spacing:.3px;font-weight:700}
+.campus-entrance .code-field input{min-width:0;padding:16px 10px;font-size:16px;letter-spacing:.3px;font-weight:700}
+.campus-entrance .recent-code-toggle{display:grid;place-items:center;flex:none;width:44px;min-height:44px;margin-right:2px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--teal);cursor:pointer;touch-action:manipulation}
+.campus-entrance .login-content .code-field .recent-code-toggle svg{width:18px;margin:0}
+.campus-entrance .login-content .code-field:has(.recent-code-toggle:not([hidden]))>svg{display:none}
+.campus-entrance .recent-code-toggle:hover{background:var(--accent-soft);color:var(--deep)}
+.campus-entrance .recent-code-panel{margin-top:8px;padding:8px 12px;background:var(--paper);border-radius:12px}
+.campus-entrance .recent-code-panel>p{margin:4px 0;font-size:13px;font-weight:800;color:var(--ink)}
+.campus-entrance #recent-code-list{max-height:236px;overflow:auto;overscroll-behavior:contain}
+.campus-entrance .recent-code-option{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;min-height:52px;padding:10px 8px;border:0;border-radius:8px;text-align:left;background:transparent;color:var(--ink);font:inherit;cursor:pointer;touch-action:manipulation}
+.campus-entrance .recent-code-option strong,.campus-entrance .recent-code-option span{max-width:100%;overflow-wrap:anywhere;font-size:13px;line-height:1.4}
+.campus-entrance .recent-code-option span{color:var(--muted)}
+.campus-entrance .recent-code-option:hover,.campus-entrance .recent-code-option:focus-visible{background:var(--accent-soft);color:var(--deep)}
+.campus-entrance .recent-code-forget{min-height:44px;padding:8px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;touch-action:manipulation}
+.campus-entrance .recent-code-forget:hover{color:var(--ink)}
+.campus-entrance :is(.recent-code-toggle,.recent-code-option,.recent-code-forget):focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.campus-entrance .recent-code-toggle[hidden],.campus-entrance .recent-code-panel[hidden]{display:none}
 .campus-entrance .code-field input::placeholder{color:var(--muted);font-size:14px;font-weight:600}
 .campus-entrance .login-content .code-field svg{stroke:var(--teal);width:19px;margin-left:12px}
 .campus-entrance .login-content .field-hint{font-size:13px;line-height:1.5;margin-top:10px;color:var(--muted)}
