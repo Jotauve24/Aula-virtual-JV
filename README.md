@@ -24,6 +24,13 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
+## Estado de los grupos a simple vista (0.26.1)
+
+Los grupos creados tienen fondo teal suave; los completos pendientes de check,
+fondo durazno; y los demás pendientes, fondo claro. Cada uno muestra su estado
+escrito en «Mesas y temas» y «Estudiantes y equipos». Marcar o retirar el check
+actualiza ambos listados después del guardado confirmado. [Detalle y revisión](docs/estados-grupos-2026-10-29.md).
+
 ## Guías con voz y subtítulos (0.26.0)
 
 «Cómo funciona» en la portada abre el video del estudiante. Un icono de ayuda

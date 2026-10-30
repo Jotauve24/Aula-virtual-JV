@@ -36,4 +36,12 @@
 #detail .work-group-check[aria-pressed="true"]{color:var(--accent);background:transparent;border-color:transparent}
 #detail .work-group-check:hover:not(:disabled){background:var(--accent-soft)}
 #detail .work-group-check:disabled{cursor:default}
+#detail :is(.teacher-group,.topic-card)[data-work-state]{--work-state-bg:var(--surface);--work-state-ink:var(--muted);--work-state-edge:var(--line);background:var(--work-state-bg);border-inline-start:4px solid var(--work-state-edge);box-shadow:none}
+#detail :is(.teacher-group,.topic-card)[data-work-state="created"]{--work-state-bg:var(--work-created-bg);--work-state-ink:var(--work-created-ink);--work-state-edge:var(--work-created-edge)}
+#detail :is(.teacher-group,.topic-card)[data-work-state="ready"]{--work-state-bg:var(--work-ready-bg);--work-state-ink:var(--work-ready-ink);--work-state-edge:var(--work-ready-edge)}
+#detail .work-group-state-label{display:block;width:fit-content;max-width:100%;color:var(--work-state-ink);font-size:12px;font-weight:750;line-height:1.45;overflow-wrap:anywhere}
+#detail #topic-list .topic-card .work-group-state-label{margin-top:10px;color:var(--work-state-ink);font-size:12px}
+#detail .has-work-group-check .work-group-state-label{grid-column:1;grid-row:3;margin:5px 0 0}
+#detail .has-work-group-check .work-group-check{grid-row:1/4;align-self:start}
+@media(forced-colors:active){#detail :is(.teacher-group,.topic-card)[data-work-state]{border-inline-start-color:CanvasText}#detail .work-group-state-label{color:CanvasText}}
 @media(max-width:560px){.enrollment-review-alert{gap:4px 6px}.enrollment-review-alert .button{padding:0 2px}}

@@ -6,6 +6,8 @@
  --accent:#2f6b73;--accent-hover:var(--deep);--accent-soft:#e3ece8;--line:#cddbd5;
  --positive:#305c49;--positive-soft:#e7efe3;--warning-ink:#6b442c;--warning-soft:#fff0e3;
  --red:#b73549;--red-hover:#90283c;--red-soft:#fbe5df;
+ --work-created-bg:#e0eeee;--work-created-ink:#25565e;--work-created-edge:var(--teal);
+ --work-ready-bg:var(--warning-soft);--work-ready-ink:var(--warning-ink);--work-ready-edge:#bd8659;
  --focus:var(--teal);--green:var(--accent);--green-hover:var(--accent-hover);--mint:var(--accent-soft);
  --white:var(--surface);--warm:var(--peach);--warm-ink:var(--warning-ink);--warm-soft:var(--champagne);
  --serif:Georgia,'Times New Roman',serif;

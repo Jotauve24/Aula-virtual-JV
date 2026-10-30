@@ -1,10 +1,10 @@
-import './video-guide.js?v=0.26.0';
-import './embed.js?v=0.26.0';
-import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.26.0';
-import { initTeacherAuth } from './teacher-auth.js?v=0.26.0';
-import { allCoursesXlsx } from './teacher-export.js?v=0.26.0';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.26.0';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.26.0';
+import './video-guide.js?v=0.26.1';
+import './embed.js?v=0.26.1';
+import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.26.1';
+import { initTeacherAuth } from './teacher-auth.js?v=0.26.1';
+import { allCoursesXlsx } from './teacher-export.js?v=0.26.1';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.26.1';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.26.1';
 const $ = selector => document.querySelector(selector);
 let courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
@@ -495,6 +495,7 @@ async function openCourse(id) {
     $('#topic-list').replaceChildren(empty);
   } else $('#topic-list').replaceChildren(...overview.topics.map(topic => {
     const card = document.createElement('article'); card.className = 'topic-card';
+    card.dataset.workGroupId = topic.id;
     const title = document.createElement('h3'); title.textContent = topic.name;
     const used = overview.students.filter(student => student.topicId === topic.id).length;
     const capacity = document.createElement('small');
@@ -551,6 +552,7 @@ function renderStudentGroups() {
     const students = overview.students.filter(student => student.topicId === group.id)
       .sort((a, b) => (a.lastName + ' ' + a.firstName).localeCompare(b.lastName + ' ' + b.firstName, 'es'));
     const card = document.createElement('section'); card.className = 'teacher-group';
+    if (group.id) card.dataset.workGroupId = group.id;
     const heading = document.createElement('div'); heading.className = 'teacher-group-heading';
     const title = document.createElement('h4'); title.textContent = group.name;
     const count = document.createElement('span'); count.textContent = group.capacity === null
@@ -605,6 +607,28 @@ function renderStudentGroups() {
     }
     return card;
   }));
+  updateWorkGroupStates();
+}
+function updateWorkGroupStates() {
+  const groups = new Map(overview.topics.map(group => [group.id, group]));
+  const counts = new Map();
+  for (const student of overview.students)
+    counts.set(student.topicId, (counts.get(student.topicId) || 0) + 1);
+  for (const card of document.querySelectorAll('#detail [data-work-group-id]')) {
+    const group = groups.get(card.dataset.workGroupId);
+    if (!group) continue;
+    const complete = Number.isInteger(group.capacity) && group.capacity > 0 &&
+      (counts.get(group.id) || 0) >= group.capacity;
+    const state = group.workGroupCreated === true ? 'created' : complete ? 'ready' : 'pending';
+    card.dataset.workState = state;
+    let label = card.querySelector('.work-group-state-label');
+    if (!label) {
+      label = document.createElement('small'); label.className = 'work-group-state-label';
+      (card.querySelector('.teacher-group-heading') || card).append(label);
+    }
+    label.textContent = state === 'created' ? 'Grupo creado'
+      : state === 'ready' ? 'Completo · por crear' : 'Pendiente de crear';
+  }
 }
 function enrollmentReviewControl(id, student) {
   const button = document.createElement('button'); button.type = 'button';

@@ -1,6 +1,6 @@
 {
   "name": "aulavirtual-jv",
-  "version": "0.26.0",
+  "version": "0.26.1",
   "private": true,
   "type": "module",
   "description": "AulavirtualJV: ingreso por materia, selección de temas, equipos y chat interno.",
