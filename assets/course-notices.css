@@ -1,0 +1,68 @@
+.course-notice-dialog{max-width:580px;width:calc(100% - 32px);max-height:calc(100svh - 32px);padding:0;border:0;border-radius:20px;background:var(--surface);color:var(--ink);overflow:auto;overscroll-behavior:contain}
+.course-notice-dialog::backdrop{background:color-mix(in srgb,var(--deep) 66%,transparent)}
+.notice-dialog-inner{padding:28px}
+.notice-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.course-notice-dialog h2{margin:0;font:850 27px/1.25 var(--sans);letter-spacing:-.025em;overflow-wrap:anywhere;text-wrap:balance}
+.course-notice-dialog h2:focus{outline:none}
+.notice-dialog-heading>.notice-meta{margin:0;color:var(--accent);font-weight:800}
+.notice-close{display:grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--accent-soft);color:var(--ink);font:400 28px/1 var(--sans);cursor:pointer;touch-action:manipulation}
+.notice-close:hover{background:var(--line)}
+.notice-course{margin:10px 0 20px;color:var(--muted);font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.student-notices-dialog h2{margin-top:14px}
+.student-notice-content{padding:20px;background:var(--paper);border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:17px;line-height:1.7}
+.notice-confirm-hint{margin:18px 0;color:var(--muted);font-size:14px;line-height:1.5}
+.notice-student-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:20px}
+.notice-student-actions a{margin-right:auto;min-height:44px;display:inline-flex;align-items:center;color:var(--muted);font-size:14px;text-underline-offset:3px}
+.notice-student-actions a:hover{color:var(--ink)}
+.notice-student-actions button{min-height:48px;padding:10px 24px;font-size:16px}
+.course-notice-dialog .primary{box-shadow:none}
+.notice-error{padding:12px;background:var(--red-soft);color:var(--red);font-size:14px;line-height:1.5;border-radius:8px;overflow-wrap:anywhere}
+.notice-success{margin:16px 0 0;color:var(--positive);font-size:14px;line-height:1.5}
+.notice-success:empty{display:none}
+.student-notices-trigger{position:relative;display:grid;place-items:center;flex:none;width:48px;min-height:48px;padding:0;border:0;border-radius:12px;background:var(--champagne);color:var(--deep);cursor:pointer;touch-action:manipulation}
+.student-notices-trigger:hover{background:var(--peach)}
+.student-notices-trigger span{position:absolute;top:-5px;right:-5px;display:grid;place-items:center;min-width:21px;height:21px;padding:0 4px;background:var(--notification);color:white;border-radius:50%;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.student-notice-history article+article{margin-top:24px}
+.student-notice-history h3{margin:0;font-size:18px;overflow-wrap:anywhere}
+.student-notice-history p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px;line-height:1.65}
+.student-notice-history small{color:var(--muted)}
+.teacher-notices-dialog{max-width:960px}
+.teacher-notices-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:32px;align-items:start}
+.teacher-notices-grid h3{margin:0;font-size:18px;line-height:1.4;overflow-wrap:anywhere}
+.teacher-notices-grid form>p{font-size:14px;line-height:1.5;color:var(--muted)}
+.teacher-notices-grid label{display:block;margin:16px 0 8px;font-size:14px;font-weight:750}
+.teacher-notices-grid :is(input,textarea,select){width:100%;min-width:0;min-height:44px;font:inherit;font-size:16px;color:var(--ink);background:var(--surface)}
+.teacher-notices-grid textarea{resize:vertical;max-height:60svh}
+.teacher-notices-grid form>button{width:100%;min-height:48px;margin-top:12px}
+.notice-history-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.notice-text-button{min-height:44px;padding:4px 0;border:0;background:transparent;color:var(--accent);font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;touch-action:manipulation}
+.notice-text-button:hover{color:var(--deep)}
+.notice-meta{font-size:13px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
+.teacher-notice-item{padding:18px;background:var(--paper);border-radius:12px;margin-top:16px}
+.teacher-notice-item h3{font-size:17px}
+.notice-message{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;font-size:14px}
+.notice-confirmations{font-weight:800;font-size:13px;line-height:1.6;font-variant-numeric:tabular-nums;color:var(--accent)}
+.notice-readers summary{min-height:44px;cursor:pointer;padding:10px 0;font-size:14px;color:var(--ink)}
+.notice-readers ul{padding:0;list-style:none;max-height:250px;overflow:auto;overscroll-behavior:contain}
+.notice-reader{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 12px;padding:8px 0;font-size:14px;overflow-wrap:anywhere}
+.notice-reader small{color:var(--muted);font-size:12px}
+.notice-retire-confirm p{font-size:14px;color:var(--muted);line-height:1.5}
+.notice-retire-confirm button{min-height:44px;margin-right:12px}
+.notice-empty{font-size:15px;line-height:1.6;color:var(--muted)}
+#open-course-notices{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px}
+.course-notice-dialog :is(button,a,summary,input,textarea,select):focus-visible,.student-notices-trigger:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.course-notice-dialog :is(button,input,textarea,select):disabled{cursor:default;opacity:.65}
+.course-notice-dialog [hidden],.student-notices-trigger[hidden],.student-notices-trigger [hidden]{display:none!important}
+@media(min-width:921px){#detail .course-header-actions button{width:auto;flex:none}}
+@media(max-width:850px){
+  .teacher-notices-grid{grid-template-columns:minmax(0,1fr);gap:28px}
+  .notice-dialog-inner{padding:22px}
+  .course-notice-dialog h2{font-size:24px}
+  .teacher-notices-dialog{max-width:680px}
+}
+@media(max-width:390px){
+  .notice-dialog-inner{padding:18px}
+  .student-notice-content{padding:16px;font-size:16px}
+  .notice-student-actions{gap:8px}
+  .notice-student-actions button{padding:10px 18px}
+}

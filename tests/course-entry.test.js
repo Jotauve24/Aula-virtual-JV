@@ -8,6 +8,7 @@ import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from '../assets/mod
 import { memberSeat, createRoomLayout, isWalkable, findPath, canWalkSegment } from '../assets/world-layout.js';
 import { createIncomingMessageTracker } from '../assets/chat-notification.js';
 import { createRecentCourses, RECENT_COURSES_KEY } from '../assets/recent-courses.js';
+import { createStudentNotices } from '../assets/student-notices.js';
 
 const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', import.meta.url), 'utf8')
   .split('function rect(ctx')[0].replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '')
@@ -24,6 +25,32 @@ const NEW = 'MAT-DDDDD-EEEEE-FFFFF';
 const LAST_CODE = 'aula-student-course-code';
 const HANDOFF = 'aula-course-code';
 const SESSION = 'aula-student-session';
+
+test('un aviso docente se presenta antes del chat solicitado y solo Entendido permite abrirlo',async()=>{
+  const notices=[{id:'notice-fixture',title:'Actividad extra',body:'Revisa Educativa.',confirmedAt:null}];
+  const page=await boot({submitted:NEW,search:'?chat=g1',notices,
+    profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}},
+    roomFixture:[{id:'g1',name:'Coral',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true}]}]});
+  assert.equal(page.get('#student-notices-dialog').open,true);
+  assert.equal(page.state('courseNotices.isBlocking()'),true);
+  assert.equal(page.state('floatingChat.isReading()'),false);
+  page.get('#tab-chat').click();assert.equal(page.state('floatingChat.isReading()'),false);
+  page.get('#student-notice-confirm').click();await page.settle();
+  assert.equal(page.get('#student-notices-dialog').open,false);
+  assert.equal(page.state('floatingChat.isReading()'),true);
+  assert.equal(page.state('profile.id'),'self');assert.equal(page.state('profile.topicId'),'g1');
+});
+
+test('un fallo de confirmación mantiene el aula detrás del aviso y conserva el perfil y el equipo',async()=>{
+  const page=await boot({submitted:NEW,notices:[{id:'notice-fixture',title:'Aviso',body:'Mensaje',confirmedAt:null}],
+    confirmNotice:async()=>{throw Error('Sin conexión');},
+    profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}},
+    roomFixture:[{id:'g1',name:'Coral',capacity:5,members:[{id:'self',name:'Ana Prueba',mine:true}]}]});
+  page.get('#student-notice-confirm').click();await page.settle();
+  assert.equal(page.get('#student-notices-dialog').open,true);assert.equal(page.state('courseNotices.isBlocking()'),true);
+  assert.equal(page.state('profile.id'),'self');assert.equal(page.state('profile.topicId'),'g1');
+  page.get('#logout').click();assert.equal(page.get('#student-notices-dialog').open,false);
+});
 
 test('el equipo recibe una revisión, identifica al integrante y conserva su chat al retirarla',async()=>{
  const room=[{id:'g1',name:'Coral',capacity:5,members:[
@@ -112,7 +139,7 @@ class Element {
 
 async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
   profileFixture, roomFixture = [], sharedPresence, messages = [], chatFailure, presenceFailure,
-  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, documentRequired = false, setDocument, uploadFile, sendMessage, renameTeam, saveAvatar, search = '' } = {}) {
+  motionReduced = true, realLayout = false, emailHint = false, phoneHint = false, phoneHintError = false, documentRequired = false, setDocument, uploadFile, sendMessage, renameTeam, saveAvatar, notices = [], confirmNotice, search = '' } = {}) {
   const nodes = new Map();
   const get = selector => {
     if (selector.startsWith('#')) {
@@ -147,7 +174,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     .filter(node => Object.hasOwn(node.dataset, 'memberPresence'));
   class PageDate extends Date { static now() { return clock; } }
   const context = vm.createContext({
-    document: { body:get('body'),documentElement:get('html'),querySelector: get, querySelectorAll: selector => selector === '.dialog-step' ? steps
+    document: { body:get('body'),documentElement:get('html'),querySelector: selector => selector==='dialog[open]'?[...nodes].find(([key,node])=>key.endsWith('-dialog')&&node.open)?.[1]||null:get(selector), querySelectorAll: selector => selector === '.dialog-step' ? steps
       : selector === '[data-room-tab]' ? tabs : selector === '[data-member-presence]' ? presenceNodes() : [], createElement: () => new Element(), hidden: false,
       createElementNS:()=>new Element(),addEventListener: (name, handler) => documentListeners.set(name, handler), dispatchEvent() {} },
     window: { addEventListener: (name, handler) => windowListeners.set(name, handler) }, localStorage, sessionStorage, Date: PageDate,
@@ -159,6 +186,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
     CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
     createIncomingMessageTracker, createRecentCourses:()=>createRecentCourses(localStorage), normalizeStudentDocument, DOCUMENT_COUNTRIES, attachmentInfo, fileSizeLabel,
+    createStudentNotices:options=>createStudentNotices({...options,root:context.document}),
     createChatPushSettings:()=>({mount(){},setContext(){},setUnread(){},logout(){},requestFromChat(){calls.push({name:'request_push_from_chat'});}}),
     uploadTeamFile:async(id,team,file,info)=>{calls.push({name:'upload_file',body:{id,team,name:info.name}});return uploadFile?uploadFile():id+'/'+team+'/qa/file.pdf';},
     cancelTeamFile:async path=>calls.push({name:'cancel_file',body:{path}}),
@@ -188,6 +216,12 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
       if (name === 'student_document_status') return {required:documentRequired};
       if (name === 'student_complete_registration') {if(setDocument) await setDocument(body); documentRequired=false; if(body.p_age!==undefined)profileData.age=body.p_age; return;}
       if (name === 'my_profile') return profileData;
+      if (name === 'student_course_notices') return notices;
+      if (name === 'student_confirm_course_notice') {
+        if (confirmNotice) await confirmNotice(body);
+        const row=notices.find(row=>row.id===body.p_notice_id);
+        row.confirmedAt='2026-10-31T20:00:00Z';return {confirmedAt:row.confirmedAt};
+      }
       if (name === 'save_student_avatar') { if(saveAvatar)await saveAvatar(body);profileData.avatar = body.p_avatar; return; }
       if (name === 'team_contact_setting') {
         for(const team of roomFixture) for(const member of team.members) if(member.mine) {

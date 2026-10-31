@@ -1,11 +1,14 @@
-import './video-guide.js?v=0.27.5';
-import './embed.js?v=0.27.5';
-import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.27.5';
-import { initTeacherAuth } from './teacher-auth.js?v=0.27.5';
-import { allCoursesXlsx } from './teacher-export.js?v=0.27.5';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.27.5';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.5';
+import './video-guide.js?v=0.27.6';
+import './embed.js?v=0.27.6';
+import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.27.6';
+import { initTeacherAuth } from './teacher-auth.js?v=0.27.6';
+import { createTeacherNotices } from './teacher-notices.js?v=0.27.6';
+import { allCoursesXlsx } from './teacher-export.js?v=0.27.6';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.27.6';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.6';
 const $ = selector => document.querySelector(selector);
+const courseNotices = createTeacherNotices({ rpc, signedIn });
+$('#open-course-notices').addEventListener('click', () => courseNotices.open());
 let courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
 let renamingCourseTarget = null;
@@ -42,6 +45,7 @@ const teacherAccess = initTeacherAuth({ show, onNotice: teacherSuccess, onSigned
   if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(target || '')) await openCourse(target);
 } });
 async function loadCourses() {
+  courseNotices.reset();
   clearCourseRename();
   clearStudentMove();
   clearTopicEdit();
@@ -456,6 +460,7 @@ async function openCourse(id) {
   if (requestId !== courseRequestGeneration || !signedIn()) return;
   courseId = id;
   overview = details;
+  courseNotices.setCourse(overview.course, overview.topics);
   overview.topics.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   $('#group-count').value = overview.topics.length; updateGroupPreview();
   show('detail'); $('#course-title').textContent = overview.course.name;
@@ -799,6 +804,7 @@ $('#enter-room').addEventListener('click', () => {
 });
 $('#back').addEventListener('click', () => run(loadCourses));
 $('#logout').addEventListener('click', () => {
+  courseNotices.reset();
   ++courseRequestGeneration; ++accountGeneration;
   clearCourseRename();
   clearStudentMove();

@@ -1,17 +1,18 @@
-import './video-guide.js?v=0.27.5';
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.27.5';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.5';
-import './embed.js?v=0.27.5';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.27.5';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.27.5';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.27.5';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.27.5';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.5';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.27.5';
-import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.5';
-import { createChatPushSettings } from './chat-push.js?v=0.27.5';
-import { createRecentCourses } from './recent-courses.js?v=0.27.5';
-import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.5';
+import './video-guide.js?v=0.27.6';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.27.6';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.6';
+import './embed.js?v=0.27.6';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.27.6';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.27.6';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.27.6';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.27.6';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.6';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.27.6';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.6';
+import { createChatPushSettings } from './chat-push.js?v=0.27.6';
+import { createRecentCourses } from './recent-courses.js?v=0.27.6';
+import { createStudentNotices } from './student-notices.js?v=0.27.6';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.6';
 
 const $ = selector => document.querySelector(selector);
 const recentCourses = createRecentCourses();
@@ -38,10 +39,23 @@ const floatingChat = createFloatingChat({
   onRead: markChatRead,
   onOpen: () => { closeTopic(); refreshChat(); }
 });
-$('#tab-chat').addEventListener('click', () => floatingChat.openFromGesture());
+const courseNotices = createStudentNotices({ rpc: studentRpc, signedIn: studentSignedIn,
+  beforeOpen: () => { stopAnimation(); path = []; onArrival = null; closeTopic(); },
+  onReady: () => {
+    if (requestedChat && requestedChat === profile?.topicId && $('#room').dataset.stage === 'room') {
+      requestedChat = null; floatingChat.open();
+    }
+  } });
+$('#tab-chat').addEventListener('click', () => {
+  if (courseNotices.isBlocking()) { requestedChat = profile?.topicId; courseNotices.open(); return; }
+  floatingChat.openFromGesture();
+});
 window.addEventListener('message', event => {
   if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'aula:chat-notification') return;
-  if (event.data.courseId === courseId && event.data.topicId === profile?.topicId) floatingChat.open();
+  if (event.data.courseId === courseId && event.data.topicId === profile?.topicId) {
+    if (courseNotices.isBlocking()) { requestedChat = profile.topicId; courseNotices.open(); }
+    else floatingChat.open();
+  }
 });
 function stopAnimation() { cancelAnimationFrame(animation); animation = 0; }
 function stopAmbientAnimation() {
@@ -352,6 +366,8 @@ async function openStudentCourse(result, code = null, generation = ++courseEntry
   stopRoomPolling();
   completingProfile = false;
   courseId = id; courseName = result.course_name; profile = nextProfile;
+  await courseNotices.enter({ courseId: id, studentId: profile.id, courseName });
+  if (!entryCurrent(generation) || courseId !== id) return;
   if (code) {
     localStorage.setItem('aula-student-course-code', code);
     localStorage.removeItem('aula-student-resume-id');
@@ -727,7 +743,7 @@ function renderTeamChat(team) {
     refreshChat();
   }
   $('#team-chat-title').textContent = team.name;
-  if (requestedChat === team.id) { requestedChat = null; floatingChat.open(); }
+  if (requestedChat === team.id && !courseNotices.isBlocking()) { requestedChat = null; floatingChat.open(); }
 }
 function homePanel() {
   selectedTopic = null;
@@ -1200,6 +1216,7 @@ function moveDirection(direction) {
 document.querySelectorAll('[data-direction]').forEach(button =>
   button.addEventListener('click', () => moveDirection(button.dataset.direction)));
 document.addEventListener('keydown', event => {
+  if ($('#student-notices-dialog').open) return;
   if (event.key === 'Escape' && $('#room').dataset.stage === 'avatar' && avatarReturn) {
     event.preventDefault(); returnFromAvatar(); return;
   }
@@ -1218,7 +1235,7 @@ document.addEventListener('keydown', event => {
 });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { stopAnimation(); stopAmbientAnimation(); }
-  else if (!$('#room').hidden) { path = []; draw(); refreshPresence(); if (profile?.topicId) refreshChat(); }
+  else if (!$('#room').hidden) { path = []; draw(); refreshPresence(); if (profile?.topicId) refreshChat(); void courseNotices.refresh(); }
   updateAmbientAnimation();
 });
 window.addEventListener('pagehide', () => { stopAnimation(); stopAmbientAnimation(); });
@@ -1227,6 +1244,7 @@ reducedMotion.addEventListener('change', () => {
   draw(); updateAmbientAnimation();
 });
 function stopRoomPolling() {
+  courseNotices.reset();
   floatingChat.reset();
   document.body.dataset.chatCourse = ''; document.body.dataset.chatTopic = '';
   pushSettings.setContext(null);
@@ -1277,7 +1295,11 @@ function closeTopic() {
 }
 $('#topic-dialog').addEventListener('cancel', event => { event.preventDefault(); homePanel(); });
 function setRoomTab(name) {
-  if (name === 'chat') { floatingChat.open(); return; }
+  if (name === 'chat') {
+    if (courseNotices.isBlocking()) { requestedChat = profile?.topicId; courseNotices.open(); }
+    else floatingChat.open();
+    return;
+  }
   if (!['aula', 'equipo'].includes(name)) return;
   activeTab = name;
   const reviewOpen = $('#enrollment-review-open');
@@ -1306,6 +1328,7 @@ async function refreshRoom() {
   const currentCourseId = courseId, studentId = profile?.id;
   const stillCurrent = () => courseId === currentCourseId && profile?.id === studentId && $('#room').dataset.stage === 'room';
   refreshingRoom = true;
+  void courseNotices.refresh();
   try {
     const [rows, currentProfile] = await Promise.all([studentRpc('course_room', {p_course_id:currentCourseId}), studentRpc('my_profile',{p_course_id:currentCourseId})]);
     if (!stillCurrent()) return;
