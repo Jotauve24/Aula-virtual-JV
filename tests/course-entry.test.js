@@ -9,6 +9,7 @@ import { memberSeat, createRoomLayout, isWalkable, findPath, canWalkSegment } fr
 import { createIncomingMessageTracker } from '../assets/chat-notification.js';
 import { createRecentCourses, RECENT_COURSES_KEY } from '../assets/recent-courses.js';
 import { createStudentNotices } from '../assets/student-notices.js';
+import { createPeerMotion } from '../assets/peer-motion.js';
 
 const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', import.meta.url), 'utf8')
   .split('function rect(ctx')[0].replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '')
@@ -186,6 +187,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
     CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
     createIncomingMessageTracker, createRecentCourses:()=>createRecentCourses(localStorage), normalizeStudentDocument, DOCUMENT_COUNTRIES, attachmentInfo, fileSizeLabel,
+    createPeerMotion,
     createStudentNotices:options=>createStudentNotices({...options,root:context.document}),
     createChatPushSettings:()=>({mount(){},setContext(){},setUnread(){},logout(){},requestFromChat(){calls.push({name:'request_push_from_chat'});}}),
     uploadTeamFile:async(id,team,file,info)=>{calls.push({name:'upload_file',body:{id,team,name:info.name}});return uploadFile?uploadFile():id+'/'+team+'/qa/file.pdf';},
@@ -201,7 +203,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     createRoomLayout: realLayout ? createRoomLayout : count => ({ rooms: Array.from({ length: count }, (_, i) => ({
       x: 40 + i * 10, y: 40 + i * 25, w: 300, h: 220,
       arrival: { x: 400, y: 140 + i * 30 }, label: { x: 400, y: 100 + i * 30 }
-    })), width: 800, height: 560, spawn: { x: 400, y: 300 } }),
+    })), width: 800, height: 560, obstacles:[], spawn: { x: 400, y: 300 } }),
     studentSignedIn: () => !!localStorage.getItem(SESSION),
     studentSignOut: () => { signOutCount++; localStorage.removeItem(SESSION); },
     signInStudentAnonymously: async () => { localStorage.setItem(SESSION, 'existing-private-session'); },
@@ -438,6 +440,35 @@ test('two connected students appear together in the same classroom', async () =>
   assert.equal(ana.frames.at(-1).peers[0].name, 'Luis');
   assert.equal(luis.frames.at(-1).peers[0].name, 'Ana');
   assert.equal(ana.frames.at(-1).player.direction, 'down');
+});
+
+test('dos estudiantes ven posiciones intermedias y pasos del otro al caminar simultáneamente',async()=>{
+  const sharedPresence=new Map();
+  const actor=(id,name)=>({id,firstName:name,lastName:'Prueba',topicId:null,avatar:{skin:1,shirt:0}});
+  const ana=await boot({submitted:NEW,motionReduced:false,profileFixture:actor('student-a','Ana'),sharedPresence});
+  const luis=await boot({submitted:NEW,motionReduced:false,profileFixture:actor('student-b','Luis'),sharedPresence});
+  await ana.state('refreshPresence()');
+  ana.state('walkTo({x:650,y:300})');luis.state('walkTo({x:200,y:300})');
+  const traces={ana:[],luis:[]};
+  for(let tick=0;tick<180;tick++){
+    ana.tick(16);luis.tick(16);
+    if(tick%30===0){
+      const before=luis.frames.at(-1);
+      await ana.state('refreshPresence()');await luis.state('refreshPresence()');
+      const after=luis.frames.at(-1);
+      if(before.peers[0])assert.ok(Math.abs(after.peers[0].x-before.peers[0].x)<=.33*(after.time-before.time)+.1,'a snapshot only advances by elapsed animation time');
+    }
+    for(const [name,page] of [['ana',ana],['luis',luis]]){
+      const frame=page.frames.at(-1),view=frame.peers[0];if(view)traces[name].push({...view,time:frame.time});
+    }
+  }
+  for(const [name,trace] of Object.entries(traces)){
+    assert.ok(trace.some(row=>row.walking),name+' must see the other person walking');
+    assert.ok(new Set(trace.map(row=>row.x.toFixed(1))).size>20,name+' must see many intermediate positions');
+    for(let i=1;i<trace.length;i++)assert.ok(Math.abs(trace[i].x-trace[i-1].x)<=.33*(trace[i].time-trace[i-1].time)+.1,'visible steps remain continuous');
+  }
+  assert.ok(ana.frames.some(frame=>frame.walking&&frame.peers[0]?.walking));
+  assert.ok(luis.frames.some(frame=>frame.walking&&frame.peers[0]?.walking));
 });
 
 test('disconnected members sit at their team and connected students appear only once', async () => {

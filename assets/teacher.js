@@ -1,11 +1,11 @@
-import './video-guide.js?v=0.27.6';
-import './embed.js?v=0.27.6';
-import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.27.6';
-import { initTeacherAuth } from './teacher-auth.js?v=0.27.6';
-import { createTeacherNotices } from './teacher-notices.js?v=0.27.6';
-import { allCoursesXlsx } from './teacher-export.js?v=0.27.6';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.27.6';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.6';
+import './video-guide.js?v=0.27.7';
+import './embed.js?v=0.27.7';
+import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.27.7';
+import { initTeacherAuth } from './teacher-auth.js?v=0.27.7';
+import { createTeacherNotices } from './teacher-notices.js?v=0.27.7';
+import { allCoursesXlsx } from './teacher-export.js?v=0.27.7';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.27.7';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.7';
 const $ = selector => document.querySelector(selector);
 const courseNotices = createTeacherNotices({ rpc, signedIn });
 $('#open-course-notices').addEventListener('click', () => courseNotices.open());
@@ -53,6 +53,7 @@ async function loadCourses() {
   const requestId = ++courseRequestGeneration;
   const [courses, disabled] = await Promise.all([rpc('my_courses'), rpc('teacher_disabled_courses')]);
   if (requestId !== courseRequestGeneration || !signedIn()) return;
+  courseNotices.setCourses(courses);
   show('dashboard');
   $('#export-all').disabled = !courses.length && !disabled.length;
   const list = $('#courses');

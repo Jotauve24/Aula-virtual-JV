@@ -12,6 +12,8 @@ export function createTeacherNotices({ rpc, signedIn, root = document, makeId = 
   const title = get('teacher-notice-title'), body = get('teacher-notice-body'), target = get('teacher-notice-target');
   const list = get('teacher-notice-list'), status = get('teacher-notice-status'), error = get('teacher-notice-error');
   const publish = get('publish-course-notice'), close = get('close-teacher-notices'), refresh = get('refresh-teacher-notices');
+  const multi = get('teacher-notice-multi'), choices = get('teacher-notice-courses'), destination = get('teacher-notice-destinations');
+  let catalog = [], extraChecks = new Map();
   let context = null, generation = 0, revision = 0, sending = false, retiring = false, draftId = null;
   const current = epoch => generation === epoch && context && signedIn();
   const node = (tag, text, className = '') => {
@@ -23,10 +25,31 @@ export function createTeacherNotices({ rpc, signedIn, root = document, makeId = 
     return Number.isNaN(instant.getTime()) ? '' : new Intl.DateTimeFormat('es-PA', { dateStyle: 'medium', timeStyle: 'short' }).format(instant);
   };
   function message(text = '') { error.textContent = text; error.hidden = !text; }
+  const selectedCourses = () => context ? [context.id,...[...extraChecks].filter(([,box])=>box.checked && !target.value).map(([id])=>id)] : [];
   function controls() {
     title.disabled = body.disabled = target.disabled = publish.disabled = sending || !context?.active;
-    publish.textContent = sending ? 'Publicando…' : 'Publicar aviso';
+    const count = selectedCourses().length;
+    publish.textContent = sending ? 'Publicando…' : count > 1 ? `Publicar en ${count} materias` : 'Publicar aviso';
     close.disabled = sending || retiring;
+    choices.disabled = sending || !!target.value || !context?.active;
+    for (const box of extraChecks.values()) box.disabled = choices.disabled || count >= 30 && !box.checked;
+    get('teacher-notice-multi-hint').hidden = !target.value;
+    destination.textContent = !context ? '' : count > 1
+      ? `Se enviará a ${count} materias: ${[context,...catalog.filter(course=>extraChecks.get(course.id)?.checked)].map(course=>course.name).join(' · ')}`
+      : target.value ? 'Se enviará solo al equipo seleccionado de esta materia.' : 'Se enviará a todos los estudiantes de esta materia.';
+    get('teacher-notice-multi-count').textContent = count > 1 ? `(${count} materias)` : '';
+  }
+  function renderCourses() {
+    const selected = new Set([...extraChecks].filter(([,box])=>box.checked).map(([id])=>id));
+    extraChecks = new Map();
+    const others = catalog.filter(course=>course.id!==context?.id);
+    choices.replaceChildren(...others.map(course=>{
+      const label = node('label',undefined,'notice-course-choice');
+      const box = node('input'); box.type = 'checkbox'; box.name = 'extra_courses'; box.value = course.id; box.checked = selected.has(course.id);
+      box.addEventListener('change',()=>{draftId=null;message();controls();});
+      extraChecks.set(course.id,box); label.append(box,node('span',course.name)); return label;
+    }));
+    multi.hidden = !others.length; controls();
   }
   async function readers(notice, host, epoch) {
     host.textContent = 'Consultando lecturas…';
@@ -48,6 +71,7 @@ export function createTeacherNotices({ rpc, signedIn, root = document, makeId = 
     }
   }
   function render(rows, epoch) {
+    dialog.setAttribute('data-empty',String(!rows.length));
     list.replaceChildren(...rows.map(notice => {
       const article = node('article', undefined, 'teacher-notice-item');
       const heading = node('h3',notice.title);
@@ -109,35 +133,56 @@ export function createTeacherNotices({ rpc, signedIn, root = document, makeId = 
       (heading.length < 2 || heading.length > 120 ? title : body).focus(); return;
     }
     const epoch = generation;
+    const destinations = selectedCourses();
     const payload = { p_course_id: context.id,
       p_title: heading, p_body: text, p_topic_id: target.value || null };
     sending = true; message(); status.textContent = ''; controls();
     try {
       payload.p_notice_id = draftId || (draftId = makeId());
-      await rpc('teacher_publish_course_notice',payload);
+      if (destinations.length > 1) await rpc('teacher_publish_notice_to_courses', {
+        p_course_ids:destinations,p_batch_id:payload.p_notice_id,p_title:heading,p_body:text
+      });
+      else await rpc('teacher_publish_course_notice',payload);
       if (!current(epoch)) return;
       form.reset(); draftId = null;
-      status.textContent = 'Aviso publicado. Aparecerá al entrar y pedirá confirmar la lectura.';
+      for (const box of extraChecks.values()) box.checked=false;
+      multi.open=false;
+      status.textContent = destinations.length > 1
+        ? `Aviso publicado en ${destinations.length} materias. Cada estudiante confirmará la lectura en su materia.`
+        : 'Aviso publicado. Aparecerá al entrar y pedirá confirmar la lectura.';
       await load();
     } catch (failure) { if (current(epoch)) message(failure.message || 'No se pudo publicar. Reintenta.'); }
     finally { if (current(epoch)) { sending = false; controls(); } }
   });
   // A retry of an unchanged draft reuses its ID, including an ambiguous network failure.
   for (const field of [title,body,target]) field.addEventListener('input', () => { if (!sending) draftId = null; message(); });
+  target.addEventListener('change',()=>{
+    draftId=null;
+    if (target.value) for (const box of extraChecks.values()) box.checked=false;
+    controls();
+  });
   refresh.addEventListener('click', () => { message(); void load(); });
   close.addEventListener('click', () => { if (!sending && !retiring) { dialog.close(); get('open-course-notices').focus(); } });
   dialog.addEventListener('cancel', event => { if (sending || retiring) event.preventDefault(); });
-  function reset() {
+  function reset(forgetCourses = true) {
     generation++; revision++; context = null; sending = retiring = false; draftId = null;
     if (dialog.open) dialog.close();
+    dialog.setAttribute('data-empty','true');
     form.reset(); list.replaceChildren(); status.textContent = ''; message(); controls();
+    if (forgetCourses) catalog=[];
+    extraChecks=new Map();choices.replaceChildren();multi.open=false;multi.hidden=true;
+    controls();
   }
   reset();
   return {
     reset,
+    setCourses(courses) {
+      catalog = courses.filter(course=>course.active!==false).map(course=>({id:course.id,name:course.name})).sort((a,b)=>a.name.localeCompare(b.name,'es'));
+      renderCourses();
+    },
     setCourse(course, topics) {
       const selected = context?.id === course.id ? target.value : '';
-      if (context?.id !== course.id) reset();
+      if (context?.id !== course.id) reset(false);
       context = { ...course };
       get('teacher-notices-course').textContent = course.name;
       target.replaceChildren(node('option','Toda la materia'), ...topics.map(topic => {
@@ -145,7 +190,7 @@ export function createTeacherNotices({ rpc, signedIn, root = document, makeId = 
       }));
       target.children[0].value = ''; target.value = topics.some(topic => topic.id === selected) ? selected : '';
       get('teacher-notice-inactive').hidden = course.active;
-      controls();
+      renderCourses();
     },
     open() {
       if (!context || !signedIn()) return;

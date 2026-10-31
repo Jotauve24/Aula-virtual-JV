@@ -1,18 +1,19 @@
-import './video-guide.js?v=0.27.6';
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.27.6';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.6';
-import './embed.js?v=0.27.6';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.27.6';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.27.6';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.27.6';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.27.6';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.6';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.27.6';
-import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.6';
-import { createChatPushSettings } from './chat-push.js?v=0.27.6';
-import { createRecentCourses } from './recent-courses.js?v=0.27.6';
-import { createStudentNotices } from './student-notices.js?v=0.27.6';
-import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.6';
+import './video-guide.js?v=0.27.7';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.27.7';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.7';
+import './embed.js?v=0.27.7';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.27.7';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.27.7';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.27.7';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.27.7';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.7';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.27.7';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.7';
+import { createChatPushSettings } from './chat-push.js?v=0.27.7';
+import { createRecentCourses } from './recent-courses.js?v=0.27.7';
+import { createPeerMotion } from './peer-motion.js?v=0.27.7';
+import { createStudentNotices } from './student-notices.js?v=0.27.7';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.7';
 
 const $ = selector => document.querySelector(selector);
 const recentCourses = createRecentCourses();
@@ -29,6 +30,7 @@ let participantColor = createParticipantPalette();
 let layout = createRoomLayout(0), activeTab = 'aula', roomRefresh = 0;
 let presenceTimer = 0, presenceLoading = false, peers = [], courseName = '';
 let presenceVerifiedAt = 0, presenceState = 'pending', avatarReturn = null;
+const peerMotion = createPeerMotion();
 let assignedSeats = [];
 let ambientAnimation = 0, ambientLastFrame = 0;
 let teamNameControl = null, teamNameKey = '';
@@ -64,12 +66,12 @@ function stopAmbientAnimation() {
 function updateAmbientAnimation() {
   stopAmbientAnimation();
   const visible = () => !document.hidden && !$('#room').hidden && activeTab === 'aula' &&
-    $('#room').dataset.stage === 'room' && !reducedMotion.matches;
+    $('#room').dataset.stage === 'room' && (!reducedMotion.matches || peerMotion.moving());
   if (!visible()) return;
   function animateAmbient(time) {
     if (!visible()) { stopAmbientAnimation(); return; }
     // Walking already redraws the whole map; idle creatures need only 12 fps.
-    if (!path.length && time - ambientLastFrame >= 80) { draw(time); ambientLastFrame = time; }
+    if (!path.length && time - ambientLastFrame >= (peerMotion.moving() ? 30 : 80)) { draw(time); ambientLastFrame = time; }
     ambientAnimation = requestAnimationFrame(animateAmbient);
   }
   ambientAnimation = requestAnimationFrame(animateAmbient);
@@ -632,7 +634,9 @@ async function enterRoom() {
   clearInterval(chatTimer);
   chatTimer = setInterval(() => { if (!document.hidden && profile?.topicId) refreshChat(); }, 6000);
   clearInterval(roomRefresh); roomRefresh = setInterval(refreshRoom, 15000);
-  clearInterval(presenceTimer); presenceTimer = setInterval(refreshPresence, 2500);
+  clearInterval(presenceTimer); presenceTimer = setInterval(() => {
+    if (peers.length || path.length || Date.now()-presenceVerifiedAt >= 2500) void refreshPresence();
+  }, 750);
   refreshPresence();
   if (returning) setRoomTab(returning.tab);
 }
@@ -645,6 +649,7 @@ function renderTopics() {
   const roomOrder = topics.map(topic => topic.id).join(',');
   const geometryChanged = layout.rooms.length !== topics.length;
   if (geometryChanged || roomOrder !== renderedTopicOrder) {
+    peerMotion.reset();
     stopAnimation(); path = []; onArrival = null;
     if (geometryChanged) layout = createRoomLayout(topics.length);
   }
@@ -1134,35 +1139,36 @@ function draw(time = 0) {
     player: inRoom && profile ? { ...player, ...look, id:profile.id } : undefined,
     seated: inRoom ? disconnectedMembers() : [],
     seatCounts: inRoom ? topics.map(topic=>topic.members.length) : [],
-    peers: inRoom ? peers : [], walking: path.length > 0, time,
+    peers: inRoom ? peerMotion.sample(Date.now(),player) : [], walking: path.length > 0, time:Date.now(),
     ambientTime: reducedMotion.matches ? 0 : Date.now(), reducedMotion: reducedMotion.matches });
 }
 async function refreshPresence() {
   if ($('#room').dataset.stage === 'room' && presenceVerifiedAt && Date.now() - presenceVerifiedAt > 15000) {
-    peers = []; presenceState = 'reconnecting';
+    peers = []; peerMotion.reset(); presenceState = 'reconnecting';
     $('#online-count').textContent = 'Reconectando…'; $('#online-count').dataset.state = presenceState;
     updateTeamPresence(); draw();
   }
   if (presenceLoading || document.hidden || !profile?.id || !courseId || $('#room').dataset.stage !== 'room') return;
-  const currentCourseId = courseId, studentId = profile.id;
+  const currentCourseId = courseId, studentId = profile.id, generation = courseEntryGeneration;
   presenceLoading = true;
   try {
     const nearby = await studentRpc('classroom_presence_ping', {
       p_course_id: currentCourseId, p_x: Math.round(player.x), p_y: Math.round(player.y),
       p_direction: player.direction
     });
-    if (courseId !== currentCourseId || profile?.id !== studentId || $('#room').dataset.stage !== 'room') return;
+    if (!entryCurrent(generation) || courseId !== currentCourseId || profile?.id !== studentId || $('#room').dataset.stage !== 'room') return;
     presenceVerifiedAt = Date.now(); presenceState = 'live';
     peers = (Array.isArray(nearby) ? nearby : []).filter(peer => peer.id !== studentId &&
       Number.isFinite(peer.x) && Number.isFinite(peer.y) && peer.x >= 28 && peer.x <= layout.width - 28 &&
       peer.y >= 28 && peer.y <= layout.height - 28);
+    peerMotion.update(peers,layout,Date.now());
     $('#online-count').textContent = `En el aula: ${peers.length + 1}`;
     $('#online-count').dataset.state = presenceState;
     $('#online-count').hidden = false;
     updateTeamPresence();
-    draw();
+    draw(); updateAmbientAnimation();
   } catch (_) {
-    if (courseId === currentCourseId && profile?.id === studentId && $('#room').dataset.stage === 'room') {
+    if (entryCurrent(generation) && courseId === currentCourseId && profile?.id === studentId && $('#room').dataset.stage === 'room') {
       presenceState = 'reconnecting';
       $('#online-count').textContent = 'Reconectando…'; $('#online-count').dataset.state = presenceState;
       $('#online-count').hidden = false; updateTeamPresence(); draw();
@@ -1191,9 +1197,12 @@ function walkTo(target, arrived = null) {
     else { player.x += dx / distance * speed; player.y += dy / distance * speed; }
     draw(time);
     if (path.length) animation = requestAnimationFrame(walk);
-    else if (onArrival) { const done = onArrival; onArrival = null; done(); }
-    else { const i = locationsForTopics.findIndex(([x,y]) => Math.hypot(player.x-x, player.y-y) < 65);
-      if (i >= 0 && topics[i]) status('Llegaste a ' + topics[i].name + '. Pulsa E o toca su letrero para ver el tema.'); }
+    else {
+      void refreshPresence();
+      if (onArrival) { const done = onArrival; onArrival = null; done(); }
+      else { const i = locationsForTopics.findIndex(([x,y]) => Math.hypot(player.x-x, player.y-y) < 65);
+        if (i >= 0 && topics[i]) status('Llegaste a ' + topics[i].name + '. Pulsa E o toca su letrero para ver el tema.'); }
+    }
   }
   animation = requestAnimationFrame(walk);
 }
@@ -1234,7 +1243,7 @@ document.addEventListener('keydown', event => {
   if (direction) { event.preventDefault(); if (!$('#topic-dialog').hidden) homePanel(); moveDirection(direction); }
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { stopAnimation(); stopAmbientAnimation(); }
+  if (document.hidden) { stopAnimation(); stopAmbientAnimation(); peerMotion.reset(); }
   else if (!$('#room').hidden) { path = []; draw(); refreshPresence(); if (profile?.topicId) refreshChat(); void courseNotices.refresh(); }
   updateAmbientAnimation();
 });
@@ -1244,6 +1253,7 @@ reducedMotion.addEventListener('change', () => {
   draw(); updateAmbientAnimation();
 });
 function stopRoomPolling() {
+  peerMotion.reset();
   courseNotices.reset();
   floatingChat.reset();
   document.body.dataset.chatCourse = ''; document.body.dataset.chatTopic = '';

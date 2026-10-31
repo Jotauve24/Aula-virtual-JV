@@ -1,10 +1,11 @@
-import './video-guide.js?v=0.27.6';
-import './embed.js?v=0.27.6';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.27.6';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.27.6';
-import { drawWorld, roomTheme } from './world.js?v=0.27.6';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.27.6';
-import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.6';
+import './video-guide.js?v=0.27.7';
+import './embed.js?v=0.27.7';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.27.7';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.27.7';
+import { drawWorld, roomTheme } from './world.js?v=0.27.7';
+import { createPeerMotion } from './peer-motion.js?v=0.27.7';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.27.7';
+import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.7';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -15,10 +16,12 @@ let courseId = '', topics = [], layout = createRoomLayout(0), player = { x: 400,
 let seated = [], peers = [], path = [], animation = 0, previousFrame = 0, lastDraw = 0;
 let lastPresence = 0, state = 'pending', pingRunning = false, roomRunning = false;
 let pingTimer = 0, roomTimer = 0, destroyed = false;
+const peerMotion = createPeerMotion();
 
 function status(value) { $('#room-status').textContent = value; }
 function fail(value) {
   destroyed = true; clearInterval(pingTimer); clearInterval(roomTimer);
+  peerMotion.reset();
   cancelAnimationFrame(animation);
   $('#loading').hidden = true; $('#room').hidden = true; $('#error-view').hidden = false;
   renderSelectedTeam();
@@ -113,6 +116,7 @@ function applyTopics(rows) {
   const geometryChanged = oldIds !== nextIds;
   topics = ordered;
   if (geometryChanged) {
+    peerMotion.reset();
     layout = createRoomLayout(topics.length);
     path = [];
     if (!isWalkable(player.x,player.y,layout)) player = { ...layout.spawn, direction: 'up' };
@@ -129,10 +133,10 @@ function draw(time = 0) {
   const connected = state === 'live' ? onlineIds() : new Set();
   drawWorld($('#world'), { layout, labels:false, actors:false,
     player: { ...player, ...teacherAvatar, id:'teacher-local' }, hidePlayerName:true,
-    peers: state === 'live' ? peers : [],
+    peers: state === 'live' ? peerMotion.sample(Date.now(),player) : [],
     seated: state === 'live' ? seated.filter(member => !connected.has(member.id)) : [],
     seatCounts: topics.map(topic => topic.members.length),
-    walking:path.length>0, time, ambientTime:reducedMotion.matches?0:Date.now(),
+    walking:path.length>0, time:Date.now(), ambientTime:reducedMotion.matches?0:Date.now(),
     reducedMotion:reducedMotion.matches });
 }
 function loop(time) {
@@ -145,15 +149,16 @@ function loop(time) {
     player.direction = Math.abs(dx)>Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
     if (distance <= step) { player.x = next.x; player.y = next.y; path.shift(); }
     else { player.x += dx/distance*step; player.y += dy/distance*step; }
-    if (!path.length) status('Llegaste a tu destino.');
+    if (!path.length) { status('Llegaste a tu destino.'); void refreshPresence(); }
   }
-  if (path.length || !reducedMotion.matches && time - lastDraw >= 55) {
+  if (path.length || peerMotion.moving() || !reducedMotion.matches && time - lastDraw >= 55) {
     draw(time); lastDraw = time;
   }
+  if (reducedMotion.matches && !path.length && !peerMotion.moving()) { animation = 0; return; }
   animation = requestAnimationFrame(loop);
 }
 function beginAnimation() {
-  if (destroyed || document.hidden || animation || reducedMotion.matches) return;
+  if (destroyed || document.hidden || animation || reducedMotion.matches && !peerMotion.moving()) return;
   previousFrame = 0;
   animation = requestAnimationFrame(loop);
 }
@@ -191,7 +196,7 @@ document.addEventListener('keydown',event=>{
 });
 async function refreshPresence() {
   if (destroyed || document.hidden || pingRunning || !courseId) return;
-  if (lastPresence && Date.now()-lastPresence>15000) { state='reconnecting';peers=[];renderPresenceSummary();draw(); }
+  if (lastPresence && Date.now()-lastPresence>15000) { state='reconnecting';peers=[];peerMotion.reset();renderPresenceSummary();draw(); }
   pingRunning = true;
   try {
     const result = await rpc('teacher_classroom_presence_ping',{
@@ -201,13 +206,14 @@ async function refreshPresence() {
     peers = (Array.isArray(result)?result:[]).filter(row => row && typeof row.id==='string' &&
       Number.isFinite(row.x) && Number.isFinite(row.y) && row.x>=28 && row.x<=layout.width-28 &&
       row.y>=28 && row.y<=layout.height-28);
-    state='live';lastPresence=Date.now();renderPresenceSummary();draw();
+    peerMotion.update(peers,layout,Date.now());
+    state='live';lastPresence=Date.now();renderPresenceSummary();draw();beginAnimation();
   } catch(error) {
     if (destroyed) return;
     if (/Materia deshabilitada|Acceso denegado|Acceso docente requerido/.test(error.message)) {
       fail('Esta materia ya no está disponible para tu cuenta docente.'); return;
     }
-    state='reconnecting';peers=[];renderPresenceSummary();draw();
+    state='reconnecting';peers=[];peerMotion.reset();renderPresenceSummary();draw();
   } finally {pingRunning=false;}
 }
 async function refreshRoom() {
@@ -223,7 +229,7 @@ async function refreshRoom() {
   } finally {roomRunning=false;}
 }
 document.addEventListener('visibilitychange',()=>{
-  if (document.hidden) {cancelAnimationFrame(animation);animation=0;path=[];}
+  if (document.hidden) {cancelAnimationFrame(animation);animation=0;path=[];peerMotion.reset();}
   else if (!destroyed) {beginAnimation();refreshPresence();refreshRoom();}
 });
 reducedMotion.addEventListener('change',()=>{
@@ -258,7 +264,7 @@ async function initialize() {
     player = { ...layout.spawn, direction:'up' };
     draw();beginAnimation();
     await refreshPresence();
-    pingTimer=setInterval(refreshPresence,2500);
+    pingTimer=setInterval(()=>{if(peers.length || path.length || Date.now()-lastPresence>=2500)void refreshPresence();},750);
     roomTimer=setInterval(refreshRoom,15000);
   } catch(error) { fail('No se pudo abrir la sala. Comprueba tu sesión docente e inténtalo nuevamente.'); }
 }

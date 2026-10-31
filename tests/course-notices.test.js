@@ -156,3 +156,35 @@ test('una publicación antigua no restaura el contenido al salir del panel o cam
   page.get('teacher-notice-title').value='Aviso';page.get('teacher-notice-body').value='Mensaje';const post=page.get('teacher-notice-form').fire('submit');
   page.controller.reset();slow.resolve('id');await post;assert.equal(page.get('teacher-notice-status').textContent,'');assert.equal(page.get('teacher-notice-list').children.length,0);
 });
+
+test('seleccionar varias materias envía el mismo texto una sola vez al RPC atómico',async()=>{
+  const calls=[];const page=teacher(async(name,args)=>{calls.push({name,args});return name==='teacher_course_notices'?[]:[];});
+  page.controller.setCourses([{id:'c1',name:'Materia actual'},{id:'c2',name:'Informática II'},{id:'c3',name:'Taller de Informática'},{id:'disabled',name:'Inactiva',active:false}]);
+  const choices=page.get('teacher-notice-courses').children;assert.equal(choices.length,2);
+  for(const label of choices){label.children[0].checked=true;await label.children[0].fire('change');}
+  assert.equal(page.get('publish-course-notice').textContent,'Publicar en 3 materias');assert.match(page.get('teacher-notice-destinations').textContent,/Informática II/);
+  page.get('teacher-notice-title').value='Actividad extra';page.get('teacher-notice-body').value='Revisa Educativa.';
+  await page.get('teacher-notice-form').fire('submit');
+  const posts=calls.filter(c=>c.name==='teacher_publish_notice_to_courses');assert.equal(posts.length,1);
+  assert.deepEqual(posts[0].args.p_course_ids,['c1','c2','c3']);assert.equal(posts[0].args.p_title,'Actividad extra');
+  assert.equal(calls.some(c=>c.name==='teacher_publish_course_notice'),false);assert.match(page.get('teacher-notice-status').textContent,/3 materias/);
+  assert.equal(page.get('publish-course-notice').textContent,'Publicar aviso');assert.ok(choices.every(label=>!label.children[0].checked));
+});
+test('un reintento conserva el lote y cambiar a un equipo quita los otros destinos',async()=>{
+  const calls=[];let fail=true;const page=teacher(async(name,args)=>{calls.push({name,args});if(name==='teacher_course_notices')return [];if(fail)throw Error('Conexión interrumpida');return [];});
+  page.controller.setCourses([{id:'c1',name:'Actual'},{id:'c2',name:'Otra'}]);
+  const box=page.get('teacher-notice-courses').children[0].children[0];box.checked=true;await box.fire('change');
+  page.get('teacher-notice-title').value='Actividad extra';page.get('teacher-notice-body').value='Mensaje';
+  await page.get('teacher-notice-form').fire('submit');fail=false;await page.get('teacher-notice-form').fire('submit');
+  const posts=calls.filter(c=>c.name==='teacher_publish_notice_to_courses');assert.equal(posts[0].args.p_batch_id,posts[1].args.p_batch_id);
+  box.checked=true;await box.fire('change');page.get('teacher-notice-target').value='g1';await page.get('teacher-notice-target').fire('change');
+  assert.equal(box.checked,false);assert.equal(box.disabled,true);assert.equal(page.get('publish-course-notice').textContent,'Publicar aviso');
+  page.get('teacher-notice-title').value='Solo equipo';page.get('teacher-notice-body').value='Mensaje';await page.get('teacher-notice-form').fire('submit');
+  assert.equal(calls.at(-2).name,'teacher_publish_course_notice');assert.equal(calls.at(-2).args.p_topic_id,'g1');
+});
+test('cerrar sesión borra el catálogo de otras materias de la vista de avisos',()=>{
+  const page=teacher(async()=>[]);page.controller.setCourses([{id:'c1',name:'Actual'},{id:'c2',name:'Materia anterior'}]);
+  assert.match(page.get('teacher-notice-courses').textContent,/Materia anterior/);page.controller.reset();
+  page.controller.setCourse({id:'other-account',name:'Otra cuenta',active:true},[]);
+  assert.equal(page.get('teacher-notice-multi').hidden,true);assert.equal(page.get('teacher-notice-courses').textContent,'');
+});

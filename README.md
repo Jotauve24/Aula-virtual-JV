@@ -465,6 +465,11 @@ un equipo. Aparecen al ingresar y requieren **Entendido**; las lecturas quedan
 asociadas al perfil y el docente puede consultar confirmaciones o retirar avisos.
 Consulta [funcionamiento y verificación de avisos](docs/avisos-docente.md).
 
+En **Enviar a más materias** puedes seleccionar otras clases y publicar un mismo
+aviso en todas de forma atómica, con lecturas independientes. La presencia del aula
+también anima los recorridos de compañeros entre las posiciones compartidas.
+Consulta [avisos múltiples y movimiento compartido](docs/avisos-multiples-y-movimiento.md).
+
 ## Chat flotante y avisos en el celular
 
 La versión 0.27.0 incorpora una ventana sobre el aula, ampliación, minimizado

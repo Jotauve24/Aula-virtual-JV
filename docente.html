@@ -6,29 +6,29 @@
   <meta name="apple-mobile-web-app-title" content="AulavirtualJV">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="./manifest.webmanifest?v=0.27.6">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png?v=0.27.6">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png?v=0.27.6">
+  <link rel="manifest" href="./manifest.webmanifest?v=0.27.7">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png?v=0.27.7">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png?v=0.27.7">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fbf8ef">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
-  <title>Panel docente · AulavirtualJV</title><script src="./assets/page-shell.js?v=0.27.6"></script>
-  <link rel="icon" href="./assets/favicon.svg?v=0.27.6" type="image/svg+xml">
+  <title>Panel docente · AulavirtualJV</title><script src="./assets/page-shell.js?v=0.27.7"></script>
+  <link rel="icon" href="./assets/favicon.svg?v=0.27.7" type="image/svg+xml">
   <link rel="preload" as="font" href="./assets/fonts/nunito-latin.woff" type="font/woff" crossorigin>
-  <link rel="stylesheet" href="./assets/palette.css?v=0.27.6"><link rel="stylesheet" href="./assets/live.css?v=0.27.6"><link rel="stylesheet" href="./assets/brand.css?v=0.27.6"><link rel="stylesheet" href="./assets/teacher-live.css?v=0.27.6"><link rel="stylesheet" href="./assets/student-account.css?v=0.27.6">
-  <link rel="modulepreload" data-aula-module href="./assets/teacher.js?v=0.27.6">
-<link rel="stylesheet" href="./assets/campus.css?v=0.27.6">
-<link rel="stylesheet" href="./assets/page-shell.css?v=0.27.6">
-<link rel="stylesheet" href="./assets/enrollment-review.css?v=0.27.6">  <link rel="stylesheet" href="./assets/video-guide.css?v=0.27.6">
-  <link rel="stylesheet" href="./assets/course-notices.css?v=0.27.6">
+  <link rel="stylesheet" href="./assets/palette.css?v=0.27.7"><link rel="stylesheet" href="./assets/live.css?v=0.27.7"><link rel="stylesheet" href="./assets/brand.css?v=0.27.7"><link rel="stylesheet" href="./assets/teacher-live.css?v=0.27.7"><link rel="stylesheet" href="./assets/student-account.css?v=0.27.7">
+  <link rel="modulepreload" data-aula-module href="./assets/teacher.js?v=0.27.7">
+<link rel="stylesheet" href="./assets/campus.css?v=0.27.7">
+<link rel="stylesheet" href="./assets/page-shell.css?v=0.27.7">
+<link rel="stylesheet" href="./assets/enrollment-review.css?v=0.27.7">  <link rel="stylesheet" href="./assets/video-guide.css?v=0.27.7">
+  <link rel="stylesheet" href="./assets/course-notices.css?v=0.27.7">
 </head>
 <body class="campus-theme campus-panel">
   <a class="skip-link" href="#main">Ir al contenido</a>
   <header class="teacher-header">
-    <a class="brand" href="./" aria-label="AulavirtualJV, volver al ingreso"><img class="brand-mark" src="./assets/favicon.svg?v=0.27.6" width="40" height="40" alt="" aria-hidden="true"><span><span class="brand-name">Aula<span class="brand-light">virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.27.6" width="38" height="30" alt="JV"></span><small>Un espacio para hacer equipo</small></span></a>
+    <a class="brand" href="./" aria-label="AulavirtualJV, volver al ingreso"><img class="brand-mark" src="./assets/favicon.svg?v=0.27.7" width="40" height="40" alt="" aria-hidden="true"><span><span class="brand-name">Aula<span class="brand-light">virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.27.7" width="38" height="30" alt="JV"></span><small>Un espacio para hacer equipo</small></span></a>
     <div class="teacher-header-tools"><span class="header-label">PANEL DOCENTE</span><button type="button" class="aula-guide-trigger aula-guide-icon" data-guide-open="teacher" aria-haspopup="dialog" aria-label="Ver guía docente" title="Ver guía docente"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 .5c0 1.5-2.5 2-2.5 3.5m0 3h.01"/></svg></button><button id="expand-aula" class="secondary aula-expand-icon" type="button" aria-label="Ampliar aula" title="Ampliar aula"><svg data-fullscreen-icon viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button></div>
   </header>
   <main id="main" class="teacher-main">
@@ -135,16 +135,18 @@
             <h3>Nuevo aviso</h3>
             <p>Se mostrará al entrar. Cada estudiante deberá pulsar Entendido para continuar.</p>
             <label for="teacher-notice-target">Destinatarios</label><select id="teacher-notice-target" name="target"><option value="">Toda la materia</option></select>
+            <details id="teacher-notice-multi" class="notice-multi-courses" hidden><summary>Enviar a más materias <span id="teacher-notice-multi-count"></span></summary><p>Se incluye esta materia. Marca las otras clases que recibirán el mismo aviso, hasta 30 materias por envío.</p><p id="teacher-notice-multi-hint" hidden>Para elegir otras materias, selecciona Toda la materia en Destinatarios.</p><fieldset id="teacher-notice-courses" aria-label="Otras materias para este aviso"></fieldset></details>
             <label for="teacher-notice-title">Título</label><input id="teacher-notice-title" name="title" required minlength="2" maxlength="120" placeholder="Ej.: Actividad extra para mejorar calificaciones…">
             <label for="teacher-notice-body">Mensaje</label><textarea id="teacher-notice-body" name="message" rows="6" required maxlength="4000" placeholder="Escribe las indicaciones que deben leer tus estudiantes…"></textarea>
             <p class="notice-meta">Para corregir un aviso publicado, retíralo y publica uno nuevo. Así podrán confirmar la nueva información.</p>
             <p id="teacher-notice-inactive" class="notice-meta" hidden>Restaura la materia para publicar nuevos avisos.</p>
+            <p id="teacher-notice-destinations" class="notice-meta" aria-live="polite"></p>
+            <p id="teacher-notice-status" class="notice-success" role="status" aria-live="polite"></p>
+            <p id="teacher-notice-error" class="notice-error" role="alert" hidden></p>
             <button id="publish-course-notice" class="primary" type="submit">Publicar aviso</button>
           </form>
           <section class="teacher-notices-history" aria-labelledby="teacher-notice-history-title"><div class="notice-history-heading"><h3 id="teacher-notice-history-title">Publicados</h3><button id="refresh-teacher-notices" class="notice-text-button" type="button">Actualizar lecturas</button></div><p class="notice-meta">Las lecturas corresponden a los estudiantes que actualmente reciben cada aviso.</p><div id="teacher-notice-list"></div></section>
         </div>
-        <p id="teacher-notice-status" class="notice-success" role="status" aria-live="polite"></p>
-        <p id="teacher-notice-error" class="notice-error" role="alert" hidden></p>
       </div>
     </dialog>
     <dialog id="rename-course-dialog" aria-labelledby="rename-course-title"><form id="rename-course-form" class="panel-card" novalidate autocomplete="off">
