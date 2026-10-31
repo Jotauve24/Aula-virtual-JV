@@ -1,8 +1,8 @@
-import { avatarXFrame, drawAvatarX } from './avatar-x.js?v=0.27.6';
-import { SKINS, SHIRTS } from './model.js?v=0.27.6';
-import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.27.6';
-import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.27.6';
-import { canWalkSegment } from './world-layout.js?v=0.27.6';
+import { avatarXFrame, drawAvatarX } from './avatar-x.js?v=0.27.7';
+import { SKINS, SHIRTS } from './model.js?v=0.27.7';
+import { animalFrames, drawAnimal, drawAnimalHeart } from './animals.js?v=0.27.7';
+import { chickenJockeyFrame, drawChickenJockey } from './chicken-jockey.js?v=0.27.7';
+import { canWalkSegment } from './world-layout.js?v=0.27.7';
 
 export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 560;
@@ -991,14 +991,14 @@ function drawRoomWorld(canvas, options) {
   const occupied=options.player?[{x:options.player.x,y:options.player.y}]:[];
   for(const peer of options.peers||[]){
     let x=peer.x;
-    for(const offset of [0,-32,32,-64,64,-96,96]){
+    for(const offset of peer.smoothPosition ? [] : [0,-32,32,-64,64,-96,96]){
       const candidate=Math.max(32,Math.min(layout.width-32,peer.x+offset));
       if(canWalkSegment(peer,{x:candidate,y:peer.y},layout)&&
         !occupied.some(other=>Math.abs(other.x-candidate)<27&&Math.abs(other.y-peer.y)<45)){x=candidate;break;}
     }
     occupied.push({x,y:peer.y});
     const look = peer.role === 'teacher' ? { character:'zombie', direction:peer.direction } : { ...peer.avatar, direction:peer.direction };
-    add(peer.y,()=>avatar(ctx,x,peer.y,look));
+    add(peer.y,()=>avatar(ctx,x,peer.y,look,peer.walking&&!options.reducedMotion?Math.sin((options.time||0)/85)*2:0));
     if(peer.role !== 'teacher') names.push(()=>nameTag(ctx,x,peer.y+8,peer.name||'Compañero','#38586f'));
   }
   if(options.player){
