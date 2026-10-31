@@ -458,6 +458,13 @@ La portada recuerda hasta cinco códigos recientes y deja el último escrito par
 entrar directamente. Tocar el campo o la flecha permite elegir otra materia.
 Consulta [códigos recientes y alcance del historial](docs/codigos-recientes.md).
 
+## Avisos del docente con confirmación
+
+Desde **Avisos** en una materia, el docente publica mensajes para toda la clase o
+un equipo. Aparecen al ingresar y requieren **Entendido**; las lecturas quedan
+asociadas al perfil y el docente puede consultar confirmaciones o retirar avisos.
+Consulta [funcionamiento y verificación de avisos](docs/avisos-docente.md).
+
 ## Chat flotante y avisos en el celular
 
 La versión 0.27.0 incorpora una ventana sobre el aula, ampliación, minimizado
