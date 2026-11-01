@@ -1,7 +1,7 @@
 import {
   SOUND_STORAGE_KEY, AMBIENT_VOLUME, EFFECT_VOLUME, SOUND_SOURCE,
   soundEnabled, shouldPlayAmbient, soundForAction
-} from './retro-audio-model.js?v=0.27.7';
+} from './retro-audio-model.js?v=0.27.8';
 
 const room = document.querySelector('#room');
 const button = document.querySelector('#retro-sound-toggle');

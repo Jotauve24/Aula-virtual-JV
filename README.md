@@ -470,6 +470,10 @@ aviso en todas de forma atómica, con lecturas independientes. La presencia del 
 también anima los recorridos de compañeros entre las posiciones compartidas.
 Consulta [avisos múltiples y movimiento compartido](docs/avisos-multiples-y-movimiento.md).
 
+El **Tablón del aula** muestra el último aviso y las personas conectadas, con sus
+avatares y equipos. Pulsa una persona para localizarla en el mapa. Consulta
+[comportamiento y verificación del tablón](docs/tablon-del-aula.md).
+
 ## Chat flotante y avisos en el celular
 
 La versión 0.27.0 incorpora una ventana sobre el aula, ampliación, minimizado

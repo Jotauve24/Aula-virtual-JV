@@ -1,5 +1,5 @@
 // Read confirmations belong to the server's student profile, never this browser.
-export function createStudentNotices({ rpc, signedIn, root = document, beforeOpen = () => {}, onReady = () => {} }) {
+export function createStudentNotices({ rpc, signedIn, root = document, beforeOpen = () => {}, onReady = () => {}, onUpdate = () => {} }) {
   const get = id => root.querySelector('#' + id);
   const dialog = get('student-notices-dialog'), trigger = get('student-notices-button');
   const title = get('student-notice-title'), course = get('student-notice-course');
@@ -9,6 +9,8 @@ export function createStudentNotices({ rpc, signedIn, root = document, beforeOpe
   const hint = get('student-notice-hint'), home = get('student-notice-home');
   let context = null, generation = 0, rows = [], checking = false, required = false;
   let browsing = false, confirming = '', request = null, signature = '', revision = 0;
+  let feedState = 'hidden', returnFocus = trigger;
+  const restoreFocus = () => (returnFocus?.isConnected === false ? trigger : returnFocus).focus({ preventScroll: true });
   const current = (epoch, id) => generation === epoch && context?.courseId === id && signedIn();
   const pending = () => rows.filter(row => !row.confirmedAt);
   function message(value = '') { error.textContent = value; error.hidden = !value; }
@@ -24,6 +26,7 @@ export function createStudentNotices({ rpc, signedIn, root = document, beforeOpe
     get('student-notices-count').textContent = String(count);
     get('student-notices-count').hidden = !count;
     trigger.setAttribute('aria-label', count ? `Avisos del docente: ${count} sin confirmar` : 'Ver avisos del docente');
+    onUpdate({state:feedState,pendingCount:count,rows:rows.map(row=>({...row}))});
   }
   function render({ focus = false } = {}) {
     updateTrigger();
@@ -72,10 +75,12 @@ export function createStudentNotices({ rpc, signedIn, root = document, beforeOpe
         if (!current(epoch,id) || version !== revision) return;
         if (!Array.isArray(next)) throw new Error('No pudimos comprobar los avisos. Pulsa Reintentar.');
         const changed = JSON.stringify(rows) !== JSON.stringify(next);
-        rows = next; checking = false; message();
+        rows = next; checking = false; feedState = 'ready'; message();
         if (changed || !signature || required) render();
+        else updateTrigger();
       } catch (failure) {
         if (!current(epoch,id) || version !== revision) return;
+        feedState = 'unavailable'; updateTrigger();
         message('No pudimos comprobar los avisos. Revisa tu conexión y pulsa Reintentar.');
         retry.hidden = false;
         if (checking) {
@@ -99,7 +104,7 @@ export function createStudentNotices({ rpc, signedIn, root = document, beforeOpe
       rows = result.retired ? rows.filter(item => item.id !== row.id)
         : rows.map(item => item.id === row.id ? { ...item, confirmedAt: result.confirmedAt } : item);
       confirming = ''; browsing = false; render({ focus: true });
-      if (!required) trigger.focus({ preventScroll: true });
+      if (!required) restoreFocus();
     } catch (failure) {
       if (!current(epoch,id)) return;
       confirming = ''; confirm.disabled = false; confirm.textContent = 'Entendido';
@@ -108,10 +113,12 @@ export function createStudentNotices({ rpc, signedIn, root = document, beforeOpe
   }
   function reset() {
     generation++; context = null; rows = []; checking = required = browsing = false;
+    feedState = 'hidden'; returnFocus = trigger;
     confirming = ''; request = null; signature = ''; message(); closeDialog(); updateTrigger();
   }
-  function open() {
+  function open({ opener = trigger } = {}) {
     if (!context || !signedIn()) return;
+    returnFocus = opener;
     browsing = !pending().length;
     if (checking) { openDialog(true); void refresh(); return; }
     render(); void refresh();
@@ -121,7 +128,7 @@ export function createStudentNotices({ rpc, signedIn, root = document, beforeOpe
   retry.addEventListener('click', () => { retry.hidden = true; message(); void refresh(); });
   close.addEventListener('click', () => {
     if (required || checking) return;
-    closeDialog(); trigger.focus({ preventScroll: true });
+    closeDialog(); restoreFocus();
   });
   dialog.addEventListener('cancel', event => {
     if (required || checking) { event.preventDefault(); return; }
@@ -133,7 +140,7 @@ export function createStudentNotices({ rpc, signedIn, root = document, beforeOpe
   return {
     reset, refresh, open, isBlocking: () => !!context && (required || checking),
     async enter(next) {
-      reset(); context = { ...next }; checking = true; required = true;
+      reset(); context = { ...next }; checking = true; required = true; feedState = 'loading';
       dialog.setAttribute('closedby','none');
       title.textContent = 'Avisos del docente'; course.textContent = context.courseName;
       progress.textContent = 'Antes de entrar'; content.className = 'student-notice-content';
