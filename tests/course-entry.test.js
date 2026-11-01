@@ -10,6 +10,7 @@ import { createIncomingMessageTracker } from '../assets/chat-notification.js';
 import { createRecentCourses, RECENT_COURSES_KEY } from '../assets/recent-courses.js';
 import { createStudentNotices } from '../assets/student-notices.js';
 import { createPeerMotion } from '../assets/peer-motion.js';
+import { createClassroomBoard } from '../assets/classroom-board.js';
 
 const avatarSVG = vm.runInNewContext(readFileSync(new URL('../assets/world.js', import.meta.url), 'utf8')
   .split('function rect(ctx')[0].replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '')
@@ -126,6 +127,7 @@ class Element {
     return this.children.map(find).find(Boolean) || null;
   }
   focus() { this.focused = true; }
+  scrollIntoView(options) { this.scrolledIntoView = options; }
   select() { this.selected = true; }
   reportValidity() { return true; }
   close() { this.open = false; }
@@ -188,6 +190,7 @@ async function boot({ submitted, remembered, signedIn = true, enroll, roomError,
     CustomEvent: class { constructor(type,options){this.type=type;this.detail=options?.detail;} },
     createIncomingMessageTracker, createRecentCourses:()=>createRecentCourses(localStorage), normalizeStudentDocument, DOCUMENT_COUNTRIES, attachmentInfo, fileSizeLabel,
     createPeerMotion,
+    createClassroomBoard:options=>createClassroomBoard({...options,root:context.document}),
     createStudentNotices:options=>createStudentNotices({...options,root:context.document}),
     createChatPushSettings:()=>({mount(){},setContext(){},setUnread(){},logout(){},requestFromChat(){calls.push({name:'request_push_from_chat'});}}),
     uploadTeamFile:async(id,team,file,info)=>{calls.push({name:'upload_file',body:{id,team,name:info.name}});return uploadFile?uploadFile():id+'/'+team+'/qa/file.pdf';},
@@ -440,6 +443,42 @@ test('two connected students appear together in the same classroom', async () =>
   assert.equal(ana.frames.at(-1).peers[0].name, 'Luis');
   assert.equal(luis.frames.at(-1).peers[0].name, 'Ana');
   assert.equal(ana.frames.at(-1).player.direction, 'down');
+});
+
+test('el tablón localiza un compañero en su posición animada sin mover al estudiante ni cambiar su equipo',async()=>{
+  const sharedPresence=new Map([['other',{id:'other',name:'Luis Prueba',x:400,y:200,avatar:{skin:2}}]]);
+  const page=await boot({submitted:NEW,motionReduced:false,sharedPresence,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:null,avatar:{skin:1}}});
+  const board=page.get('#classroom-board');assert.match(board.textContent,/2 personas conectadas/);assert.match(board.textContent,/Luis Prueba/);
+  const own=JSON.stringify(page.state('player'));
+  const list=board.children[1].children[2],button=list.children.find(item=>item.children[0].dataset.boardPerson==='other').children[0];
+  await button.click();assert.equal(page.get('#located-person').hidden,false);assert.match(page.get('#room-status').textContent,/Aquí está Luis Prueba/);
+  assert.equal(page.get('#located-person').scrolledIntoView.behavior,'auto');
+  assert.equal(JSON.stringify(page.state('player')),own);assert.equal(page.state('profile.topicId'),null);
+  const before=page.get('#located-person').style.left;
+  sharedPresence.set('other',{...sharedPresence.get('other'),x:550});page.advanceTime(750);await page.state('refreshPresence()');
+  for(let i=0;i<8;i++)page.tick(30);
+  assert.notEqual(page.get('#located-person').style.left,before);
+  const peer=page.frames.at(-1).peers.find(person=>person.id==='other');
+  assert.equal(page.get('#located-person').style.left,peer.x/800*100+'%');
+  assert.equal(page.calls.some(call=>call.name==='choose_topic'||call.name==='student_confirm_course_notice'),false);
+  sharedPresence.delete('other');await page.state('refreshPresence()');assert.equal(page.get('#located-person').hidden,true);
+  assert.match(page.get('#room-status').textContent,/Resaltado finalizado/);assert.doesNotMatch(board.children[1].textContent,/Luis Prueba/);
+  page.get('#logout').click();assert.equal(board.hidden,true);assert.doesNotMatch(board.textContent,/Ana Prueba/);
+});
+test('abrir el último aviso desde el tablón conserva las confirmaciones existentes y no confirma al consultarlo',async()=>{
+  const page=await boot({submitted:NEW,notices:[{id:'n1',title:'Actividad extra',body:'Revisa Educativa.',confirmedAt:'2026-10-31T20:00:00Z'}],
+    profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:null,avatar:{skin:1}}});
+  const notices=page.get('#classroom-board').children[0];assert.match(notices.textContent,/Actividad extra/);
+  await notices.children[4].click();await page.settle();assert.equal(page.get('#student-notices-dialog').open,true);
+  assert.equal(page.get('#student-notice-confirm').hidden,true);assert.equal(page.calls.some(call=>call.name==='student_confirm_course_notice'),false);
+});
+test('quien ya tiene equipo puede desplegar las otras mesas y conservar esa elección al actualizar',async()=>{
+  const page=await boot({submitted:NEW,profileFixture:{id:'self',firstName:'Ana',lastName:'Prueba',topicId:'g1',avatar:{skin:1}},
+    roomFixture:[{id:'g1',name:'Coral',capacity:5,members:[{id:'self',name:'Ana',mine:true}]},{id:'g2',name:'Bosque',capacity:5,members:[]}]});
+  const picker=()=>page.get('#side-content').children.find(node=>node.className==='side-team-picker');
+  assert.equal(picker().open,false);assert.match(picker().children[0].textContent,/Ver equipos \(2\)/);
+  picker().open=true;picker().dispatch('toggle');await page.state('refreshRoom()');assert.equal(picker().open,true);
+  assert.match(picker().textContent,/Coral|Bosque/);assert.equal(page.state('profile.topicId'),'g1');
 });
 
 test('dos estudiantes ven posiciones intermedias y pasos del otro al caminar simultáneamente',async()=>{

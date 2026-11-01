@@ -35,7 +35,24 @@ test('el identificador de envío funciona también cuando el navegador no ofrece
   assert.match(uuid,/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   assert.equal(createNoticeId({randomUUID:()=>uuid}),uuid);
 });
-function student(rpc) {const root=dom();const controller=createStudentNotices({root,rpc,signedIn:()=>true});return {root,controller,get:id=>root.get('student-'+id)};}
+function student(rpc,options={}) {const root=dom();const controller=createStudentNotices({root,rpc,signedIn:()=>true,...options});return {root,controller,get:id=>root.get('student-'+id)};}
+
+test('el resumen comparte solo lecturas confirmadas por el servidor y distingue un fallo al actualizar',async()=>{
+  const snapshots=[],gate=deferred();let failing=false;
+  const page=student(async name=>{if(failing)throw Error('Sin conexión');return name==='student_course_notices'?[notice()]:gate.promise;},{onUpdate:value=>snapshots.push(value)});
+  await page.controller.enter(context);assert.ok(snapshots.some(value=>value.state==='loading'));
+  assert.equal(snapshots.at(-1).pendingCount,1);assert.equal(snapshots.at(-1).rows[0].confirmedAt,null);
+  await page.get('notice-confirm').fire('click');assert.equal(snapshots.at(-1).rows[0].confirmedAt,null);
+  gate.resolve({confirmedAt:'2026-10-31T21:00:00Z'});await settle();
+  assert.equal(snapshots.at(-1).pendingCount,0);assert.equal(snapshots.at(-1).rows[0].confirmedAt,'2026-10-31T21:00:00Z');
+  failing=true;await page.controller.refresh();assert.equal(snapshots.at(-1).state,'unavailable');
+  page.controller.reset();assert.deepEqual(snapshots.at(-1),{state:'hidden',pendingCount:0,rows:[]});
+});
+test('cerrar los avisos devuelve el foco al acceso del tablón que los abrió',async()=>{
+  const page=student(async()=>[notice('n1',{confirmedAt:'2026-10-31T21:00:00Z'})]);await page.controller.enter(context);
+  const opener=page.root.createElement('button');page.controller.open({opener});await settle();
+  await page.get('notice-close').fire('click');assert.equal(page.root.activeElement,opener);
+});
 function teacher(rpc) {const root=dom();let nextId=0;const controller=createTeacherNotices({root,rpc,signedIn:()=>true,makeId:()=>`uuid-${++nextId}`});controller.setCourse({id:'c1',name:'Materia ficticia',active:true},[{id:'g1',name:'Equipo Coral'}]);return {root,controller,get:id=>root.get(id)};}
 
 test('abrir un aviso exige Entendido, sin confirmar por mostrarlo ni por Escape',async()=>{

@@ -1,10 +1,10 @@
-import './video-guide.js?v=0.27.7';
-import './embed.js?v=0.27.7';
-import { normalizeCode } from './model.js?v=0.27.7';
-import { mountEntranceTutorial } from './entrance-tutorial.js?v=0.27.7';
-import { configured } from './supabase-client.js?v=0.27.7';
-import { avatarSVG } from './world.js?v=0.27.7';
-import { createRecentCourses } from './recent-courses.js?v=0.27.7';
+import './video-guide.js?v=0.27.8';
+import './embed.js?v=0.27.8';
+import { normalizeCode } from './model.js?v=0.27.8';
+import { mountEntranceTutorial } from './entrance-tutorial.js?v=0.27.8';
+import { configured } from './supabase-client.js?v=0.27.8';
+import { avatarSVG } from './world.js?v=0.27.8';
+import { createRecentCourses } from './recent-courses.js?v=0.27.8';
 
 // Decorative classmates use the same characters as the real classroom.
 const entranceLooks = [
