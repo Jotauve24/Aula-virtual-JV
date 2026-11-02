@@ -1,6 +1,8 @@
-# Visitas únicas · 0.27.9
+# Visitas únicas · 0.27.10
 
 Los cuatro puntos de entrada muestran el mismo total global en la cabecera.
+El indicador usa una base champán de la paleta, un número destacado y la
+etiqueta en una sola línea, con la misma composición en las cuatro páginas.
 Se acumula desde la activación, sin inventar visitas anteriores. Cada IP se
 registra una vez, incluso entre sesiones, navegadores y materias. Un Wi-Fi con
 una sola IP pública cuenta una visita; cambios de IP, VPN, conexiones IPv4 e
