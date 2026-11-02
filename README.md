@@ -22,8 +22,17 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 - Panel docente para materias, grupos, inscripciones y presencia reciente.
 - Recuperación voluntaria mediante correo verificado.
 - Interfaz accesible, adaptable y con movimiento reducido.
+- Contador general de visitas únicas por IP, compartido entre la portada y las aulas y actualizado en tiempo real.
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
+
+## Visitas únicas (0.27.9)
+
+La cabecera muestra el total acumulado desde la activación del contador. Una IP
+cuenta una vez aunque vuelva a entrar, cambie de navegador o visite varias
+materias. Personas que comparten una IP pública cuentan como una visita; una
+persona cuya IP cambia puede generar otra. No representa matrícula ni personas
+conectadas en ese momento. [Funcionamiento y despliegue](docs/visitas-unicas.md).
 
 ## Estado de los grupos a simple vista (0.26.1)
 

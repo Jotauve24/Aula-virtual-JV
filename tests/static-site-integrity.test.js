@@ -106,7 +106,7 @@ test('each persistent host declares the original application modules in page ord
   for(const html of htmlPages){
     const source=readFileSync(join(root,html),'utf8');
     const entries=pageModules(source).map(path=>stripQuery(path).split('/').at(-1));
-    assert.deepEqual(entries,['page-shell.js',...expected[html]],html);
+    assert.deepEqual(entries,['page-shell.js',...expected[html],'site-visits.js'],html);
     assert.equal((source.match(/id="expand-aula"/g)||[]).length,1,html+' needs an exit control');
     assert.match(source,/assets\/page-shell\.css\?v=/);
   }
