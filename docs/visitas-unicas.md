@@ -1,8 +1,9 @@
-# Visitas únicas · 0.27.11
+# Visitas únicas · 0.27.12
 
 Los cuatro puntos de entrada muestran el mismo total global en la cabecera.
-El indicador usa una base champán de la paleta. El número tiene el mismo tamaño
-y peso que la etiqueta, en una sola línea y con la misma composición en las cuatro páginas.
+El indicador se limita a un punto verde y la cantidad, sin recuadro ni etiqueta
+visible, con la misma composición en las cuatro páginas. Su título accesible
+conserva la explicación de visitas únicas y el alcance de una por IP.
 Se acumula desde la activación, sin inventar visitas anteriores. Cada IP se
 registra una vez, incluso entre sesiones, navegadores y materias. Un Wi-Fi con
 una sola IP pública cuenta una visita; cambios de IP, VPN, conexiones IPv4 e
