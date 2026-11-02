@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.27.9';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.27.10';
 
 const TOPIC='realtime:site-visit-totals';
 const TABLE='site_visit_totals';
@@ -29,7 +29,7 @@ export function createSiteVisits({root=document,windowTarget=globalThis.window,f
     const status=phase==='live' ? 'Actualizado en tiempo real.'
       : phase==='unavailable' ? 'No disponible; se reintentará automáticamente.'
       : phase==='offline' ? 'Último total conocido; recuperando conexión.' : 'Actualización automática.';
-    const description=`${latest ? value : 'Consultando'} visitas únicas${since}. Una por IP; quienes comparten una red cuentan una vez. ${status}`;
+    const description=`${latest ? value : 'Consultando'} ${latest?.total===1?'visita única':'visitas únicas'}${since}. Una por IP; quienes comparten una red cuentan una vez. ${status}`;
     if (host.title!==description) {host.title=description;host.setAttribute('aria-label',description);}
   }
   function apply(value) {
