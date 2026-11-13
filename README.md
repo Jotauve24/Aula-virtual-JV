@@ -507,6 +507,11 @@ privada por perfil y materia. Vacío significa pendiente; 0 sí cuenta como nota
 La simulación se recupera al volver a ingresar con el mismo perfil, también desde
 otro dispositivo. No se publican ni se registran calificaciones oficiales.
 
+La barra **Tu avance** representa los puntos acumulados sobre 100 y marca la
+meta elegida. Se actualiza al editar las notas, distingue los estados de la meta
+y respeta la preferencia de movimiento reducido. Los datos inválidos ocultan
+el progreso hasta corregirlos; las filas con nota se distinguen de las pendientes.
+
 El resultado distingue los puntos que ya se acumulan en la nota final, cuántos
 faltan para alcanzar la meta y qué nota sobre 100 se necesita en cada actividad
 pendiente. La lista de pendientes muestra una misma nota mínima para todas:
