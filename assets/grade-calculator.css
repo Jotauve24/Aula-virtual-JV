@@ -2,17 +2,22 @@
 .grade-calculator{padding:28px;background:var(--surface);border:1px solid var(--line);border-radius:18px;max-width:1120px;margin:0 auto}
 .grade-calculator h2,.grade-settings h2{font:800 25px/1.25 var(--sans);letter-spacing:-.4px;text-wrap:balance;margin:0 0 8px;color:var(--deep)}
 .grade-heading p{margin:0;color:var(--muted)}
+.grade-title-accent{font-style:italic;color:var(--red);text-decoration:underline;text-decoration-color:var(--salmon);text-decoration-thickness:3px;text-underline-offset:4px}
 .grade-calculator p,.grade-settings p{overflow-wrap:anywhere}
 .grade-personal{font-size:13px;color:var(--muted);margin:14px 0 24px}
-.grade-workspace{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(270px,.85fr);gap:36px;align-items:start}
-.grade-input-panel,.grade-results{min-width:0}
+.grade-workspace{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(290px,.85fr);gap:28px;align-items:start}
+.grade-input-panel,.grade-results,.grade-insights{min-width:0}
 .grade-target{display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;margin:0 0 16px}
 .grade-target label{margin:0;font-size:15px;font-weight:800}
+.grade-calculator .grade-target{padding:14px 16px;background:var(--champagne);border-radius:12px}
 .grade-calculator input,.grade-settings input{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:600 16px/1.4 var(--sans);min-height:44px;padding:9px 11px;width:100%;min-width:0;font-variant-numeric:tabular-nums}
 .grade-target input{width:90px;text-align:right}
 .grade-muted{color:var(--muted);font-size:13px}
 .grade-quick-result{display:none}
 .grade-input-panel>.grade-muted{margin:0 0 16px}
+.grade-entry-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;margin:22px 0 8px}
+.grade-entry-heading h3{font-size:17px;font-weight:800;margin:0;color:var(--deep)}
+.grade-entry-count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .grade-table{width:100%;border-collapse:collapse;table-layout:fixed}
 .grade-table caption{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .grade-table th,.grade-table td{border-bottom:1px solid var(--line);padding:11px 6px;vertical-align:middle;text-align:left;overflow-wrap:anywhere}
@@ -20,11 +25,39 @@
 .grade-percentage-short{display:none}
 .grade-table th:first-child{padding-left:0;width:52%}
 .grade-table tbody th{font-size:15px;font-weight:700}
+.grade-activity-label{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.grade-row-dot{width:7px;height:7px;flex:none;border:1px solid var(--opal);border-radius:50%;margin-top:8px}
+.grade-table tr[data-grade-state="recorded"] .grade-row-dot{background:var(--accent);border-color:var(--accent)}
+.grade-table tr[data-grade-state="recorded"] input{background:var(--accent-soft);border-color:var(--opal);color:var(--deep)}
+.grade-table tbody tr:hover{background:var(--paper)}
+.grade-percentage-chip{display:inline-flex;align-items:center;justify-content:center;min-width:38px;min-height:24px;padding:0 5px;border-radius:6px;background:var(--champagne);color:var(--warning-ink);font-size:12px;font-weight:800;white-space:nowrap}
 .grade-table th:nth-child(2),.grade-table td:nth-child(2){text-align:right;width:18%;font-variant-numeric:tabular-nums}
 .grade-table th:last-child,.grade-table td:last-child{text-align:right;width:30%;padding-right:0}
 .grade-table input{text-align:right;max-width:125px}
 .grade-calculator input::placeholder{font:400 12px var(--sans);color:var(--muted)}
-.grade-results{background:var(--paper);border-radius:12px;padding:24px;scroll-margin-top:20px}
+.grade-insights{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--paper)}
+.grade-progress{padding:20px 24px 16px;background:var(--accent-soft);border-bottom:1px solid var(--line);scroll-margin-top:20px}
+.grade-progress-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.grade-progress-top h3{font-size:15px;line-height:1.4;font-weight:800;color:var(--deep);margin:0}
+.grade-progress-status{font-size:11px;font-weight:800;line-height:1.5;padding:3px 8px;border-radius:6px;background:var(--champagne);color:var(--warning-ink)}
+.grade-progress:is([data-state="covered"],[data-state="complete-met"]) .grade-progress-status{background:var(--surface);color:var(--accent)}
+.grade-progress:is([data-state="unreachable"],[data-state="complete-missed"],[data-state="invalid"]) .grade-progress-status{background:var(--warning-soft);color:var(--warning-ink)}
+.grade-progress .grade-progress-value{margin:12px 0 1px;line-height:1.25;font-variant-numeric:tabular-nums;color:var(--accent)}
+.grade-progress-value strong{font-size:28px;font-weight:800;letter-spacing:-.7px;overflow-wrap:anywhere}
+.grade-progress-value>span{font-size:13px;color:var(--muted)}
+.grade-progress .grade-progress-count{margin:0;font-size:12px;color:var(--muted)}
+.grade-progress-meter{position:relative;padding-top:28px;margin:8px 0}
+.grade-progress-track{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.grade-progress-fill{display:block;width:100%;height:100%;background:var(--accent);transform-origin:left;transition:transform .26s ease}
+.grade-goal-marker{position:absolute;top:0;width:0;height:43px;pointer-events:none}
+.grade-goal-label{position:absolute;left:0;top:0;transform:translateX(-50%);font-size:12px;line-height:20px;font-weight:800;white-space:nowrap;color:var(--red)}
+.grade-goal-marker::after{content:'';position:absolute;top:25px;left:-2px;width:2px;height:16px;background:var(--red);border-inline:1px solid var(--surface)}
+.grade-goal-marker[data-edge="start"] .grade-goal-label{transform:none}
+.grade-goal-marker[data-edge="end"] .grade-goal-label{transform:translateX(-100%)}
+.grade-progress-scale{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.grade-progress-track[hidden],.grade-goal-marker[hidden]{display:none}
+.grade-progress[data-state="invalid"] .grade-progress-value{color:var(--muted)}
+.grade-results{padding:24px;scroll-margin-top:20px}
 .grade-results h3{font-size:16px;line-height:1.4;margin:0 0 14px;font-weight:800;text-wrap:balance}
 .grade-results .grade-answer{font-size:clamp(24px,2.5vw,32px);line-height:1.2;color:var(--accent);font-weight:800;margin:0 0 12px;font-variant-numeric:tabular-nums;letter-spacing:-.6px}
 .grade-answer-kicker,.grade-answer-label{display:block;color:var(--ink);font-size:14px;line-height:1.5;letter-spacing:0;font-weight:700}
@@ -77,3 +110,6 @@
 @media(max-width:850px){.grade-workspace{grid-template-columns:minmax(0,1fr);gap:24px}.grade-results{padding:22px}.grade-results .grade-answer{font-size:30px}.grade-quick-result{display:flex;flex-wrap:wrap;gap:4px 12px;margin:0 0 18px;font-size:14px;color:var(--accent)}.grade-quick-result a{min-height:44px;display:inline-flex;align-items:center;color:var(--accent);text-underline-offset:3px}.grade-quick-result strong{align-self:center}}
 @media(max-width:500px){.grade-calculator{padding:20px 14px;border-radius:12px}.grade-calculator h2{font-size:22px}.grade-target .grade-muted{flex-basis:100%}.grade-table th:first-child{width:44%}.grade-table th:nth-child(2),.grade-table td:nth-child(2){width:20%}.grade-table th:last-child,.grade-table td:last-child{width:36%}.grade-settings-content{padding:10px 12px 20px}.grade-setting-labels{display:block}.grade-setting-labels span:not(:first-child){display:none}.grade-setting-row{grid-template-columns:minmax(0,1fr) 140px;gap:6px;padding-bottom:12px;border-bottom:1px solid var(--line)}.grade-setting-row>input{grid-column:1/-1}.grade-row-weight{max-width:94px}.grade-row-controls{grid-column:2}.grade-setting-list{gap:12px}.grade-save-row .button.primary{width:100%}.grade-table tbody th{font-size:14px}}
 @media(max-width:500px){.grade-percentage-label{display:none}.grade-percentage-short{display:inline}}
+@media(max-width:500px){.grade-progress{padding:18px 20px 14px}.grade-activity-label{gap:6px}.grade-percentage-chip{min-width:32px;padding:0 4px;font-size:11px}.grade-calculator .grade-target{padding:12px}.grade-progress-value strong{font-size:26px}}
+@media(prefers-reduced-motion:reduce){.grade-progress-fill{transition:none}}
+@media(forced-colors:active){.grade-progress-fill{background:Highlight}.grade-goal-marker::after{background:CanvasText;border-color:Canvas}.grade-progress-track{border:1px solid CanvasText}.grade-row-dot{border-color:CanvasText}.grade-table tr[data-grade-state="recorded"] .grade-row-dot{background:CanvasText}}

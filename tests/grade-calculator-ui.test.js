@@ -5,7 +5,7 @@ import { createStudentGradeCalculator } from '../assets/grade-calculator.js';
 import { calculateGrades } from '../assets/grade-calculator-model.js';
 
 class Element {
-  constructor(root, tag) { Object.assign(this,{root,tag,children:[],attributes:{},listeners:new Map(),dataset:{},value:'',text:'',hidden:false,disabled:false}); }
+  constructor(root, tag) { Object.assign(this,{root,tag,children:[],attributes:{},listeners:new Map(),dataset:{},style:{},value:'',text:'',hidden:false,disabled:false}); }
   set textContent(value) { this.text=String(value);this.children=[]; }
   get textContent() { return this.text+this.children.map(child=>child.textContent).join(''); }
   append(...nodes) { for(const node of nodes){node.parent=this;this.children.push(node);} }
@@ -85,6 +85,41 @@ test('failed first load remains retryable after a course context is replaced',as
   controller.setContext({courseId:'c2'});fail=true;controller.open();await settle();
   assert.match(page.host.textContent,/Sin conexión/);assert.ok(page.button('Reintentar'));
   fail=false;page.button('Reintentar').click();await settle();assert.ok(page.get('grade-a'));
+});
+test('live progress distinguishes an empty grade from zero and keeps the same meter while editing',async()=>{
+  const page=dom();
+  const controller=createStudentGradeCalculator({...page,signedIn:()=>true,rpc:async()=>({scheme:structuredClone(scheme),draft:null})});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  const meter=page.get('grade-progress-track'),progress=page.get('grade-progress');
+  assert.equal(meter.getAttribute('aria-valuenow'),'0');assert.match(progress.textContent,/0 de 2 actividades con nota/);
+  assert.match(progress.textContent,/Empieza aquí/);
+  page.get('grade-goal').value='0';page.get('grade-goal').dispatch('input');assert.match(progress.textContent,/Meta alcanzada/);
+  page.get('grade-goal').value='71';page.get('grade-goal').dispatch('input');assert.match(progress.textContent,/Empieza aquí/);
+  const field=page.get('grade-a');field.focus();field.value='0';field.dispatch('input');
+  assert.equal(page.get('grade-progress-track'),meter);assert.equal(page.root.activeElement,field);
+  assert.equal(meter.getAttribute('aria-valuenow'),'0');assert.match(progress.textContent,/1 de 2 actividades con nota/);
+  assert.match(progress.textContent,/Meta por revisar/);
+  field.value='80';field.dispatch('input');
+  assert.equal(meter.getAttribute('aria-valuenow'),'32');assert.match(meter.getAttribute('aria-valuetext'),/32 puntos de 100. Tu meta es 71/);
+  page.get('grade-b').value='100';page.get('grade-b').dispatch('input');
+  assert.equal(meter.getAttribute('aria-valuenow'),'92');assert.match(progress.textContent,/Meta alcanzada/);
+  assert.match(progress.textContent,/2 de 2 actividades con nota/);
+});
+test('invalid input hides numeric progress until corrected and targets at both scale ends stay exact',async()=>{
+  const page=dom();
+  const controller=createStudentGradeCalculator({...page,signedIn:()=>true,rpc:async()=>({scheme:structuredClone(scheme),draft:{grades:{a:100},goal:100,revision:1,schemeRevision:1}})});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  const meter=page.get('grade-progress-track'),marker=page.get('grade-goal-marker'),field=page.get('grade-a'),goal=page.get('grade-goal');
+  assert.equal(meter.getAttribute('aria-valuenow'),'40');assert.match(meter.getAttribute('aria-valuetext'),/Tu meta es 100/);
+  field.value='101';field.dispatch('input');
+  assert.equal(meter.hidden,true);assert.equal(marker.hidden,true);assert.equal(meter.getAttribute('aria-valuenow'),null);
+  assert.equal(page.get('grade-progress-value').textContent,'—');assert.match(page.get('grade-progress').textContent,/Revisa los datos/);
+  field.value='100';field.dispatch('input');goal.value='0';goal.dispatch('input');
+  assert.equal(meter.hidden,false);assert.equal(marker.hidden,false);assert.equal(meter.getAttribute('aria-valuenow'),'40');
+  assert.match(meter.getAttribute('aria-valuetext'),/Tu meta es 0/);assert.match(page.get('grade-progress').textContent,/Meta alcanzada/);
+  goal.value='101';goal.dispatch('input');assert.equal(meter.getAttribute('aria-valuenow'),null);
+  goal.value='100';goal.dispatch('input');page.get('grade-b').value='100';page.get('grade-b').dispatch('input');
+  assert.equal(meter.getAttribute('aria-valuenow'),'100');assert.match(page.get('grade-progress').textContent,/Meta alcanzada/);
 });
 test('the result distinguishes missing final points from the score needed in each pending activity',async()=>{
   const page=dom();
