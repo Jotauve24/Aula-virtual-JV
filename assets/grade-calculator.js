@@ -1,5 +1,5 @@
-import { calculateGrades } from './grade-calculator-model.js?v=0.28.1';
-import { createGradeSession } from './grade-calculator-session.js?v=0.28.1';
+import { calculateGrades } from './grade-calculator-model.js?v=0.28.2';
+import { createGradeSession } from './grade-calculator-session.js?v=0.28.2';
 
 const format = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 2 });
 const n = value => format.format(value);
@@ -7,6 +7,7 @@ const pointFormat = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 6 })
 const points = value => pointFormat.format(value);
 export function createStudentGradeCalculator({ host, rpc, signedIn, root = document, win = window }) {
   let fields = new Map(), goalInput, results, quickResult, errorBox, saveButton, saveStatus, reloadButton, noticeBox;
+  let pendingListExpanded = null;
   const session = createGradeSession({ rpc, signedIn, onChange });
   function el(tag, text = '', className = '') {
     const node = root.createElement(tag); node.textContent = text;
@@ -23,7 +24,7 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
     return node;
   }
   function onChange(kind, state) {
-    if (kind === 'reset') { host.replaceChildren(); host.removeAttribute('aria-busy'); fields.clear(); saveButton = null; return; }
+    if (kind === 'reset') { host.replaceChildren(); host.removeAttribute('aria-busy'); fields.clear(); saveButton = null; pendingListExpanded = null; return; }
     if (kind === 'loading') {
       host.setAttribute('aria-busy', 'true');
       for (const field of fields.values()) field.disabled = true;
@@ -61,7 +62,14 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
     const table = el('table', '', 'grade-table');
     const caption = el('caption', 'Actividades y porcentajes de esta materia', 'sr-only');
     const head = el('thead'), headRow = el('tr');
-    for (const text of ['Actividad', 'Peso', 'Tu nota']) { const th = el('th', text); th.scope = 'col'; headRow.append(th); }
+    for (const text of ['Actividad', 'Porcentaje', 'Tu nota']) {
+      const th = el('th', text); th.scope = 'col';
+      if (text === 'Porcentaje') {
+        const short = el('span', '%', 'grade-percentage-short'); short.setAttribute('aria-hidden', 'true');
+        th.setAttribute('aria-label', 'Porcentaje'); th.replaceChildren(el('span', text, 'grade-percentage-label'), short);
+      }
+      headRow.append(th);
+    }
     head.append(headRow); const body = el('tbody');
     for (const activity of state.scheme.activities) {
       const row = el('tr'), name = el('th', activity.name); name.scope = 'row';
@@ -118,35 +126,43 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
       : state.dirty ? 'Cambios sin guardar' : state.revision ? 'Simulación guardada' : 'Aún no has guardado una simulación';
   }
   function renderResult(result) {
-    const title = el('h3', 'Tu plan para llegar a la meta');
+    const title = el('h3', `Tu meta: ${n(result.target)} de 100`);
     const score = el('p', '', 'grade-answer'), explanation = el('p');
     score.setAttribute('role', 'status'); score.setAttribute('aria-atomic', 'true');
     if (result.status.startsWith('complete')) {
       title.textContent = 'Tu nota final estimada'; score.textContent = `${points(result.earned)} / 100`;
       explanation.textContent = result.status === 'complete-met' ? 'Con estas notas alcanzas tu meta.' : `Con estas notas no alcanzas la meta de ${n(result.target)}. Revisa con tu docente las opciones de mejora.`;
     } else if (result.status === 'covered') {
-      score.textContent = 'Meta cubierta'; explanation.textContent = `Ya acumulas ${points(result.earned)} puntos. Aun con 0 en lo pendiente, esta simulación alcanza tu meta. Completa tus actividades.`;
+      score.textContent = 'Ya alcanzas tu meta'; explanation.textContent = `Ya acumulas ${points(result.earned)} puntos de la nota final. Aun con 0 en lo pendiente, esta simulación alcanza tu meta de ${n(result.target)}. Completa tus actividades.`;
     } else if (result.status === 'unreachable') {
-      score.textContent = 'La meta supera el máximo'; explanation.textContent = `Necesitarías ${n(result.required)} sobre 100 en todo lo pendiente. Incluso obteniendo 100, llegarías a ${points(result.maximum)}. Prueba otra meta o consulta las opciones de mejora.`;
+      score.textContent = 'La meta supera el máximo'; explanation.textContent = `Incluso con 100 en todas las actividades pendientes, tu nota final llegaría a ${points(result.maximum)} sobre 100. Tu meta es ${n(result.target)}. Revisa las notas introducidas o consulta las opciones de mejora con tu docente.`;
     } else {
-      score.textContent = `${n(result.required)} / 100`;
-      explanation.textContent = `Necesitas al menos esta nota en cada una de las ${result.pending.length} actividades pendientes para alcanzar ${n(result.target)}. Si combinas notas distintas, su promedio ponderado debe ser al menos ${n(result.required)}.`;
+      const context = result.pending.length === 1 ? 'sobre 100 en la actividad pendiente.'
+        : `sobre 100 en cada una de las ${n(result.pending.length)} actividades pendientes.`;
+      score.append(el('span', 'Necesitas al menos ', 'grade-answer-kicker'), el('strong', n(result.required)),
+        el('span', ' ' + context, 'grade-answer-label'));
+      explanation.textContent = result.completedWeight
+        ? `Ya acumulas ${points(result.earned)} puntos de la nota final. Te ${result.missing === 1 ? 'falta 1 punto' : `faltan ${points(result.missing)} puntos`} para alcanzar ${n(result.target)}.`
+        : 'Todavía no has introducido notas. Este cálculo te muestra qué necesitarías si obtuvieras la misma nota en todas las actividades.';
     }
     const stats = el('dl', '', 'grade-stats');
-    for (const [label, value] of [['Puntos acumulados', `${points(result.earned)} / 100`], ['Peso registrado', `${n(result.completedWeight)} %`], ['Peso pendiente', `${n(result.remainingWeight)} %`], ['Máximo posible', `${points(result.maximum)} / 100`]]) {
+    for (const [label, value] of [['Acumulado en la nota final', `${points(result.earned)} / 100`], ['Porcentaje con nota', `${n(result.completedWeight)} %`], ['Porcentaje pendiente', `${n(result.remainingWeight)} %`], ['Máximo posible', `${points(result.maximum)} / 100`]]) {
       const item = el('div'); item.append(el('dt', label), el('dd', value)); stats.append(item);
     }
     results.dataset.state = result.status;
-    quickResult.replaceChildren(el('strong', result.status === 'pending' ? `Mínimo en lo pendiente: ${n(result.required)} / 100.`
+    quickResult.replaceChildren(el('strong', result.status === 'pending' ? `Necesitas ${n(result.required)} sobre 100 en cada actividad pendiente para alcanzar una nota final de ${n(result.target)}.`
       : result.status.startsWith('complete') ? `Nota final estimada: ${points(result.earned)} / 100.` : score.textContent + '.'));
     const detailLink = el('a', 'Ver detalle ↓'); detailLink.href = '#grade-results'; quickResult.append(detailLink);
-    results.append(title, score, explanation, stats);
-    if (result.pending.length > 1) {
-      const details = el('details', '', 'grade-minimums'); details.append(el('summary', 'Ver mínimos por actividad'),
-        el('p', 'Cada mínimo supone 100 en todas las demás actividades pendientes. Son escenarios independientes: no combines estos mínimos como un plan.'));
+    if (result.status === 'pending') results.append(title, explanation, score, stats);
+    else results.append(title, score, explanation, stats);
+    if (result.status === 'pending') {
+      const details = el('details', '', 'grade-minimums'); details.append(el('summary', result.pending.length === 1 ? 'Ver la actividad pendiente' : `Ver las ${n(result.pending.length)} actividades pendientes`),
+        el('p', 'Una opción es obtener al menos esta nota en cada actividad de la lista. Si pruebas otra nota en la tabla, recalcularemos lo que necesitas en las demás.'));
+      details.open = pendingListExpanded ?? result.pending.length <= 3;
+      details.addEventListener('toggle', () => { pendingListExpanded = details.open; });
       const list = el('dl');
       for (const activity of result.pending) {
-        const row = el('div'); row.append(el('dt', activity.name), el('dd', activity.minimum > 100 ? 'Supera 100' : `${n(activity.minimum)} / 100`)); list.append(row);
+        const row = el('div'); row.append(el('dt', activity.name), el('dd', `${n(result.required)} / 100`)); list.append(row);
       }
       details.append(list); results.append(details);
     }

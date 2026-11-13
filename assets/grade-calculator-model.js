@@ -62,7 +62,7 @@ export function calculateGrades(activities, values, goal) {
     if (Object.hasOwn(grades, row.id)) {
       completedWeight += weight;
       earnedN += Math.round(grades[row.id] * 100) * weight;
-    } else pending.push({ ...row, weightUnits: weight });
+    } else pending.push(row);
   }
   const remainingWeight = 10000 - completedWeight;
   const neededN = Math.max(0, targetN - earnedN);
@@ -74,11 +74,10 @@ export function calculateGrades(activities, values, goal) {
     remainingWeight: remainingWeight / 100,
     average: completedWeight ? earnedN / completedWeight / 100 : null,
     maximum: maximumN / 1000000,
+    missing: neededN / 1000000,
     required: remainingWeight ? Math.ceil(neededN / remainingWeight) / 100 : null,
     status: !remainingWeight ? (earnedN >= targetN ? 'complete-met' : 'complete-missed')
       : earnedN >= targetN ? 'covered' : maximumN < targetN ? 'unreachable' : 'pending',
-    pending: pending.map(({ weightUnits, ...row }) => ({ ...row,
-      minimum: Math.ceil(Math.max(0, neededN - (remainingWeight - weightUnits) * 10000) / weightUnits) / 100
-    }))
+    pending
   };
 }

@@ -1,4 +1,4 @@
-import { DEFAULT_GRADE_ACTIVITIES, GRADE_ACTIVITY_LIMIT, parseGrade, validateGradeActivities } from './grade-calculator-model.js?v=0.28.1';
+import { DEFAULT_GRADE_ACTIVITIES, GRADE_ACTIVITY_LIMIT, parseGrade, validateGradeActivities } from './grade-calculator-model.js?v=0.28.2';
 
 const number = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 2 });
 export function createTeacherGradeScheme({ host, rpc, signedIn, root = document, win = window }) {
@@ -126,7 +126,7 @@ export function createTeacherGradeScheme({ host, rpc, signedIn, root = document,
     if (!scheme) content.append(el('p', 'Plantilla sugerida. Revisa los nombres y porcentajes según tu programa; se publicará cuando pulses Activar calculadora.', 'grade-notice'));
     else content.append(el('p', 'Los porcentajes nuevos se aplican al recargar la calculadora. Renombrar conserva las notas; para sustituir una actividad, quítala y añade otra.', 'grade-muted'));
     content.append(el('p', 'Usa ↑ y ↓ para cambiar el orden. Puedes colocar un foro justo después de su unidad.', 'grade-muted'));
-    const heading = el('div', '', 'grade-setting-labels'); heading.append(el('span', 'Actividad'), el('span', 'Peso (%)'), el('span', 'Orden'));
+    const heading = el('div', '', 'grade-setting-labels'); heading.append(el('span', 'Actividad'), el('span', 'Porcentaje'), el('span', 'Orden'));
     list = el('div', '', 'grade-setting-list');
     add = button('Añadir actividad', () => {
       if (rows.length >= GRADE_ACTIVITY_LIMIT || busy) return;
