@@ -513,6 +513,10 @@ común para todas las actividades pendientes. Los mínimos individuales suponen
 Los mínimos se redondean hacia arriba a dos decimales. Un cambio de porcentajes
 o de borrador desde otro dispositivo exige recargar antes de sobrescribir datos.
 
+Las flechas **↑ / ↓** del editor docente permiten ordenar las actividades y
+colocar cada foro junto a su unidad. El orden se publica al guardar y conserva
+los identificadores, porcentajes y notas personales de cada actividad.
+
 `tests/grade-calculator.integration.sql` verifica con perfiles ficticios y ROLLBACK
 la propiedad de la materia, aislamiento entre estudiantes, valores inválidos,
 revisiones, recuperación del perfil, materias deshabilitadas y borrado en cascada.

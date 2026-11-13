@@ -1,4 +1,4 @@
-import { canWalkSegment, findPath, isWalkable } from './world-layout.js?v=0.28.0';
+import { canWalkSegment, findPath, isWalkable } from './world-layout.js?v=0.28.1';
 
 // The server owns membership and positions. This only fills in the visible
 // journey between authorized snapshots; animation never sends network requests.

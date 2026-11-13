@@ -1,4 +1,4 @@
-import { DEFAULT_GRADE_ACTIVITIES, GRADE_ACTIVITY_LIMIT, parseGrade, validateGradeActivities } from './grade-calculator-model.js?v=0.28.0';
+import { DEFAULT_GRADE_ACTIVITIES, GRADE_ACTIVITY_LIMIT, parseGrade, validateGradeActivities } from './grade-calculator-model.js?v=0.28.1';
 
 const number = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 2 });
 export function createTeacherGradeScheme({ host, rpc, signedIn, root = document, win = window }) {
@@ -55,6 +55,28 @@ export function createTeacherGradeScheme({ host, rpc, signedIn, root = document,
     save.disabled = value || conflict; save.textContent = value ? (loading ? 'Cargando…' : 'Guardando…') : revision ? 'Guardar cambios' : 'Activar calculadora';
     reload.disabled = value; add.disabled = value || rows.length >= GRADE_ACTIVITY_LIMIT; reference.disabled = value;
     for (const row of rows) { row.name.disabled = row.weight.disabled = row.remove.disabled = value; }
+    updateRowControls();
+  }
+  function updateRowControls() {
+    rows.forEach((row, index) => {
+      const name = row.name.value.trim() || 'actividad';
+      row.up.disabled = busy || index === 0;
+      row.down.disabled = busy || index === rows.length - 1;
+      row.up.setAttribute('aria-label', `Subir ${name}`); row.up.title = `Subir ${name}`;
+      row.down.setAttribute('aria-label', `Bajar ${name}`); row.down.title = `Bajar ${name}`;
+      row.controls.setAttribute('aria-label', `Ordenar o quitar ${name}`);
+    });
+  }
+  function moveRow(id, step, trigger) {
+    if (busy) return;
+    const from = rows.findIndex(row => row.id === id), to = from + step;
+    if (from < 0 || to < 0 || to >= rows.length) return;
+    const [row] = rows.splice(from, 1); rows.splice(to, 0, row);
+    // Move the existing nodes: edited values, IDs and linked student notes stay intact.
+    list.insertBefore(row.item, rows[to + 1]?.item ?? null);
+    changed();
+    status.textContent = `${row.name.value.trim() || 'Actividad'}: posición ${number.format(to + 1)} de ${number.format(rows.length)}. Cambios sin guardar.`;
+    (trigger.disabled ? row.name : trigger).focus();
   }
   function changed() {
     dirty = true; error.hidden = true; status.textContent = 'Cambios sin guardar'; updateTotal();
@@ -71,22 +93,29 @@ export function createTeacherGradeScheme({ host, rpc, signedIn, root = document,
     }
     total.textContent = valid ? `Total: ${number.format(units / 100)} % de 100 %` : 'Revisa los porcentajes; deben ser mayores que 0.';
     total.dataset.valid = String(valid && units === 10000); add.disabled = busy || rows.length >= GRADE_ACTIVITY_LIMIT;
+    updateRowControls();
   }
   function addRow(activity, focus = false) {
     const item = el('div', '', 'grade-setting-row');
     const name = field(`scheme-name-${activity.id}`, activity.name, 'Nombre de la actividad');
     const weight = field(`scheme-weight-${activity.id}`, activity.weight, `Porcentaje de ${activity.name || 'la actividad'}`, true);
     name.placeholder = 'Ej.: Proyecto final…'; weight.placeholder = 'Ej.: 20…';
+    const weightBox = el('div', '', 'grade-row-weight'), percent = el('span', '%');
+    percent.setAttribute('aria-hidden', 'true'); weightBox.append(weight, percent);
+    const controls = el('div', '', 'grade-row-controls'); controls.setAttribute('role', 'group');
+    const up = button('↑', () => moveRow(activity.id, -1, up), 'grade-row-button');
+    const down = button('↓', () => moveRow(activity.id, 1, down), 'grade-row-button');
     const remove = button('×', () => {
+      if (busy) return;
       rows = rows.filter(row => row.id !== activity.id); item.remove(); changed(); add.focus();
-    }, 'grade-remove');
+    }, 'grade-row-button grade-remove');
     remove.setAttribute('aria-label', `Quitar ${activity.name || 'actividad'}`); remove.title = 'Quitar actividad';
     name.addEventListener('input', () => {
       weight.setAttribute('aria-label', `Porcentaje de ${name.value || 'la actividad'}`);
       remove.setAttribute('aria-label', `Quitar ${name.value || 'actividad'}`); changed();
     });
-    weight.addEventListener('input', changed); item.append(name, weight, remove); list.append(item);
-    rows.push({ id: activity.id, name, weight, remove }); if (focus) name.focus();
+    weight.addEventListener('input', changed); controls.append(up, down, remove); item.append(name, weightBox, controls); list.append(item);
+    rows.push({ id: activity.id, item, name, weight, controls, up, down, remove }); updateRowControls(); if (focus) name.focus();
   }
   function render(scheme) {
     rows = [];
@@ -96,7 +125,8 @@ export function createTeacherGradeScheme({ host, rpc, signedIn, root = document,
       el('p', 'Configura esta materia para que tus estudiantes calculen su nota final y lo que necesitan en las actividades pendientes. Sus simulaciones son privadas.'));
     if (!scheme) content.append(el('p', 'Plantilla sugerida. Revisa los nombres y porcentajes según tu programa; se publicará cuando pulses Activar calculadora.', 'grade-notice'));
     else content.append(el('p', 'Los porcentajes nuevos se aplican al recargar la calculadora. Renombrar conserva las notas; para sustituir una actividad, quítala y añade otra.', 'grade-muted'));
-    const heading = el('div', '', 'grade-setting-labels'); heading.append(el('span', 'Actividad'), el('span', 'Peso (%)'));
+    content.append(el('p', 'Usa ↑ y ↓ para cambiar el orden. Puedes colocar un foro justo después de su unidad.', 'grade-muted'));
+    const heading = el('div', '', 'grade-setting-labels'); heading.append(el('span', 'Actividad'), el('span', 'Peso (%)'), el('span', 'Orden'));
     list = el('div', '', 'grade-setting-list');
     add = button('Añadir actividad', () => {
       if (rows.length >= GRADE_ACTIVITY_LIMIT || busy) return;
