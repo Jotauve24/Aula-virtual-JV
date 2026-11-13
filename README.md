@@ -507,9 +507,10 @@ privada por perfil y materia. Vacío significa pendiente; 0 sí cuenta como nota
 La simulación se recupera al volver a ingresar con el mismo perfil, también desde
 otro dispositivo. No se publican ni se registran calificaciones oficiales.
 
-El resultado incluye los puntos ponderados, el máximo posible y una nota mínima
-común para todas las actividades pendientes. Los mínimos individuales suponen
-100 en las demás pendientes y se identifican como escenarios independientes.
+El resultado distingue los puntos que ya se acumulan en la nota final, cuántos
+faltan para alcanzar la meta y qué nota sobre 100 se necesita en cada actividad
+pendiente. La lista de pendientes muestra una misma nota mínima para todas:
+es una forma de llegar a la meta. Introducir otras notas recalcula lo restante.
 Los mínimos se redondean hacia arriba a dos decimales. Un cambio de porcentajes
 o de borrador desde otro dispositivo exige recargar antes de sobrescribir datos.
 

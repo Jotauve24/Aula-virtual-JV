@@ -86,6 +86,22 @@ test('failed first load remains retryable after a course context is replaced',as
   assert.match(page.host.textContent,/Sin conexión/);assert.ok(page.button('Reintentar'));
   fail=false;page.button('Reintentar').click();await settle();assert.ok(page.get('grade-a'));
 });
+test('the result distinguishes missing final points from the score needed in each pending activity',async()=>{
+  const page=dom();
+  const sample={activities:[{id:'done',name:'Actividades con nota',weight:70},{id:'foro5',name:'Foro Unidad V',weight:5},{id:'u6',name:'Unidad VI',weight:20},{id:'foro6',name:'Foro Unidad VI',weight:5}],referenceGrade:71,revision:1};
+  const controller=createStudentGradeCalculator({...page,signedIn:()=>true,rpc:async()=>({scheme:sample,draft:{grades:{done:100},goal:71,revision:1,schemeRevision:1}})});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  const result=page.get('grade-results').textContent;
+  assert.match(result,/Ya acumulas 70 puntos de la nota final/);assert.match(result,/Te falta 1 punto para alcanzar 71/);
+  assert.match(result,/Necesitas al menos 3.34 sobre 100 en cada una de las 3 actividades pendientes/);
+  assert.doesNotMatch(result,/Peso|promedio ponderado|escenarios independientes/);
+  const pending=descendants(page.get('grade-results')).find(node=>node.tag==='details');
+  assert.equal(pending.open,true);pending.open=false;pending.dispatch('toggle');
+  page.get('grade-u6').value='3';page.get('grade-u6').dispatch('input');
+  assert.equal(descendants(page.get('grade-results')).find(node=>node.tag==='details').open,false);
+  page.get('grade-u6').value='10';page.get('grade-u6').dispatch('input');
+  assert.match(page.get('grade-results').textContent,/Ya alcanzas tu meta/);
+});
 
 test('moving activities preserves edited fields, saves their order and keeps student grades attached to their IDs',async()=>{
   const page=dom();let stored={activities:[{id:'u1',name:'Unidad I',weight:5},{id:'final',name:'Proyecto final',weight:90},{id:'foro',name:'Foro I',weight:5}],referenceGrade:71,revision:1};

@@ -15,16 +15,22 @@ test('weighted results and the common minimum account for all pending work', () 
   const result = calculateGrades(plan, { a: 80 }, 71);
   assert.equal(result.earned, 24); assert.equal(result.average, 80);
   assert.equal(result.required, 67.15); assert.equal(result.maximum, 94);
-  assert.equal(result.pending[0].minimum, 67.15);
   assert.ok(calculateGrades(plan, { a: 80, b: result.required }, 71).earned >= 71);
   assert.ok(calculateGrades(plan, { a: 80, b: result.required - .01 }, 71).earned < 71);
 });
-test('independent minima do not pretend to be a combined plan', () => {
+test('the suggested minimum covers all pending activities together', () => {
   const rows = [{ id: 'a', name: 'A', weight: 50 }, { id: 'b', name: 'B', weight: 50 }];
   const result = calculateGrades(rows, {}, 71);
   assert.equal(result.required, 71);
-  assert.deepEqual(result.pending.map(a => a.minimum), [42, 42]);
-  assert.equal(calculateGrades(rows, { a: 42, b: 42 }, 71).earned, 42);
+  assert.equal(calculateGrades(rows, { a: result.required, b: result.required }, 71).earned, 71);
+});
+test('70 accumulated points need one final point, supplied by 3.34 in each pending activity', () => {
+  const activities=[{id:'done',name:'Actividades con nota',weight:70},{id:'foro5',name:'Foro Unidad V',weight:5},{id:'u6',name:'Unidad VI',weight:20},{id:'foro6',name:'Foro Unidad VI',weight:5}];
+  const result=calculateGrades(activities,{done:100},71);
+  assert.equal(result.earned,70);assert.equal(result.missing,1);assert.equal(result.required,3.34);
+  assert.equal(result.remainingWeight,30);assert.equal(result.pending.length,3);
+  assert.equal(calculateGrades(activities,{done:100,foro5:3.34,u6:3.34,foro6:3.34},71).earned,71.002);
+  assert.equal(calculateGrades(activities,{done:100,foro5:3.33,u6:3.33,foro6:3.33},71).earned,70.999);
 });
 test('complete, already covered, impossible and exact boundary targets', () => {
   assert.equal(calculateGrades(plan, { a: 100 }, 30).status, 'covered');
