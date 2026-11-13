@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createTeacherGradeScheme } from '../assets/teacher-grade-scheme.js';
 import { createStudentGradeCalculator } from '../assets/grade-calculator.js';
 import { calculateGrades } from '../assets/grade-calculator-model.js';
+import { createTeacherGradePreview } from '../assets/teacher-grade-preview.js';
 
 class Element {
   constructor(root, tag) { Object.assign(this,{root,tag,children:[],attributes:{},listeners:new Map(),dataset:{},style:{},value:'',text:'',hidden:false,disabled:false}); }
@@ -35,6 +36,35 @@ function dom() {
     button:text=>descendants(host).find(node=>node.tag==='button'&&node.textContent===text)};
 }
 const scheme={activities:[{id:'a',name:'Proyecto',weight:40},{id:'b',name:'Examen',weight:60}],referenceGrade:71,revision:1};
+
+test('zombie view uses the student calculator, local save labels and restart without any student RPC',async()=>{
+  const page=dom(),calls=[];
+  const controller=createTeacherGradePreview({...page,signedIn:()=>true,avatar:()=>'<svg data-zombie></svg>',rpc:async(name,body)=>{
+    calls.push({name,body});return structuredClone(scheme);
+  }});
+  controller.setContext('c1');assert.equal(calls.length,0);controller.open();await settle();
+  assert.match(page.host.textContent,/Porcentajes publicados de esta materia/);assert.match(page.host.textContent,/Demostración docente/);
+  assert.equal(page.get('grade-progress-avatar').innerHTML,'<svg data-zombie></svg>');
+  page.get('grade-a').value='0';page.get('grade-a').dispatch('input');
+  page.get('grade-trial-grade').value='80';page.get('grade-trial-grade').dispatch('input');page.get('grade-trial-apply').click();
+  assert.equal(page.get('grade-a').value,'0');assert.equal(page.get('grade-b').value,'80');
+  page.button('Guardar prueba').click();await settle();assert.match(page.host.textContent,/Prueba guardada solo en esta demostración/);
+  page.get('grade-b').value='50';page.get('grade-b').dispatch('input');page.button('Recargar prueba guardada').click();await settle();
+  assert.equal(page.get('grade-b').value,80);
+  controller.reset();controller.open();await settle();assert.equal(page.get('grade-a').value,'');assert.equal(page.get('grade-b').value,'');
+  assert.ok(calls.every(call=>call.name==='teacher_grade_scheme'));
+});
+
+test('zombie preview distinguishes a missing configuration, a failed read and a late former room',async()=>{
+  const page=dom();let source=null;
+  const controller=createTeacherGradePreview({...page,signedIn:()=>true,rpc:async()=>{if(source instanceof Error)throw source;return source;}});
+  controller.setContext('c1');controller.open();await settle();assert.match(page.host.textContent,/plantilla de ejemplo/);
+  assert.ok(page.get('grade-u1'));assert.equal(page.get('grade-u1').value,'');
+  controller.setContext('c2');source=Error('Sin conexión');controller.open();await settle();
+  assert.match(page.host.textContent,/Sin conexión/);assert.doesNotMatch(page.host.textContent,/plantilla de ejemplo/);
+  assert.equal(page.get('grade-u1'),undefined);source=structuredClone(scheme);page.button('Reintentar').click();await settle();
+  assert.ok(page.get('grade-a'));assert.match(page.host.textContent,/Porcentajes publicados/);
+});
 
 test('a valid activity ID matching an object property remains blank until the trial is applied',async()=>{
   const page=dom();const sample={activities:[{id:'constructor',name:'Proyecto',weight:100}],referenceGrade:71,revision:1};

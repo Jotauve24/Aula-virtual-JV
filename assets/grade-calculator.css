@@ -1,5 +1,6 @@
 .grade-calculator,.grade-settings{color:var(--ink);font-size:15px;line-height:1.6;min-width:0}
 .grade-calculator{padding:8px 0;max-width:1120px;margin:0 auto}
+.grade-preview-notice{max-width:1120px;margin:0 auto 18px;font:400 13px/1.6 var(--sans);color:var(--muted);overflow-wrap:anywhere}
 .grade-calculator h2,.grade-settings h2{font:800 25px/1.25 var(--sans);letter-spacing:-.4px;text-wrap:balance;margin:0 0 8px;color:var(--deep)}
 .grade-heading p{margin:0;color:var(--muted)}
 .grade-title-accent{font-style:italic;color:var(--red);text-decoration:underline;text-decoration-color:var(--salmon);text-decoration-thickness:3px;text-underline-offset:4px}

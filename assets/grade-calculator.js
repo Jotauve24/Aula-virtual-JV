@@ -1,12 +1,12 @@
-import { calculateGrades } from './grade-calculator-model.js?v=0.30.0';
-import { createGradeSession } from './grade-calculator-session.js?v=0.30.0';
-import { createGradeWhatIf } from './grade-what-if.js?v=0.30.0';
+import { calculateGrades } from './grade-calculator-model.js?v=0.30.1';
+import { createGradeSession } from './grade-calculator-session.js?v=0.30.1';
+import { createGradeWhatIf } from './grade-what-if.js?v=0.30.1';
 
 const format = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 2 });
 const n = value => format.format(value);
 const pointFormat = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 6 });
 const points = value => pointFormat.format(value);
-export function createStudentGradeCalculator({ host, rpc, signedIn, avatar = () => '', root = document, win = window }) {
+export function createStudentGradeCalculator({ host, rpc, signedIn, avatar = () => '', root = document, win = window, demo = false }) {
   let fields = new Map(), goalInput, results, quickResult, errorBox, saveButton, saveStatus, reloadButton, noticeBox;
   let activityRows = new Map(), activityCount, progress;
   let pendingListExpanded = null;
@@ -61,7 +61,8 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, avatar = () 
       host.append(el('p', 'Tu docente todavía no ha configurado las actividades y sus porcentajes para esta materia.', 'grade-empty'),
         button('Comprobar configuración', () => session.load())); return;
     }
-    const personal = el('p', 'Simulación personal · Escala de 0 a 100. Estas cifras no son calificaciones oficiales.', 'grade-personal');
+    const personal = el('p', demo ? 'Demostración docente · Escala de 0 a 100. Prueba el mismo cálculo que verá el estudiante.'
+      : 'Simulación personal · Escala de 0 a 100. Estas cifras no son calificaciones oficiales.', 'grade-personal');
     const grid = el('div', '', 'grade-workspace');
     const editor = el('div', '', 'grade-input-panel');
     const target = el('div', '', 'grade-target');
@@ -112,14 +113,15 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, avatar = () 
     noticeBox = el('p', state.notice, 'grade-notice'); noticeBox.hidden = !state.notice; noticeBox.setAttribute('role', 'status');
     errorBox = el('p', '', 'grade-error'); errorBox.hidden = true; errorBox.setAttribute('role', 'alert');
     const footer = el('div', '', 'grade-save-row');
-    saveButton = button('Guardar simulación', () => {
+    saveButton = button(demo ? 'Guardar prueba' : 'Guardar simulación', () => {
       const bad = [...fields.values(), goalInput].find(field => field.getAttribute('aria-invalid') === 'true');
       if (bad) { bad.focus(); return; }
       void session.save();
     }, 'button primary');
     saveStatus = el('span', '', 'grade-muted'); saveStatus.setAttribute('role', 'status');
-    reloadButton = button('Recargar datos guardados', () => {
-      if (session.snapshot().dirty && !win.confirm('Se reemplazarán tus cambios sin guardar por la simulación guardada. ¿Recargar?')) return;
+    reloadButton = button(demo ? 'Recargar prueba guardada' : 'Recargar datos guardados', () => {
+      if (session.snapshot().dirty && !win.confirm(demo ? 'Se reemplazarán tus cambios sin guardar por la prueba guardada en esta demostración. ¿Recargar?'
+        : 'Se reemplazarán tus cambios sin guardar por la simulación guardada. ¿Recargar?')) return;
       void session.load();
     }, 'grade-text-button');
     const options = el('details', '', 'grade-options'); options.append(el('summary', 'Más opciones'), reloadButton);
@@ -226,10 +228,11 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, avatar = () 
     errorBox.textContent = state.error || validation; errorBox.hidden = !errorBox.textContent;
     noticeBox.textContent = state.notice; noticeBox.hidden = !state.notice;
     saveButton.disabled = state.saving || state.conflict;
-    saveButton.textContent = state.saving ? 'Guardando…' : 'Guardar simulación';
+    saveButton.textContent = state.saving ? 'Guardando…' : demo ? 'Guardar prueba' : 'Guardar simulación';
     reloadButton.disabled = state.saving;
     saveStatus.textContent = state.saving ? 'Guardando tu simulación…' : state.conflict ? 'Recarga los datos para resolver el cambio.'
-      : state.dirty ? 'Cambios sin guardar' : state.revision ? 'Simulación guardada' : 'Aún no has guardado una simulación';
+      : state.dirty ? 'Cambios sin guardar' : state.revision ? (demo ? 'Prueba guardada solo en esta demostración' : 'Simulación guardada')
+        : demo ? 'Aún no has guardado una prueba' : 'Aún no has guardado una simulación';
   }
   function renderResult(result) {
     const title = el('h3', `Tu meta: ${n(result.target)} de 100`);
