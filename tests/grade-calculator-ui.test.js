@@ -23,7 +23,7 @@ class Element {
   addEventListener(name,handler) { this.listeners.set(name,handler); }
   dispatch(name) { return this.listeners.get(name)?.(); }
   click() { if(!this.disabled)return this.dispatch('click'); }
-  focus() { this.root.activeElement=this; }
+  focus() { this.root.activeElement=this;this.dispatch('focus'); }
 }
 const descendants=node=>[node,...node.children.flatMap(descendants)];
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
@@ -35,6 +35,58 @@ function dom() {
     button:text=>descendants(host).find(node=>node.tag==='button'&&node.textContent===text)};
 }
 const scheme={activities:[{id:'a',name:'Proyecto',weight:40},{id:'b',name:'Examen',weight:60}],referenceGrade:71,revision:1};
+
+test('a valid activity ID matching an object property remains blank until the trial is applied',async()=>{
+  const page=dom();const sample={activities:[{id:'constructor',name:'Proyecto',weight:100}],referenceGrade:71,revision:1};
+  const controller=createStudentGradeCalculator({...page,signedIn:()=>true,rpc:async()=>({scheme:sample,draft:null})});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  assert.equal(page.get('grade-constructor').value,'');assert.equal(page.get('grade-constructor').getAttribute('aria-invalid'),null);
+  assert.equal(page.get('grade-progress-value').textContent,'0');assert.equal(page.get('grade-trial-final').textContent,'71');
+  page.get('grade-trial-apply').click();assert.equal(page.get('grade-constructor').value,'71');assert.equal(page.root.activeElement,page.get('grade-constructor'));
+});
+
+test('a live what-if stays separate until applied and only an explicit save sends its grades',async()=>{
+  const page=dom(),calls=[];
+  const sample={activities:[{id:'done',name:'Actividades con nota',weight:75},{id:'unit',name:'Unidad VI',weight:20},{id:'forum',name:'Foro VI',weight:5}],referenceGrade:71,revision:1};
+  const controller=createStudentGradeCalculator({...page,avatar:()=>'<svg></svg>',signedIn:()=>true,rpc:async(name,body)=>{
+    calls.push({name,body});return name==='student_grade_calculator'?{scheme:sample,draft:{grades:{done:66},goal:71,revision:1,schemeRevision:1}}:{revision:2};
+  }});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  const editTrial=value=>{page.get('grade-trial-grade').value=value;page.get('grade-trial-grade').dispatch('input');};
+  editTrial('80');assert.equal(page.get('grade-trial-final').textContent,'69.5');assert.match(page.get('grade-trial-outcome').textContent,/faltarían 1.5/);
+  assert.equal(page.get('grade-progress-value').textContent,'49.5');assert.equal(page.get('grade-unit').value,'');assert.equal(controller.hasUnsaved(),false);
+  page.get('grade-trial-range').value='0';page.get('grade-trial-range').dispatch('input');assert.equal(page.get('grade-trial-final').textContent,'49.5');
+  page.button('Probar el mínimo necesario').click();assert.equal(page.get('grade-trial-final').textContent,'71');assert.equal(calls.length,1);
+  page.get('grade-trial-apply').click();assert.equal(String(page.get('grade-unit').value),'86');assert.equal(String(page.get('grade-forum').value),'86');
+  assert.equal(page.get('grade-done').value,66);assert.equal(page.get('grade-progress-value').textContent,'71');assert.equal(page.get('grade-trial-empty').hidden,false);
+  assert.equal(page.get('grade-trial-apply').disabled,true);assert.equal(page.get('grade-trial-body').hidden,true);
+  assert.equal(page.get('grade-progress-avatar').dataset.celebrate,'true');assert.equal(controller.hasUnsaved(),true);assert.equal(calls.length,1);
+  page.button('Guardar simulación').click();await settle();assert.deepEqual(calls[1].body.p_grades,{done:66,unit:86,forum:86});assert.equal(calls[1].body.p_goal,71);
+});
+test('a bad trial cannot change the actual result and a base edit recalculates the same trial',async()=>{
+  const page=dom();
+  const controller=createStudentGradeCalculator({...page,signedIn:()=>true,rpc:async()=>({scheme:structuredClone(scheme),draft:{grades:{a:50},goal:71,revision:1,schemeRevision:1}})});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  page.get('grade-trial-grade').value='101';page.get('grade-trial-grade').dispatch('input');
+  assert.equal(page.get('grade-trial-apply').disabled,true);assert.equal(page.get('grade-trial-meter').hidden,true);
+  assert.equal(page.get('grade-progress-value').textContent,'20');assert.equal(controller.hasUnsaved(),false);
+  page.get('grade-trial-grade').value='80';page.get('grade-trial-grade').dispatch('input');assert.equal(page.get('grade-trial-final').textContent,'68');
+  page.get('grade-a').value='60';page.get('grade-a').dispatch('input');assert.equal(page.get('grade-trial-final').textContent,'72');
+  assert.equal(page.get('grade-b').value,'');
+  page.get('grade-a').value='101';page.get('grade-a').dispatch('input');assert.equal(page.get('grade-trial-range').disabled,true);assert.equal(page.get('grade-trial-meter').hidden,true);
+  controller.reset();assert.equal(page.get('grade-trial-grade'),undefined);
+});
+test('selecting a grade explains its exact weighted contribution and an avatar refresh preserves edits',async()=>{
+  const page=dom();let look='<svg id="first"></svg>',calls=0;
+  const controller=createStudentGradeCalculator({...page,avatar:()=>look,signedIn:()=>true,rpc:async()=>{calls++;return {scheme:structuredClone(scheme),draft:null};}});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  page.get('grade-a').focus();page.get('grade-a').value='0';page.get('grade-a').dispatch('input');
+  assert.equal(page.get('grade-contribution-a').hidden,false);assert.match(page.get('grade-contribution-a').textContent,/Aporta 0 puntos/);
+  page.get('grade-a').value='80,25';page.get('grade-a').dispatch('input');assert.match(page.get('grade-contribution-a').textContent,/32.1 puntos/);
+  page.get('grade-b').focus();assert.equal(page.get('grade-contribution-a').hidden,true);assert.match(page.get('grade-contribution-b').textContent,/Pendiente/);
+  look='<svg id="second"></svg>';controller.open();assert.equal(page.get('grade-progress-avatar').innerHTML,look);
+  assert.equal(page.get('grade-a').value,'80,25');assert.equal(calls,1);assert.equal(controller.hasUnsaved(),true);
+});
 
 test('teacher settings stay lazy, reject a 101-percent total, and publish canonical rows',async()=>{
   const page=dom(),calls=[];

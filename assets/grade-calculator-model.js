@@ -81,3 +81,12 @@ export function calculateGrades(activities, values, goal) {
     pending
   };
 }
+
+// A what-if uses only blank activities; existing grades, including 0, stay put.
+export function projectPendingGrades(activities, values, goal, assumed) {
+  const base = calculateGrades(activities, values, goal);
+  const assumedGrade = parseGrade(assumed, { label: 'La nota del ensayo' });
+  const grades = { ...base.grades };
+  for (const activity of base.pending) grades[activity.id] = assumedGrade;
+  return { base, assumedGrade, projected: calculateGrades(activities, grades, goal) };
+}

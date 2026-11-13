@@ -35,6 +35,8 @@
 .grade-table tr[data-grade-state="pending"] .grade-row-dot{border-color:var(--warning-ink)}
 .grade-table tbody tr:hover{background:var(--paper)}
 .grade-table tbody tr:focus-within{background:var(--paper)}
+.grade-row-contribution{display:block;padding:5px 0 0 15px;color:var(--accent);font-size:12px;font-weight:400;line-height:1.5}
+.grade-row-contribution[hidden]{display:none}
 .grade-percentage-chip{display:inline-flex;align-items:center;justify-content:center;min-width:38px;min-height:24px;padding:0 5px;border-radius:6px;background:var(--champagne);color:var(--warning-ink);font-size:12px;font-weight:800;white-space:nowrap}
 .grade-table th:nth-child(2),.grade-table td:nth-child(2){text-align:right;width:18%;font-variant-numeric:tabular-nums}
 .grade-table th:last-child,.grade-table td:last-child{text-align:right;width:30%;padding-right:0}
@@ -51,6 +53,13 @@
 .grade-progress-value strong{font-size:28px;font-weight:800;letter-spacing:-.7px;overflow-wrap:anywhere}
 .grade-progress-value>span{font-size:13px;color:var(--muted)}
 .grade-progress .grade-progress-count{margin:0;font-size:12px;color:var(--muted)}
+.grade-progress-identity{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.grade-progress-identity>div{min-width:0}
+.grade-progress-avatar{display:block;flex:none;width:44px;height:64px}
+.grade-progress-avatar[hidden]{display:none}
+.grade-progress-avatar svg{display:block;width:42px;height:64px;transform-box:fill-box;transform-origin:center bottom}
+.grade-progress-avatar[data-celebrate="true"] svg{animation:grade-cheer 1.05s ease 1 both}
+@keyframes grade-cheer{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-6px) rotate(-6deg)}50%{transform:translateY(0) rotate(6deg)}75%{transform:translateY(-4px) rotate(0)}}
 .grade-progress-meter{position:relative;padding-top:28px;margin:8px 0}
 .grade-progress-track{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
 .grade-progress-fill{display:block;width:100%;height:100%;background:var(--accent);transform-origin:left;transition:transform .26s ease}
@@ -88,6 +97,33 @@
 .grade-insights .grade-save-row>*{width:100%}
 .grade-save-row .grade-error{margin:0 0 8px}
 .grade-options .grade-text-button{font-size:13px;text-align:left}
+.grade-what-if{margin:0 0 20px;border:1px solid var(--line);border-radius:12px;background:var(--paper);min-width:0}
+.grade-what-if[hidden],.grade-trial-meter[hidden],.grade-trial-body[hidden],.grade-trial-empty[hidden]{display:none}
+.grade-what-if>summary{min-height:52px;padding:10px 14px;align-content:center;font-size:14px;color:var(--deep);cursor:pointer}
+.grade-trial-summary{margin-left:8px;font-size:12px;color:var(--muted)}
+.grade-trial-body{padding:0 16px 16px}
+.grade-trial-empty{margin:0;padding:0 16px 16px;font-size:13px;color:var(--muted)}
+.grade-trial-body>p{margin:8px 0;font-size:13px}
+.grade-trial-context,.grade-trial-legend{color:var(--muted)}
+.grade-trial-body>label{display:block;margin:12px 0 4px;font-size:13px;font-weight:700}
+.grade-trial-controls{display:grid;grid-template-columns:minmax(0,1fr) 78px;align-items:center;gap:12px}
+.grade-what-if input[type="range"]{width:100%;min-height:44px;margin:0;padding:0;background:transparent;border:0;accent-color:var(--accent);cursor:pointer}
+.grade-trial-controls input[type="text"]{text-align:right}
+.grade-trial-scale{display:flex;justify-content:space-between;width:calc(100% - 90px);font-size:12px;color:var(--muted)}
+.grade-trial-score{font-variant-numeric:tabular-nums;color:var(--accent)}
+.grade-trial-score>span:first-child{display:block;font-size:13px;font-weight:700;color:var(--ink)}
+.grade-trial-score strong{font-size:30px;font-weight:800;letter-spacing:-.6px}
+.grade-trial-score>span:last-child{font-size:13px;color:var(--muted)}
+.grade-trial-meter{height:12px;position:relative;overflow:hidden;border:1px solid var(--line);border-radius:4px;background:var(--surface);margin:8px 0}
+.grade-trial-fill,.grade-trial-base{position:absolute;inset:0;transform-origin:left;transition:transform .26s ease}
+.grade-trial-fill{background:var(--opal)}
+.grade-trial-base{background:var(--accent)}
+.grade-trial-body .grade-trial-legend{font-size:12px}
+.grade-trial-outcome{font-weight:700;color:var(--warning-ink)}
+.grade-trial-body[data-met="true"] .grade-trial-outcome{color:var(--accent)}
+.grade-trial-apply{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--accent);border-radius:8px;background:var(--surface);color:var(--accent);font:800 14px/1.4 var(--sans);cursor:pointer}
+.grade-trial-apply:hover:not(:disabled){background:var(--accent-soft);color:var(--deep)}
+.grade-what-if button:disabled{cursor:not-allowed}
 .grade-save-row{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;padding-top:24px}
 .grade-save-row .button.primary{background:var(--deep);border-color:var(--deep);box-shadow:none;transform:none;color:var(--surface)}
 .grade-save-row .button.primary:hover:not(:disabled){background:var(--accent);border-color:var(--accent);box-shadow:none;transform:none}
@@ -128,5 +164,8 @@
 @media(max-width:500px){.grade-percentage-label{display:none}.grade-percentage-short{display:inline}}
 @media(max-width:500px){.grade-progress{padding:18px 20px 14px}.grade-activity-label{gap:6px}.grade-percentage-chip{min-width:32px;padding:0 4px;font-size:11px}.grade-calculator .grade-target{padding:12px}.grade-progress-value strong{font-size:26px}}
 @media(prefers-reduced-motion:reduce){.grade-progress-fill{transition:none}}
+@media(max-width:500px){.grade-trial-summary{display:block;margin-left:16px}.grade-trial-body{padding-inline:12px}}
+@media(prefers-reduced-motion:reduce){.grade-trial-fill,.grade-trial-base{transition:none}.grade-progress-avatar[data-celebrate] svg{animation:none}}
+@media(forced-colors:active){.grade-trial-fill{background:Highlight}.grade-trial-base{background:CanvasText}}
 @media(min-width:851px){.grade-insights[data-sticky="true"]{position:sticky;top:20px}}
 @media(forced-colors:active){.grade-progress-fill{background:Highlight}.grade-goal-marker::after{background:CanvasText;border-color:Canvas}.grade-progress-track{border:1px solid CanvasText}.grade-row-dot{border-color:CanvasText}.grade-table tr[data-grade-state="recorded"] .grade-row-dot{background:CanvasText}}

@@ -48,6 +48,7 @@ test('save errors retain values; conflicts require an explicit reload', async ()
   await page.session.load();page.session.edit({id:'a',value:'80'});fail=true;
   await page.session.save();await page.session.save();
   assert.equal(saves,1);assert.equal(page.session.snapshot().conflict,true);assert.equal(page.session.snapshot().values.a,'80');
+  assert.equal(page.session.fillPending(90),false);assert.equal(Object.hasOwn(page.session.snapshot().values,'b'),false);
   await page.session.load();assert.equal(page.session.snapshot().conflict,false);
 });
 test('invalid values are not sent and failed reload preserves the current simulation', async () => {
@@ -59,4 +60,20 @@ test('invalid values are not sent and failed reload preserves the current simula
 test('updated percentages retain only matching activities and explain recalculation', async () => {
   const page=setup(()=>({scheme:{...copy(scheme),revision:2},draft:{grades:{a:75,old:100},goal:80,revision:4,schemeRevision:1}}));
   await page.session.load();assert.deepEqual(page.session.snapshot().values,{a:75});assert.match(page.session.snapshot().notice,/actualizó/);
+});
+test('applying a what-if fills only current blanks in one edit and waits for an explicit save', async () => {
+  const page=setup(()=>({scheme:copy(scheme),draft:null}));await page.session.load();
+  page.session.edit({id:'a',value:'0'});assert.equal(page.session.fillPending('86,01'),true);
+  assert.deepEqual(page.session.snapshot().values,{a:'0',b:86.01});assert.equal(page.session.snapshot().dirty,true);
+  assert.equal(page.calls.length,1);assert.equal(page.session.fillPending(99),false);
+});
+test('invalid inputs, a save in flight and a replaced context cannot be changed by an applied trial', async () => {
+  const pending=deferred();const page=setup(name=>name==='student_grade_calculator'?{scheme:copy(scheme),draft:null}:pending.promise);
+  await page.session.load();page.session.edit({id:'a',value:'101'});
+  assert.equal(page.session.fillPending(80),false);assert.deepEqual(page.session.snapshot().values,{a:'101'});
+  page.session.edit({id:'a',value:'80'});assert.equal(page.session.fillPending(101),false);
+  const saving=page.session.save();assert.equal(page.session.fillPending(80),false);
+  pending.resolve({revision:1});await saving;
+  page.session.setContext('course-b');assert.equal(page.session.fillPending(80),false);
+  assert.deepEqual(page.session.snapshot().values,{});
 });

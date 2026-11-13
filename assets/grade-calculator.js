@@ -1,16 +1,18 @@
-import { calculateGrades } from './grade-calculator-model.js?v=0.29.2';
-import { createGradeSession } from './grade-calculator-session.js?v=0.29.2';
+import { calculateGrades } from './grade-calculator-model.js?v=0.30.0';
+import { createGradeSession } from './grade-calculator-session.js?v=0.30.0';
+import { createGradeWhatIf } from './grade-what-if.js?v=0.30.0';
 
 const format = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 2 });
 const n = value => format.format(value);
 const pointFormat = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 6 });
 const points = value => pointFormat.format(value);
-export function createStudentGradeCalculator({ host, rpc, signedIn, root = document, win = window }) {
+export function createStudentGradeCalculator({ host, rpc, signedIn, avatar = () => '', root = document, win = window }) {
   let fields = new Map(), goalInput, results, quickResult, errorBox, saveButton, saveStatus, reloadButton, noticeBox;
   let activityRows = new Map(), activityCount, progress;
   let pendingListExpanded = null;
   let calculationExpanded = false;
   let rail, railObserver, railHeight = Infinity;
+  let whatIf, focusedActivity = null;
   const session = createGradeSession({ rpc, signedIn, onChange });
   function disconnectRail() { railObserver?.disconnect(); railObserver = rail = null; railHeight = Infinity; }
   function syncRail() { if (rail) rail.dataset.sticky = String(railHeight <= win.innerHeight - 40); }
@@ -29,13 +31,14 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
     return node;
   }
   function onChange(kind, state) {
-    if (kind === 'reset') { disconnectRail(); host.replaceChildren(); host.removeAttribute('aria-busy'); fields.clear(); activityRows.clear(); progress = null; saveButton = null; pendingListExpanded = null; calculationExpanded = false; return; }
+    if (kind === 'reset') { disconnectRail(); host.replaceChildren(); host.removeAttribute('aria-busy'); fields.clear(); activityRows.clear(); progress = whatIf = null; focusedActivity = null; saveButton = null; pendingListExpanded = null; calculationExpanded = false; return; }
     if (kind === 'loading') {
       host.setAttribute('aria-busy', 'true');
       for (const field of fields.values()) field.disabled = true;
       if (goalInput) goalInput.disabled = true;
       if (saveButton) saveButton.disabled = true;
       if (reloadButton) reloadButton.disabled = true;
+      if (whatIf) whatIf.update({ ...state, saving: true }, null);
       return;
     }
     host.removeAttribute('aria-busy');
@@ -44,11 +47,11 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
   }
   function render(state) {
     disconnectRail();
-    fields = new Map(); activityRows = new Map(); progress = null;
+    fields = new Map(); activityRows = new Map(); progress = whatIf = null; focusedActivity = null;
     goalInput = results = errorBox = saveButton = saveStatus = reloadButton = noticeBox = null;
     const heading = el('div', '', 'grade-heading');
     const headingTitle = el('h2'); headingTitle.append(el('span', 'Calculadora de nota '), el('em', 'final', 'grade-title-accent'));
-    heading.append(headingTitle, el('p', 'Prueba tus notas y descubre qué necesitas para llegar a tu meta.'));
+    heading.append(headingTitle, el('p', 'Construye tu nota: ensaya tus pendientes y descubre cómo llegar a tu meta.'));
     host.className = 'grade-calculator'; host.replaceChildren(heading);
     if (state.phase === 'error') {
       const error = el('p', state.error, 'grade-error'); error.setAttribute('role', 'alert');
@@ -65,6 +68,7 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
     const label = el('label', 'Tu meta final'); label.htmlFor = 'grade-goal';
     goalInput = input('grade-goal', state.goal, 'Tu meta final, de 0 a 100');
     goalInput.addEventListener('input', () => session.edit({ goal: goalInput.value }));
+    goalInput.addEventListener('focus', () => showContribution(null));
     target.append(label, goalInput, el('span', `/ 100 · Referencia del docente: ${n(state.scheme.referenceGrade)}`, 'grade-muted'));
     const hint = el('p', 'Escribe cada nota sobre 100. Deja vacías las que siguen pendientes; escribe 0 si esa fue la nota.', 'grade-muted'); hint.id = 'grade-input-hint';
     const table = el('table', '', 'grade-table');
@@ -83,15 +87,24 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
       const row = el('tr'), name = el('th'); name.scope = 'row';
       const activityLabel = el('span', '', 'grade-activity-label'), dot = el('span', '', 'grade-row-dot');
       dot.setAttribute('aria-hidden', 'true'); activityLabel.append(dot, el('span', activity.name)); name.append(activityLabel);
-      const cell = el('td'), field = input(`grade-${activity.id}`, state.values[activity.id], `Nota de ${activity.name}, de 0 a 100`, 'grade-input-hint');
+      const contribution = el('span', '', 'grade-row-contribution'); contribution.id = `grade-contribution-${activity.id}`; contribution.hidden = true; name.append(contribution);
+      const initialGrade = Object.hasOwn(state.values, activity.id) ? state.values[activity.id] : '';
+      const cell = el('td'), field = input(`grade-${activity.id}`, initialGrade, `Nota de ${activity.name}, de 0 a 100`, `grade-input-hint ${contribution.id}`);
       field.placeholder = 'Pendiente…'; field.addEventListener('input', () => session.edit({ id: activity.id, value: field.value }));
+      field.addEventListener('focus', () => showContribution(activity.id));
       const percentage = el('td'); percentage.append(el('span', `${n(activity.weight)} %`, 'grade-percentage-chip'));
-      fields.set(activity.id, field); activityRows.set(activity.id, { row, dot }); cell.append(field); row.append(name, percentage, cell); body.append(row);
+      fields.set(activity.id, field); activityRows.set(activity.id, { row, dot, contribution }); cell.append(field); row.append(name, percentage, cell); body.append(row);
     }
     quickResult = el('p', '', 'grade-quick-result');
     const entryHeading = el('div', '', 'grade-entry-heading');
     activityCount = el('span', '', 'grade-entry-count'); entryHeading.append(el('h3', 'Tus actividades'), activityCount);
-    table.append(caption, head, body); editor.append(target, quickResult, entryHeading, hint, table);
+    whatIf = createGradeWhatIf({ root, onApply: assumed => {
+      const current = session.snapshot();
+      if (current.courseId !== state.courseId) return;
+      const first = current.scheme.activities.find(activity => !Object.hasOwn(current.values, activity.id) || !String(current.values[activity.id] ?? '').trim());
+      if (session.fillPending(assumed) && first) { const field = fields.get(first.id); field.focus(); field.scrollIntoView?.({ block: 'center', behavior: 'auto' }); }
+    } });
+    table.append(caption, head, body); editor.append(target, quickResult, whatIf.host, entryHeading, hint, table);
     const insights = el('aside', '', 'grade-insights'); insights.setAttribute('aria-label', 'Tu progreso y las notas que necesitas');
     progress = createProgress();
     results = el('section', '', 'grade-results'); results.id = 'grade-results'; results.setAttribute('aria-label', 'Resultado de la simulación');
@@ -122,6 +135,16 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
       railObserver.observe(insights);
     }
   }
+  function showContribution(id) {
+    focusedActivity = id;
+    for (const [activityId, entry] of activityRows) entry.contribution.hidden = activityId !== id;
+  }
+  function refreshAvatar() {
+    if (!progress) return;
+    const markup = avatar();
+    if (progress.character.innerHTML !== markup) progress.character.innerHTML = markup;
+    progress.character.hidden = !markup;
+  }
   function createProgress() {
     const host = el('section', '', 'grade-progress'); host.id = 'grade-progress'; host.setAttribute('aria-label', 'Avance de tu nota final');
     const top = el('div', '', 'grade-progress-top'), status = el('span', '', 'grade-progress-status');
@@ -129,6 +152,8 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
     const valueLine = el('p', '', 'grade-progress-value'), value = el('strong', '—'); value.id = 'grade-progress-value';
     valueLine.setAttribute('aria-hidden', 'true'); valueLine.append(value, el('span', ' / 100 puntos'));
     const count = el('p', '', 'grade-progress-count');
+    const character = el('span', '', 'grade-progress-avatar'); character.id = 'grade-progress-avatar'; character.setAttribute('aria-hidden', 'true');
+    character.innerHTML = avatar(); character.hidden = !character.innerHTML;
     const meter = el('div', '', 'grade-progress-meter'), track = el('div', '', 'grade-progress-track'); track.id = 'grade-progress-track';
     track.setAttribute('role', 'progressbar'); track.setAttribute('aria-label', 'Puntos acumulados en la nota final');
     track.setAttribute('aria-valuemin', '0'); track.setAttribute('aria-valuemax', '100');
@@ -136,14 +161,16 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
     const marker = el('div', '', 'grade-goal-marker'), goal = el('span', '', 'grade-goal-label'); marker.id = 'grade-goal-marker';
     marker.setAttribute('aria-hidden', 'true'); marker.append(goal); meter.append(track, marker);
     const scale = el('div', '', 'grade-progress-scale'); scale.setAttribute('aria-hidden', 'true'); scale.append(el('span', '0'), el('span', '100'));
-    host.append(top, valueLine, count, meter, scale);
-    return { host, title, status, value, count, track, fill, marker, goal };
+    const identity = el('div', '', 'grade-progress-identity'), copy = el('div'); copy.append(valueLine, count); identity.append(copy, character);
+    host.append(top, identity, meter, scale);
+    return { host, title, status, value, count, track, fill, marker, goal, character };
   }
   function updateProgress(result, total) {
     progress.host.dataset.state = result?.status ?? 'invalid';
     progress.track.hidden = progress.marker.hidden = !result;
     if (!result) {
       progress.title.textContent = 'Tu avance';
+      progress.character.dataset.celebrate = 'false';
       progress.value.textContent = '—'; progress.status.textContent = 'Revisa los datos';
       progress.count.textContent = 'Corrige las notas para actualizar tu avance.';
       progress.track.removeAttribute('aria-valuenow'); progress.track.removeAttribute('aria-valuetext');
@@ -151,6 +178,7 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
     }
     const recorded = Object.keys(result.grades).length;
     const achieved = result.status === 'covered' || result.status === 'complete-met';
+    progress.character.dataset.celebrate = String(achieved);
     progress.title.textContent = result.status.startsWith('complete') ? 'Tu nota final estimada' : 'Tu avance';
     progress.value.textContent = points(result.earned);
     progress.status.textContent = achieved ? 'Meta alcanzada' : !recorded ? 'Empieza aquí'
@@ -169,13 +197,17 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
     goalInput.disabled = false;
     for (const [id, field] of fields) {
       field.disabled = false;
-      const { row, dot } = activityRows.get(id);
+      const { row, dot, contribution } = activityRows.get(id);
+      const storedGrade = Object.hasOwn(state.values, id) ? state.values[id] ?? '' : '';
+      if (String(field.value) !== String(storedGrade)) field.value = String(storedGrade);
       try {
         const single = calculateGrades(state.scheme.activities, { [id]: field.value }, 0);
         const recorded = Object.hasOwn(single.grades, id);
         row.dataset.gradeState = recorded ? 'recorded' : 'pending'; dot.title = recorded ? 'Nota ingresada' : 'Pendiente';
+        contribution.textContent = recorded ? `Aporta ${points(single.earned)} puntos a tu nota final.` : 'Pendiente: escribe una nota sobre 100 para ver su aporte.';
         field.removeAttribute('aria-invalid');
-      } catch { row.dataset.gradeState = 'invalid'; dot.title = 'Revisa esta nota'; field.setAttribute('aria-invalid', 'true'); }
+      } catch { row.dataset.gradeState = 'invalid'; dot.title = 'Revisa esta nota'; contribution.textContent = 'Usa una nota entre 0 y 100 para calcular su aporte.'; field.setAttribute('aria-invalid', 'true'); }
+      contribution.hidden = focusedActivity !== id;
     }
     try { result = calculateGrades(state.scheme.activities, state.values, state.goal); goalInput.removeAttribute('aria-invalid'); }
     catch (error) {
@@ -184,6 +216,7 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
       catch { goalInput.setAttribute('aria-invalid', 'true'); }
     }
     updateProgress(result, state.scheme.activities.length);
+    whatIf.update(state, result);
     results.replaceChildren();
     if (!result) {
       quickResult.textContent = 'Corrige las notas para ver tu mínimo.';
@@ -270,7 +303,7 @@ export function createStudentGradeCalculator({ host, rpc, signedIn, root = docum
   win.addEventListener('resize', syncRail);
   return {
     setContext: ({ courseId }) => session.setContext(courseId),
-    open: () => { if (session.snapshot().phase === 'idle') { host.replaceChildren(el('p', 'Cargando calculadora…')); void session.load(); } },
+    open: () => { refreshAvatar(); if (session.snapshot().phase === 'idle') { host.replaceChildren(el('p', 'Cargando calculadora…')); void session.load(); } },
     reset: () => { session.reset(); saveButton = null; },
     hasUnsaved: () => session.snapshot().dirty
   };

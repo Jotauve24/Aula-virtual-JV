@@ -1,8 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseGrade, validateGradeActivities, normalizeGradeDraft, calculateGrades, DEFAULT_GRADE_ACTIVITIES } from '../assets/grade-calculator-model.js';
+import { parseGrade, validateGradeActivities, normalizeGradeDraft, calculateGrades, projectPendingGrades, DEFAULT_GRADE_ACTIVITIES } from '../assets/grade-calculator-model.js';
 
 const plan = [{ id: 'a', name: 'Actividad', weight: 30 }, { id: 'b', name: 'Proyecto', weight: 70 }];
+test('what-if shows 69.5 with 80 and 71 with 86 while preserving the original grades', () => {
+  const activities=[{id:'done',name:'Notas ingresadas',weight:75},{id:'unit',name:'Unidad VI',weight:20},{id:'forum',name:'Foro VI',weight:5}];
+  const values={done:66,unit:'',forum:''},before=structuredClone(values);
+  const low=projectPendingGrades(activities,values,71,80),met=projectPendingGrades(activities,values,71,86);
+  assert.equal(low.base.earned,49.5);assert.equal(low.projected.earned,69.5);assert.equal(low.projected.missing,1.5);
+  assert.equal(met.projected.earned,71);assert.equal(met.projected.status,'complete-met');
+  assert.deepEqual(values,before);assert.deepEqual(met.projected.grades,{done:66,unit:86,forum:86});
+});
+test('what-if preserves recorded zeroes, decimal precision and genuine impossible targets', () => {
+  const rows=[{id:'zero',name:'Con nota cero',weight:10},{id:'done',name:'Con nota',weight:65},{id:'pending',name:'Pendiente',weight:25}];
+  const trial=projectPendingGrades(rows,{zero:0,done:'76,15'},71,'86,01');
+  assert.equal(trial.projected.grades.zero,0);assert.equal(trial.projected.grades.done,76.15);assert.equal(trial.assumedGrade,86.01);
+  assert.equal(trial.projected.earned,71);
+  assert.equal(projectPendingGrades(plan,{a:0},71,100).projected.status,'complete-missed');
+  for(const value of ['','101','oops','-1'])assert.throws(()=>projectPendingGrades(plan,{},71,value));
+  assert.throws(()=>projectPendingGrades(plan,{a:101},71,80));
+});
 test('blank grades stay pending, while zero is a real completed grade', () => {
   const empty = calculateGrades(plan, {}, 71);
   assert.equal(empty.average, null); assert.equal(empty.remainingWeight, 100);
