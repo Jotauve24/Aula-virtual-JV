@@ -1,8 +1,8 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.29.2';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.29.2';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.29.2';
-import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.29.2';
-import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.29.2';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.30.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.30.0';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.30.0';
+import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.30.0';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.30.0';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);

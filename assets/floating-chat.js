@@ -1,4 +1,4 @@
-import { participantAvatar } from './chat-ui.js?v=0.29.2';
+import { participantAvatar } from './chat-ui.js?v=0.30.0';
 
 const node = (tag, css = '', text = '') => {
   const result = document.createElement(tag);

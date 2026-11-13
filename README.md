@@ -507,6 +507,19 @@ privada por perfil y materia. Vacío significa pendiente; 0 sí cuenta como nota
 La simulación se recupera al volver a ingresar con el mismo perfil, también desde
 otro dispositivo. No se publican ni se registran calificaciones oficiales.
 
+«¿Qué pasa si saco…?» permite probar una misma nota en todas las actividades
+pendientes con un deslizador o un valor decimal. El ensayo calcula una nota
+final hipotética sin editar la tabla ni enviar solicitudes. «Probar el mínimo
+necesario» usa el mínimo redondeado hacia arriba; «Usar ensayo en las pendientes»
+rellena solo las casillas vacías y deja el borrador pendiente de guardado explícito.
+Un 0 ingresado se conserva. Los ensayos se recalculan al editar las notas o la meta
+y se descartan al recargar o cambiar de materia. Mientras se guarda o hay un
+conflicto, no se puede aplicar un ensayo.
+
+Al enfocar una nota se muestra su aportación a la nota final. El avatar elegido
+acompaña el progreso y celebra brevemente al alcanzar la meta en la simulación;
+la preferencia de movimiento reducido desactiva esa animación.
+
 La barra **Tu avance** representa los puntos acumulados sobre 100 y marca la
 meta elegida. Se actualiza al editar las notas, distingue los estados de la meta
 y respeta la preferencia de movimiento reducido. Los datos inválidos ocultan

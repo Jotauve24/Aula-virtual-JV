@@ -1,4 +1,4 @@
-import { normalizeGradeDraft, parseGrade, validateGradeActivities } from './grade-calculator-model.js?v=0.29.2';
+import { normalizeGradeDraft, parseGrade, projectPendingGrades, validateGradeActivities } from './grade-calculator-model.js?v=0.30.0';
 
 // A simulation belongs to a verified student/course, never to localStorage.
 export function createGradeSession({ rpc, signedIn, onChange = () => {} }) {
@@ -39,6 +39,17 @@ export function createGradeSession({ rpc, signedIn, onChange = () => {} }) {
     if (id && state.scheme.activities.some(row => row.id === id)) state.values[id] = value;
     state.dirty = true; state.error = ''; emit('edit');
   }
+  function fillPending(assumed) {
+    if (!signedIn() || state.phase !== 'ready' || !state.scheme || state.saving || state.conflict) return false;
+    let trial;
+    try { trial = projectPendingGrades(state.scheme.activities, state.values, state.goal, assumed); }
+    catch (error) { state.error = error.message; emit('error'); return false; }
+    if (!trial.base.pending.length) return false;
+    const values = { ...state.values };
+    for (const activity of trial.base.pending) values[activity.id] = trial.assumedGrade;
+    state.values = values; state.dirty = true; state.error = ''; emit('edit');
+    return true;
+  }
   async function save() {
     if (state.saving || state.conflict || !state.scheme || !state.dirty || !signedIn()) return;
     let grades, goal;
@@ -64,5 +75,5 @@ export function createGradeSession({ rpc, signedIn, onChange = () => {} }) {
       if (current(token, id)) { state.saving = false; emit('saved'); }
     }
   }
-  return { setContext, load, save, edit, snapshot: () => state, reset: () => { epoch++; state = fresh(); emit('reset'); } };
+  return { setContext, load, save, edit, fillPending, snapshot: () => state, reset: () => { epoch++; state = fresh(); emit('reset'); } };
 }

@@ -1,4 +1,4 @@
-import { DEFAULT_GRADE_ACTIVITIES, GRADE_ACTIVITY_LIMIT, parseGrade, validateGradeActivities } from './grade-calculator-model.js?v=0.29.2';
+import { DEFAULT_GRADE_ACTIVITIES, GRADE_ACTIVITY_LIMIT, parseGrade, validateGradeActivities } from './grade-calculator-model.js?v=0.30.0';
 
 const number = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 2 });
 export function createTeacherGradeScheme({ host, rpc, signedIn, root = document, win = window }) {
