@@ -1,23 +1,25 @@
-import './video-guide.js?v=0.27.12';
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.27.12';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.27.12';
-import './embed.js?v=0.27.12';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.27.12';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.27.12';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.27.12';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.27.12';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.27.12';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.27.12';
-import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.27.12';
-import { createChatPushSettings } from './chat-push.js?v=0.27.12';
-import { createRecentCourses } from './recent-courses.js?v=0.27.12';
-import { createPeerMotion } from './peer-motion.js?v=0.27.12';
-import { createClassroomBoard } from './classroom-board.js?v=0.27.12';
-import { createStudentNotices } from './student-notices.js?v=0.27.12';
-import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.27.12';
+import './video-guide.js?v=0.28.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.28.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.28.0';
+import './embed.js?v=0.28.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.28.0';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.28.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.28.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.28.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.28.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.28.0';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.28.0';
+import { createChatPushSettings } from './chat-push.js?v=0.28.0';
+import { createRecentCourses } from './recent-courses.js?v=0.28.0';
+import { createPeerMotion } from './peer-motion.js?v=0.28.0';
+import { createClassroomBoard } from './classroom-board.js?v=0.28.0';
+import { createStudentNotices } from './student-notices.js?v=0.28.0';
+import { createStudentGradeCalculator } from './grade-calculator.js?v=0.28.0';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.28.0';
 
 const $ = selector => document.querySelector(selector);
 const recentCourses = createRecentCourses();
+const gradeCalculator = createStudentGradeCalculator({ host: $('#student-grade-calculator'), rpc: studentRpc, signedIn: studentSignedIn });
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let courseId = '', profile = null, topics = [], selectedTopic = null;
 let courseEntryGeneration = 0;
@@ -374,6 +376,7 @@ async function openStudentCourse(result, code = null, generation = ++courseEntry
   stopRoomPolling();
   completingProfile = false;
   courseId = id; courseName = result.course_name; profile = nextProfile;
+  gradeCalculator.setContext({ courseId: id });
   await courseNotices.enter({ courseId: id, studentId: profile.id, courseName });
   if (!entryCurrent(generation) || courseId !== id) return;
   if (code) {
@@ -1290,6 +1293,7 @@ reducedMotion.addEventListener('change', () => {
   draw(); updateAmbientAnimation();
 });
 function stopRoomPolling() {
+  gradeCalculator.reset();
   clearPersonLocator();
   peerMotion.reset();
   courseNotices.reset();
@@ -1349,7 +1353,8 @@ function setRoomTab(name) {
     else floatingChat.open();
     return;
   }
-  if (!['aula', 'equipo'].includes(name)) return;
+  if (!['aula', 'equipo', 'calculadora'].includes(name)) return;
+  stopAnimation(); path = []; onArrival = null;
   activeTab = name;
   const reviewOpen = $('#enrollment-review-open');
   if (reviewOpen) reviewOpen.hidden = name === 'equipo';
@@ -1359,6 +1364,7 @@ function setRoomTab(name) {
     $('#panel-' + tab.dataset.roomTab).hidden = !selected;
   }
   if (name === 'aula') draw();
+  if (name === 'calculadora') gradeCalculator.open();
   updateAmbientAnimation();
 }
 for (const tab of document.querySelectorAll('[data-room-tab]')) {

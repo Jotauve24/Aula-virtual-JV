@@ -494,3 +494,25 @@ seguir conversando y no la repite automáticamente. La campana permite reintenta
 o desactivar Web Push en cada dispositivo; desactivarlo se respeta al volver a entrar.
 En iPhone/iPad se requiere abrir la app agregada a inicio e iOS 16.4 o posterior.
 Consulta [comportamiento, servidor y verificación](docs/chat-flotante-2026-10-29.md).
+
+## Calculadora de nota final
+
+Desde 0.28.0, cada materia tiene la pestaña **Calculadora**. El docente publica
+las actividades, sus porcentajes (100 % en total) y una meta de referencia desde
+**Calculadora de notas** en la administración de esa materia. La plantilla inicial
+es solo una sugerencia: no modifica ni activa materias existentes automáticamente.
+
+El estudiante introduce notas de 0 a 100, cambia su meta y guarda una simulación
+privada por perfil y materia. Vacío significa pendiente; 0 sí cuenta como nota.
+La simulación se recupera al volver a ingresar con el mismo perfil, también desde
+otro dispositivo. No se publican ni se registran calificaciones oficiales.
+
+El resultado incluye los puntos ponderados, el máximo posible y una nota mínima
+común para todas las actividades pendientes. Los mínimos individuales suponen
+100 en las demás pendientes y se identifican como escenarios independientes.
+Los mínimos se redondean hacia arriba a dos decimales. Un cambio de porcentajes
+o de borrador desde otro dispositivo exige recargar antes de sobrescribir datos.
+
+`tests/grade-calculator.integration.sql` verifica con perfiles ficticios y ROLLBACK
+la propiedad de la materia, aislamiento entre estudiantes, valores inválidos,
+revisiones, recuperación del perfil, materias deshabilitadas y borrado en cascada.
