@@ -512,6 +512,14 @@ meta elegida. Se actualiza al editar las notas, distingue los estados de la meta
 y respeta la preferencia de movimiento reducido. Los datos inválidos ocultan
 el progreso hasta corregirlos; las filas con nota se distinguen de las pendientes.
 
+El editor y el resultado tienen paneles independientes. En computadora, el
+resultado acompaña el desplazamiento solo si cabe completo en la ventana; el
+guardado y sus errores aparecen junto a él. La lista de pendientes permite
+enfocar cada casilla sin modificarla. «Cómo se calcula» explica la aportación de
+una nota y el redondeo; el máximo indica que supone 100 en todo lo pendiente.
+Al completar todas las notas se muestra la diferencia frente a la meta, sin
+repetir un máximo hipotético.
+
 El resultado distingue los puntos que ya se acumulan en la nota final, cuántos
 faltan para alcanzar la meta y qué nota sobre 100 se necesita en cada actividad
 pendiente. La lista de pendientes muestra una misma nota mínima para todas:
