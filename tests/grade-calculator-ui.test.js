@@ -131,11 +131,48 @@ test('the result distinguishes missing final points from the score needed in eac
   assert.match(result,/Necesitas al menos 3.34 sobre 100 en cada una de las 3 actividades pendientes/);
   assert.doesNotMatch(result,/Peso|promedio ponderado|escenarios independientes/);
   const pending=descendants(page.get('grade-results')).find(node=>node.tag==='details');
-  assert.equal(pending.open,true);pending.open=false;pending.dispatch('toggle');
+  assert.equal(pending.open,false);pending.open=true;pending.dispatch('toggle');
   page.get('grade-u6').value='3';page.get('grade-u6').dispatch('input');
-  assert.equal(descendants(page.get('grade-results')).find(node=>node.tag==='details').open,false);
+  assert.equal(descendants(page.get('grade-results')).find(node=>node.tag==='details').open,true);
   page.get('grade-u6').value='10';page.get('grade-u6').dispatch('input');
   assert.match(page.get('grade-results').textContent,/Ya alcanzas tu meta/);
+});
+
+test('pending activities link back to their fields without changing a grade or saving, even after the goal is covered',async()=>{
+  const page=dom();let calls=0;
+  const controller=createStudentGradeCalculator({...page,signedIn:()=>true,rpc:async()=>{calls++;return {scheme:structuredClone(scheme),draft:{grades:{a:100},goal:30,revision:1,schemeRevision:1}};}});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  const jump=descendants(page.host).find(node=>node.tag==='button'&&node.getAttribute('aria-label')==='Escribir nota de Examen');
+  assert.ok(jump);jump.click();assert.equal(page.root.activeElement,page.get('grade-b'));
+  assert.equal(page.get('grade-b').value,'');assert.equal(page.get('grade-a').value,100);assert.equal(calls,1);
+  assert.equal(controller.hasUnsaved(),false);assert.match(page.get('grade-results').textContent,/Ya alcanzas tu meta/);
+  page.get('grade-b').value='0';page.get('grade-b').dispatch('input');
+  assert.equal(descendants(page.host).some(node=>node.tag==='button'&&node.getAttribute('aria-label')==='Escribir nota de Examen'),false);
+  assert.match(page.get('grade-progress').textContent,/2 de 2 actividades con nota/);
+});
+test('a complete result explains the difference from the goal and no longer offers a hypothetical maximum',async()=>{
+  const page=dom();const sample={activities:[{id:'a',name:'Unidad I',weight:5},{id:'b',name:'Resto de actividades',weight:95}],referenceGrade:71,revision:1};
+  const controller=createStudentGradeCalculator({...page,signedIn:()=>true,rpc:async()=>({scheme:sample,draft:{grades:{a:10,b:80},goal:71,revision:1,schemeRevision:1}})});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  assert.equal(page.get('grade-progress-value').textContent,'76.5');assert.match(page.get('grade-progress').textContent,/Tu nota final estimada/);
+  assert.match(page.get('grade-results').textContent,/Superas tu meta de 71 por 5.5 puntos/);
+  assert.doesNotMatch(page.get('grade-results').textContent,/Si sacas 100 en lo pendiente|Necesitas al menos/);
+  assert.match(page.get('grade-results').textContent,/10 × 5 ÷ 100 = 0.5 puntos/);
+  page.get('grade-b').value='';page.get('grade-b').dispatch('input');
+  assert.match(page.get('grade-results').textContent,/Si sacas 100 en lo pendiente95.5 \/ 100/);
+  page.get('grade-b').value='0';page.get('grade-b').dispatch('input');
+  assert.match(page.get('grade-results').textContent,/Te faltan 70.5 puntos/);assert.match(page.get('grade-results').textContent,/Ya ingresaste todas las notas/);
+});
+test('the result follows scrolling only when it fits and a former course observer cannot update the current pane',async()=>{
+  const page=dom(),observers=[];page.win.innerHeight=900;
+  page.win.ResizeObserver=class{constructor(callback){this.callback=callback;observers.push(this);}observe(node){this.node=node;}disconnect(){this.disconnected=true;}};
+  const controller=createStudentGradeCalculator({...page,signedIn:()=>true,rpc:async()=>({scheme:structuredClone(scheme),draft:null})});
+  controller.setContext({courseId:'c1'});controller.open();await settle();
+  const previous=observers[0];previous.callback([{borderBoxSize:[{blockSize:700}]}]);assert.equal(previous.node.dataset.sticky,'true');
+  page.win.innerHeight=600;page.events.get('resize')();assert.equal(previous.node.dataset.sticky,'false');
+  controller.setContext({courseId:'c2'});controller.open();await settle();assert.equal(previous.disconnected,true);
+  previous.callback([{borderBoxSize:[{blockSize:100}]}]);assert.equal(observers[1].node.dataset.sticky,undefined);
+  observers[1].callback([{borderBoxSize:[{blockSize:900}]}]);assert.equal(observers[1].node.dataset.sticky,'false');
 });
 
 test('moving activities preserves edited fields, saves their order and keeps student grades attached to their IDs',async()=>{
