@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createTeacherGradeScheme } from '../assets/teacher-grade-scheme.js';
 import { createStudentGradeCalculator } from '../assets/grade-calculator.js';
+import { calculateGrades } from '../assets/grade-calculator-model.js';
 
 class Element {
   constructor(root, tag) { Object.assign(this,{root,tag,children:[],attributes:{},listeners:new Map(),dataset:{},value:'',text:'',hidden:false,disabled:false}); }
@@ -10,6 +11,12 @@ class Element {
   append(...nodes) { for(const node of nodes){node.parent=this;this.children.push(node);} }
   replaceChildren(...nodes) { this.text='';this.children=[];this.append(...nodes); }
   remove() { this.parent.children=this.parent.children.filter(child=>child!==this); }
+  insertBefore(node,before) {
+    if(node===before)return;
+    if(node.parent)node.remove();
+    const index=before===null?this.children.length:this.children.indexOf(before);
+    assert.ok(index>=0);node.parent=this;this.children.splice(index,0,node);
+  }
   setAttribute(key,value) { this.attributes[key]=String(value); }
   getAttribute(key) { return this.attributes[key]??null; }
   removeAttribute(key) { delete this.attributes[key]; }
@@ -78,4 +85,41 @@ test('failed first load remains retryable after a course context is replaced',as
   controller.setContext({courseId:'c2'});fail=true;controller.open();await settle();
   assert.match(page.host.textContent,/Sin conexión/);assert.ok(page.button('Reintentar'));
   fail=false;page.button('Reintentar').click();await settle();assert.ok(page.get('grade-a'));
+});
+
+test('moving activities preserves edited fields, saves their order and keeps student grades attached to their IDs',async()=>{
+  const page=dom();let stored={activities:[{id:'u1',name:'Unidad I',weight:5},{id:'final',name:'Proyecto final',weight:90},{id:'foro',name:'Foro I',weight:5}],referenceGrade:71,revision:1};
+  const grades={u1:0,final:90,foro:80};
+  const before=calculateGrades(stored.activities,grades,71).earned;
+  const findButton=name=>descendants(page.host).find(node=>node.tag==='button'&&node.getAttribute('aria-label')===name);
+  const order=()=>descendants(page.host).filter(node=>node.tag==='input'&&node.id?.startsWith('scheme-name-')).map(node=>node.id);
+  const controller=createTeacherGradeScheme({...page,signedIn:()=>true,rpc:async(name,body)=>{
+    if(name==='teacher_save_grade_scheme')stored={activities:body.p_activities,referenceGrade:body.p_reference_grade,revision:stored.revision+1};
+    return structuredClone(stored);
+  }});
+  controller.setContext('c1');page.host.open=true;page.host.dispatch('toggle');await settle();
+  const name=page.get('scheme-name-foro'),weight=page.get('scheme-weight-foro');
+  name.value='Foro I · Participación';name.dispatch('input');
+  assert.equal(findButton('Subir Unidad I').disabled,true);assert.equal(findButton('Bajar Foro I · Participación').disabled,true);
+  findButton('Subir Foro I · Participación').click();
+  assert.deepEqual(order(),['scheme-name-u1','scheme-name-foro','scheme-name-final']);
+  assert.equal(page.get('scheme-name-foro'),name);assert.equal(page.get('scheme-weight-foro'),weight);assert.equal(weight.value,5);
+  assert.equal(controller.hasUnsaved(),true);assert.match(page.host.textContent,/posición 2 de 3/);
+  findButton('Subir Foro I · Participación').click();assert.equal(findButton('Subir Foro I · Participación').disabled,true);assert.equal(page.root.activeElement,name);
+  findButton('Bajar Foro I · Participación').click();page.button('Guardar cambios').click();await settle();
+  assert.deepEqual(stored.activities.map(row=>row.id),['u1','foro','final']);assert.equal(calculateGrades(stored.activities,grades,71).earned,before);
+  page.button('Recargar configuración').click();await settle();assert.deepEqual(order(),['scheme-name-u1','scheme-name-foro','scheme-name-final']);
+  assert.equal(page.get('scheme-name-foro').value,'Foro I · Participación');
+});
+
+test('movement boundaries update after adding or removing rows and movement stays blocked while saving',async()=>{
+  const page=dom();let finishSave;let pending;
+  const findButton=name=>descendants(page.host).find(node=>node.tag==='button'&&node.getAttribute('aria-label')===name);
+  const controller=createTeacherGradeScheme({...page,signedIn:()=>true,rpc:name=>name==='teacher_grade_scheme'?structuredClone(scheme):(pending=new Promise(resolve=>{finishSave=resolve;}))});
+  controller.setContext('c1');page.host.open=true;page.host.dispatch('toggle');await settle();
+  findButton('Quitar Examen').click();assert.equal(findButton('Subir Proyecto').disabled,true);assert.equal(findButton('Bajar Proyecto').disabled,true);
+  page.button('Añadir actividad').click();assert.equal(findButton('Bajar Proyecto').disabled,false);assert.equal(findButton('Subir actividad').disabled,false);
+  findButton('Quitar actividad').click();page.get('scheme-weight-a').value='100';page.get('scheme-weight-a').dispatch('input');
+  page.button('Guardar cambios').click();assert.equal(findButton('Subir Proyecto').disabled,true);assert.equal(findButton('Bajar Proyecto').disabled,true);assert.equal(findButton('Quitar Proyecto').disabled,true);
+  finishSave({...scheme,revision:2});await pending;await settle();assert.equal(findButton('Quitar Proyecto').disabled,false);
 });

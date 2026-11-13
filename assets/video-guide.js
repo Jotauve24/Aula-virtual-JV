@@ -1,4 +1,4 @@
-const media = name => new URL('./tutorial/' + name + '?v=0.28.0', import.meta.url).href;
+const media = name => new URL('./tutorial/' + name + '?v=0.28.1', import.meta.url).href;
 
 const GUIDES = {
   student: {
