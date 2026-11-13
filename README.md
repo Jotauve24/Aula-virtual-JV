@@ -502,6 +502,14 @@ las actividades, sus porcentajes (100 % en total) y una meta de referencia desde
 **Calculadora de notas** en la administración de esa materia. La plantilla inicial
 es solo una sugerencia: no modifica ni activa materias existentes automáticamente.
 
+La **vista docente con zombi** también incluye la pestaña **Calculadora**, con el
+mismo editor, progreso y ensayo de pendientes del estudiante. Lee únicamente los
+porcentajes publicados de esa materia mediante `teacher_grade_scheme`. Si aún no
+hay configuración, muestra una plantilla de ejemplo claramente identificada.
+**Guardar prueba** conserva las notas solo en memoria durante esa demostración;
+recargar la página, cambiar de materia o **Reiniciar demostración** las elimina.
+No consulta notas de estudiantes ni publica porcentajes o simulaciones reales.
+
 El estudiante introduce notas de 0 a 100, cambia su meta y guarda una simulación
 privada por perfil y materia. Vacío significa pendiente; 0 sí cuenta como nota.
 La simulación se recupera al volver a ingresar con el mismo perfil, también desde

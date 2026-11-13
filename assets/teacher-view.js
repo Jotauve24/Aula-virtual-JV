@@ -1,17 +1,20 @@
-import './video-guide.js?v=0.30.0';
-import './embed.js?v=0.30.0';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.30.0';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.30.0';
-import { drawWorld, roomTheme } from './world.js?v=0.30.0';
-import { createPeerMotion } from './peer-motion.js?v=0.30.0';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.30.0';
-import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.30.0';
+import './video-guide.js?v=0.30.1';
+import './embed.js?v=0.30.1';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.30.1';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.30.1';
+import { drawWorld, roomTheme, avatarSVG } from './world.js?v=0.30.1';
+import { createTeacherGradePreview } from './teacher-grade-preview.js?v=0.30.1';
+import { createPeerMotion } from './peer-motion.js?v=0.30.1';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.30.1';
+import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.30.1';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const queryCourseId = new URLSearchParams(location.search).get('materia') || '';
 const validId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryCourseId);
 const teacherAvatar = Object.freeze({ character:'zombie' });
+const gradePreview = createTeacherGradePreview({ host: $('#teacher-grade-preview'), rpc, signedIn,
+  avatar: () => avatarSVG({ ...teacherAvatar, direction: 'down' }) });
 let courseId = '', topics = [], layout = createRoomLayout(0), player = { x: 400, y: 300, direction: 'up' };
 let seated = [], peers = [], path = [], animation = 0, previousFrame = 0, lastDraw = 0;
 let lastPresence = 0, state = 'pending', pingRunning = false, roomRunning = false;
@@ -22,6 +25,7 @@ function status(value) { $('#room-status').textContent = value; }
 function fail(value) {
   destroyed = true; clearInterval(pingTimer); clearInterval(roomTimer);
   peerMotion.reset();
+  gradePreview.setContext('');
   cancelAnimationFrame(animation);
   $('#loading').hidden = true; $('#room').hidden = true; $('#error-view').hidden = false;
   renderSelectedTeam();
@@ -257,6 +261,7 @@ async function initialize() {
     if (!overview?.course?.active) {fail('La materia está deshabilitada o no está disponible.');return;}
     const rows = await rpc('course_room',{p_course_id:queryCourseId});
     courseId = queryCourseId;
+    gradePreview.setContext(courseId);
     $('#course-title').textContent = overview.course.name;
     document.title = 'Sala docente · ' + overview.course.name + ' · AulavirtualJV';
     $('#loading').hidden=true;$('#room').hidden=false;
@@ -268,5 +273,7 @@ async function initialize() {
     roomTimer=setInterval(refreshRoom,15000);
   } catch(error) { fail('No se pudo abrir la sala. Comprueba tu sesión docente e inténtalo nuevamente.'); }
 }
-configureTeacherInspector(()=>({ topics, layout, peers, state, courseId, walkTo, status, draw, syncDemo:()=>{renderTopicButtons();renderRoster();} }));
+configureTeacherInspector(()=>({ topics, layout, peers, state, courseId, walkTo, status, draw,
+  openCalculator: () => gradePreview.open(), resetCalculator: () => gradePreview.reset(),
+  syncDemo:()=>{renderTopicButtons();renderRoster();} }));
 initialize();
