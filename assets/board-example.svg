@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1040" viewBox="0 0 800 1040" role="img" aria-labelledby="title desc">
+  <title id="title">Un equipo, muchas ideas</title><desc id="desc">Infografía de ejemplo para la demostración: planificar, investigar, crear y revisar juntos.</desc>
+  <rect width="800" height="1040" fill="#F4E9CD"/>
+  <rect x="36" y="36" width="728" height="968" rx="24" fill="#fff"/>
+  <path d="M60 36h680a24 24 0 0 1 24 24v222H36V60a24 24 0 0 1 24-24" fill="#031926"/>
+  <g font-family="Arial, sans-serif">
+    <text x="76" y="91" fill="#9DBEBB" font-size="20" letter-spacing="3">AULAVIRTUALJV · EJEMPLO</text>
+    <text x="76" y="159" fill="#F4E9CD" font-size="48" font-weight="700">Un equipo,</text>
+    <text x="76" y="218" fill="#FECEA8" font-size="48" font-weight="700">muchas ideas.</text>
+    <path d="M105 350v480" stroke="#9DBEBB" stroke-width="5"/>
+    <g fill="#468189"><circle cx="105" cy="355" r="29"/><circle cx="105" cy="508" r="29"/><circle cx="105" cy="661" r="29"/><circle cx="105" cy="814" r="29"/></g>
+    <g fill="#fff" font-size="25" font-weight="700" text-anchor="middle"><text x="105" y="364">1</text><text x="105" y="517">2</text><text x="105" y="670">3</text><text x="105" y="823">4</text></g>
+    <g fill="#031926" font-size="31" font-weight="700"><text x="165" y="363">Planificamos</text><text x="165" y="516">Investigamos</text><text x="165" y="669">Creamos</text><text x="165" y="822">Revisamos juntos</text></g>
+    <g fill="#2A363B" font-size="24"><text x="165" y="405">Acordamos tareas y fechas.</text><text x="165" y="558">Contrastamos nuestras fuentes.</text><text x="165" y="711">Conectamos lo que aprendimos.</text><text x="165" y="864">Verificamos antes de publicar.</text></g>
+    <path d="M165 440h500M165 593h500M165 746h500" stroke="#9DBEBB"/>
+    <rect x="76" y="918" width="648" height="48" rx="10" fill="#FECEA8"/>
+    <text x="400" y="949" fill="#031926" text-anchor="middle" font-size="21" font-weight="700">Material ficticio para probar el tablero</text>
+  </g>
+</svg>

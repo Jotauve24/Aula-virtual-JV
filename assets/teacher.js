@@ -1,15 +1,18 @@
-import './video-guide.js?v=0.30.1';
-import './embed.js?v=0.30.1';
-import { rpc, signedIn, deleteTeacherCourseFiles } from './supabase-client.js?v=0.30.1';
-import { initTeacherAuth } from './teacher-auth.js?v=0.30.1';
-import { createTeacherNotices } from './teacher-notices.js?v=0.30.1';
-import { createTeacherGradeScheme } from './teacher-grade-scheme.js?v=0.30.1';
-import { allCoursesXlsx } from './teacher-export.js?v=0.30.1';
-import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.30.1';
-import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.30.1';
+import './video-guide.js?v=0.31.0';
+import './embed.js?v=0.31.0';
+import { rpc, signedIn, deleteTeacherCourseFiles, contentBoardFiles } from './supabase-client.js?v=0.31.0';
+import { initTeacherAuth } from './teacher-auth.js?v=0.31.0';
+import { createTeacherNotices } from './teacher-notices.js?v=0.31.0';
+import { createTeacherGradeScheme } from './teacher-grade-scheme.js?v=0.31.0';
+import { createContentBoard } from './content-board.js?v=0.31.0';
+import { allCoursesXlsx } from './teacher-export.js?v=0.31.0';
+import { buildTeacherPresenceStats, presenceAgeLabel } from './teacher-live-model.js?v=0.31.0';
+import { enrollmentReviewIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.31.0';
 const $ = selector => document.querySelector(selector);
 const courseNotices = createTeacherNotices({ rpc, signedIn });
 const gradeScheme = createTeacherGradeScheme({ host: $('#teacher-grade-scheme'), rpc, signedIn });
+const contentBoard = createContentBoard({ host: $('#teacher-content-board-host'), rpc, signedIn, files: contentBoardFiles('teacher') });
+$('#teacher-content-board').addEventListener('toggle', () => { if ($('#teacher-content-board').open) contentBoard.open(); });
 $('#open-course-notices').addEventListener('click', () => courseNotices.open());
 let courseId = '', overview = null;
 let courseRequestGeneration = 0, accountGeneration = 0;
@@ -29,7 +32,7 @@ function stopDashboardPresence() {
   liveGeneration++;
 }
 function show(id) {
-  if (id !== 'detail') gradeScheme.reset();
+  if (id !== 'detail') { gradeScheme.reset(); contentBoard.reset(); $('#teacher-content-board').open = false; }
   for (const name of ['login','verify','password','dashboard','detail']) $(`#${name}`).hidden = name !== id;
   if (id !== 'dashboard' && id !== 'detail') stopDashboardPresence();
 }
@@ -48,7 +51,7 @@ const teacherAccess = initTeacherAuth({ show, onNotice: teacherSuccess, onSigned
   if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(target || '')) await openCourse(target);
 } });
 async function loadCourses() {
-  if (gradeScheme.hasUnsaved() && !confirm('Tienes cambios sin guardar en la calculadora. ¿Volver a tus materias y descartarlos?')) return;
+  if ((gradeScheme.hasUnsaved() || contentBoard.hasUnsaved()) && !confirm('Tienes cambios sin guardar en la calculadora o el tablero. ¿Volver a tus materias y descartarlos?')) return;
   courseNotices.reset();
   clearCourseRename();
   clearStudentMove();
@@ -467,6 +470,8 @@ async function openCourse(id) {
   overview = details;
   courseNotices.setCourse(overview.course, overview.topics);
   gradeScheme.setContext(id);
+  contentBoard.setContext(overview.course.active ? id : '');
+  if ($('#teacher-content-board').open) contentBoard.open();
   overview.topics.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   $('#group-count').value = overview.topics.length; updateGroupPreview();
   show('detail'); $('#course-title').textContent = overview.course.name;
@@ -810,7 +815,7 @@ $('#enter-room').addEventListener('click', () => {
 });
 $('#back').addEventListener('click', () => run(loadCourses));
 $('#logout').addEventListener('click', () => {
-  if (gradeScheme.hasUnsaved() && !confirm('Tienes cambios sin guardar en la calculadora. ¿Cerrar sesión y descartarlos?')) return;
+  if ((gradeScheme.hasUnsaved() || contentBoard.hasUnsaved()) && !confirm('Tienes cambios sin guardar en la calculadora o el tablero. ¿Cerrar sesión y descartarlos?')) return;
   courseNotices.reset();
   ++courseRequestGeneration; ++accountGeneration;
   clearCourseRename();
