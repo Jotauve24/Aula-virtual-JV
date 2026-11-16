@@ -1,5 +1,5 @@
-import { openAuthPage } from './embed.js?v=0.30.1';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.30.1';
+import { openAuthPage } from './embed.js?v=0.31.0';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.31.0';
 
 const sessionKey = 'aula-supabase-session';
 const studentSessionKey = 'aula-student-session';
@@ -283,8 +283,8 @@ export async function deleteTeacherCourseFiles(courseId, paths) {
 
 const attachmentBucket = 'team-attachments';
 const storagePath = path => path.split('/').map(encodeURIComponent).join('/');
-async function storageRequest(path, options = {}) {
-  const token = await accessToken(studentSessionKey);
+async function storageRequest(path, options = {}, key = studentSessionKey) {
+  const token = await accessToken(key);
   const response = await fetch(endpoint('/storage/v1/' + path), {
     ...options, cache: 'no-store', headers: { apikey: SUPABASE_PUBLISHABLE_KEY,
       Authorization: `Bearer ${token}`, ...options.headers }
@@ -316,4 +316,39 @@ export async function downloadTeamFile(attachment) {
   const link = document.createElement('a'); link.href = url; link.download = attachment.name;
   document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+// Same private bucket and course cleanup, with a separate namespace from chat.
+export function contentBoardFiles(role = 'student') {
+  if (!['student', 'teacher'].includes(role)) throw new Error('Tipo de acceso al tablero inválido.');
+  const key = role === 'teacher' ? sessionKey : studentSessionKey;
+  return {
+    async upload(courseId, file, info) {
+      const token = await accessToken(key);
+      const claims = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      const path = `${courseId}/board/${claims.sub}/${crypto.randomUUID()}.${info.extension}`;
+      const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 120000);
+      try {
+        await storageRequest(`object/${attachmentBucket}/${storagePath(path)}`, {
+          method: 'POST', headers: { 'Content-Type': info.type, 'x-upsert': 'false', 'Cache-Control': 'private, max-age=0' },
+          body: file, signal: controller.signal
+        }, key);
+      } catch (error) {
+        // A lost upload response can leave a pending object. Never remove a file
+        // already referenced by a published post; Storage enforces that guard.
+        await storageRequest(`object/${attachmentBucket}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prefixes: [path] }) }, key).catch(() => {});
+        throw error;
+      } finally { clearTimeout(timeout); }
+      return path;
+    },
+    async cancel(path) {
+      await storageRequest(`object/${attachmentBucket}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefixes: [path] }) }, key);
+    },
+    async blob(attachment) {
+      const response = await storageRequest(`object/authenticated/${attachmentBucket}/${storagePath(attachment.path)}`, {}, key);
+      return response.blob();
+    }
+  };
 }

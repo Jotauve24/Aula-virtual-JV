@@ -1,26 +1,28 @@
-import './video-guide.js?v=0.30.1';
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.30.1';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.30.1';
-import './embed.js?v=0.30.1';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.30.1';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.30.1';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.30.1';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.30.1';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.30.1';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.30.1';
-import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.30.1';
-import { createChatPushSettings } from './chat-push.js?v=0.30.1';
-import { createRecentCourses } from './recent-courses.js?v=0.30.1';
-import { createPeerMotion } from './peer-motion.js?v=0.30.1';
-import { createClassroomBoard } from './classroom-board.js?v=0.30.1';
-import { createStudentNotices } from './student-notices.js?v=0.30.1';
-import { createStudentGradeCalculator } from './grade-calculator.js?v=0.30.1';
-import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.30.1';
+import './video-guide.js?v=0.31.0';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.31.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.31.0';
+import './embed.js?v=0.31.0';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile, contentBoardFiles } from './supabase-client.js?v=0.31.0';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.31.0';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.31.0';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.31.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.31.0';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.31.0';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.31.0';
+import { createChatPushSettings } from './chat-push.js?v=0.31.0';
+import { createRecentCourses } from './recent-courses.js?v=0.31.0';
+import { createPeerMotion } from './peer-motion.js?v=0.31.0';
+import { createClassroomBoard } from './classroom-board.js?v=0.31.0';
+import { createStudentNotices } from './student-notices.js?v=0.31.0';
+import { createStudentGradeCalculator } from './grade-calculator.js?v=0.31.0';
+import { createContentBoard } from './content-board.js?v=0.31.0';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.31.0';
 
 const $ = selector => document.querySelector(selector);
 const recentCourses = createRecentCourses();
 const gradeCalculator = createStudentGradeCalculator({ host: $('#student-grade-calculator'), rpc: studentRpc, signedIn: studentSignedIn,
   avatar: () => profile?.avatar ? avatarSVG(profile.avatar) : '' });
+const contentBoard = createContentBoard({ host: $('#student-content-board'), rpc: studentRpc, signedIn: studentSignedIn, files: contentBoardFiles('student') });
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let courseId = '', profile = null, topics = [], selectedTopic = null;
 let courseEntryGeneration = 0;
@@ -378,6 +380,7 @@ async function openStudentCourse(result, code = null, generation = ++courseEntry
   completingProfile = false;
   courseId = id; courseName = result.course_name; profile = nextProfile;
   gradeCalculator.setContext({ courseId: id });
+  contentBoard.setContext(id);
   await courseNotices.enter({ courseId: id, studentId: profile.id, courseName });
   if (!entryCurrent(generation) || courseId !== id) return;
   if (code) {
@@ -1295,6 +1298,7 @@ reducedMotion.addEventListener('change', () => {
 });
 function stopRoomPolling() {
   gradeCalculator.reset();
+  contentBoard.reset();
   clearPersonLocator();
   peerMotion.reset();
   courseNotices.reset();
@@ -1354,7 +1358,7 @@ function setRoomTab(name) {
     else floatingChat.open();
     return;
   }
-  if (!['aula', 'equipo', 'calculadora'].includes(name)) return;
+  if (!['aula', 'equipo', 'calculadora', 'tablero'].includes(name)) return;
   stopAnimation(); path = []; onArrival = null;
   activeTab = name;
   const reviewOpen = $('#enrollment-review-open');
@@ -1366,6 +1370,7 @@ function setRoomTab(name) {
   }
   if (name === 'aula') draw();
   if (name === 'calculadora') gradeCalculator.open();
+  if (name === 'tablero') contentBoard.open();
   updateAmbientAnimation();
 }
 for (const tab of document.querySelectorAll('[data-room-tab]')) {
