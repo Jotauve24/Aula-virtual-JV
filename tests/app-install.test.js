@@ -11,7 +11,7 @@ test('installed app has the exact requested name and a stable private-data-free 
  assert.ok(manifest.icons.some(icon=>icon.purpose.includes('maskable')));
 });
 test('all app entry points provide the same install identity and versioned Apple icon',()=>{
- for(const file of ['index.html','live.html','docente.html','docente-sala.html']){
+ for(const file of ['index.html','live.html','docente.html','docente-sala.html','biblioteca.html']){
   const html=read(file);assert.match(html,/<meta name="application-name" content="AulavirtualJV">/);
   assert.match(html,/<meta name="apple-mobile-web-app-title" content="AulavirtualJV">/);
   const link=html.match(/<link rel="manifest" href="([^"]+)"/)[1];assert.equal(new URL(link,root).searchParams.get('v'),version);

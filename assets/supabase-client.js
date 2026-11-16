@@ -1,5 +1,5 @@
-import { openAuthPage } from './embed.js?v=0.31.0';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.31.0';
+import { openAuthPage } from './embed.js?v=0.32.0';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.32.0';
 
 const sessionKey = 'aula-supabase-session';
 const studentSessionKey = 'aula-student-session';
@@ -254,6 +254,11 @@ export function studentSignOut() {
   saveSession(null, studentSessionKey);
 }
 export function signedIn() { return !!session()?.access_token; }
+// Cache invalidation only. RPCs and Storage still enforce every permission.
+export function sessionUserId(role) {
+  if (!['teacher', 'student'].includes(role)) return null;
+  return teacherIdentity(session(role === 'student' ? studentSessionKey : sessionKey));
+}
 export function signOut() {
   teacherSignInGeneration++;
   saveSession(null);

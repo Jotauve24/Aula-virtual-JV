@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="application-name" content="AulavirtualJV">
+  <meta name="apple-mobile-web-app-title" content="AulavirtualJV">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.webmanifest?v=0.32.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png?v=0.32.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png?v=0.32.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbf8ef">
+  <meta name="description" content="Biblioteca de AulavirtualJV: consulta y comparte notas, infografías, documentos y videos de tus materias.">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://zzxaarehltihndazabfj.supabase.co wss://zzxaarehltihndazabfj.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Biblioteca · AulavirtualJV</title>
+  <script src="./assets/page-shell.js?v=0.32.0"></script>
+  <link rel="icon" href="./assets/favicon.svg?v=0.32.0" type="image/svg+xml">
+  <link rel="preload" as="font" href="./assets/fonts/nunito-latin.woff" type="font/woff" crossorigin>
+  <link rel="stylesheet" href="./assets/palette.css?v=0.32.0">
+  <link rel="stylesheet" href="./assets/styles.css?v=0.32.0">
+  <link rel="stylesheet" href="./assets/brand.css?v=0.32.0">
+  <link rel="stylesheet" href="./assets/page-shell.css?v=0.32.0">
+  <link rel="stylesheet" href="./assets/content-board.css?v=0.32.0">
+  <link rel="stylesheet" href="./assets/library.css?v=0.32.0">
+  <link rel="stylesheet" href="./assets/site-visits.css?v=0.32.0">
+  <link rel="modulepreload" data-aula-module href="./assets/library.js?v=0.32.0">
+  <link rel="modulepreload" data-aula-module href="./assets/site-visits.js?v=0.32.0">
+</head>
+<body class="campus-theme library-page">
+  <a class="skip-link" href="#main">Ir al contenido</a>
+  <header class="library-header">
+    <a class="brand" href="./" aria-label="AulavirtualJV, volver al inicio">
+      <img class="brand-mark" src="./assets/favicon.svg?v=0.32.0" width="40" height="40" alt="" aria-hidden="true">
+      <span><span class="brand-name">Aula<span class="brand-light">virtual</span><img class="brand-script" src="./assets/brand-jv.svg?v=0.32.0" width="38" height="30" alt="JV"></span><small>Un espacio para compartir lo que aprendemos</small></span>
+    </a>
+    <nav aria-label="Navegación principal">
+      <span class="site-visits" data-site-visits role="status" aria-live="polite" aria-atomic="true" title="Visitas únicas: una por IP desde la activación."><span class="site-visits-dot" aria-hidden="true"></span><strong data-visit-total>—</strong></span>
+      <a href="./">Inicio</a><a id="library-back" href="./">Entrar a mi aula</a><a href="./docente.html">Acceso docente</a>
+      <button id="expand-aula" class="button secondary entry-expand" type="button" aria-label="Ampliar aula" title="Ampliar aula"><svg data-fullscreen-icon viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
+    </nav>
+  </header>
+  <main id="main" class="library-shell" tabindex="-1">
+    <div class="library-heading">
+      <div><h1>Biblioteca <em>compartida.</em></h1><p>Notas, infografías, lecturas y videos para seguir aprendiendo.</p></div>
+      <div class="library-account"><span id="library-role-label"></span><div id="library-role-wrap" class="library-role-wrap" hidden><label for="library-role">Ver como</label><select id="library-role" name="library-role" autocomplete="off"></select></div><button id="library-reset-demo" class="button secondary" type="button" hidden>Reiniciar ejemplo</button></div>
+    </div>
+    <p id="library-demo-notice" class="library-demo-notice" hidden>Biblioteca de ejemplo · Las materias y las publicaciones son ficticias. Tus pruebas solo cambian esta demostración. <a href="./biblioteca.html">Abrir mi biblioteca</a></p>
+    <p id="library-status" class="library-status" role="status" aria-live="polite"></p>
+    <section id="library-gate" class="library-state" hidden>
+      <h2>Tus recursos, en un solo lugar.</h2><p>Entra a una materia o accede como docente para consultar y compartir su contenido en la biblioteca.</p>
+      <div class="library-state-actions"><a class="button primary" href="./">Entrar a mi materia</a><a class="button secondary" href="./docente.html">Acceso docente</a></div>
+      <a class="library-example-link" href="./biblioteca.html?demo=1">Ver una biblioteca de ejemplo →</a>
+    </section>
+    <section id="library-error" class="library-state library-error" role="alert" hidden><h2>No se pudo cargar la biblioteca</h2><p id="library-error-text"></p><button id="library-retry" class="button secondary" type="button">Reintentar</button></section>
+    <section id="library-empty" class="library-state" hidden><h2>Aún no tienes materias aquí.</h2><p>Las materias a las que tienes acceso aparecerán en esta biblioteca. Entra con el código de tu docente o administra tus materias desde el panel.</p><div class="library-state-actions"><a class="button primary" href="./">Entrar a una materia</a><a class="button secondary" href="./docente.html">Ir al panel docente</a></div></section>
+    <div id="library-workspace" class="library-workspace" hidden>
+      <aside class="library-collections" aria-label="Colecciones de la biblioteca">
+        <h2>Mis materias</h2>
+        <label class="library-filter" id="library-filter-wrap">Buscar materia<input id="library-filter" name="library-filter" type="search" maxlength="160" autocomplete="off" placeholder="Nombre de la materia…"></label>
+        <nav id="library-course-list" aria-label="Materias de mi biblioteca"></nav>
+        <p id="library-filter-empty" hidden>No hay materias con ese nombre.</p>
+        <p>Elige una materia para consultar lo que comparten sus equipos.</p>
+        <div class="library-course-select"><label for="library-course">Materia</label><select id="library-course" name="library-course" autocomplete="off"></select></div>
+      </aside>
+      <div class="library-content-pane">
+        <p id="library-selection-hint" class="library-selection-hint" role="status"></p>
+        <section id="library-resources" class="library-resources" aria-label="Recursos de la materia" hidden><p id="library-current-course" class="library-current-course"></p><div id="library-content"></div></section>
+      </div>
+    </div>
+  </main>
+  <footer class="library-footer">AulavirtualJV · Un lugar para consultar, crear y compartir.</footer>
+</body>
+</html>

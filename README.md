@@ -20,26 +20,29 @@ Aula web para organizar los equipos de una materia con un espacio visual por tem
 - Chat privado flotante por grupo, avatares pixel, burbuja de pendientes y archivos adjuntos en almacenamiento protegido.
 - Avisos Web Push opcionales para Android y para la app agregada a inicio en iPhone/iPad; la primera apertura de Chat solicita permiso y la campana permite ajustar o desactivar los avisos.
 - Panel docente para materias, grupos, inscripciones y presencia reciente.
-- Tablero de contenidos compartido entre todos los equipos de una materia, con archivos privados e indicaciones del docente.
+- Biblioteca independiente, organizada por materias, con recursos compartidos entre equipos, archivos privados e indicaciones del docente.
 - Recuperación voluntaria mediante correo verificado.
 - Interfaz accesible, adaptable y con movimiento reducido.
 - Contador general de visitas únicas por IP, compartido entre la portada y las aulas y actualizado en tiempo real.
 
 > La plataforma protege los datos mediante permisos de Supabase. Los códigos de materia no deben publicarse en el repositorio ni compartirse fuera del grupo correspondiente.
 
-## Tablero de contenidos (0.31.0)
+## Biblioteca independiente (0.32.0)
 
-La pestaña **Tablero** reúne notas, infografías, documentos, presentaciones,
-libros y enlaces de video. Todos los equipos de la misma materia pueden
-consultarlo. Cada publicación conserva autor, equipo y fecha; el autor puede
-editarla, retirarla y restaurarla.
+**Biblioteca** abre un apartado propio desde la portada, el panel o la cabecera
+del aula. Reúne notas, infografías, documentos, presentaciones, libros y enlaces
+de video, organizados por materia. El docente encuentra sus materias activas;
+el estudiante, aquellas a las que ya tiene acceso desde su cuenta.
 
-En el panel docente, **Tablero de contenidos → Indicaciones y permisos** permite
-explicar la actividad y abrir o cerrar las publicaciones estudiantiles. El
-docente puede destacar, ocultar y restaurar publicaciones. Los archivos son
-privados, de hasta 10 MB; los videos se comparten mediante enlace HTTPS.
-La sala docente incluye ejemplos ficticios para probar el mural en modo zombi.
-[Funcionamiento, permisos y verificación](docs/tablero-contenidos.md).
+Los recursos conservan sus autores, equipos, archivos y permisos. Se puede
+publicar, buscar, filtrar, destacar y moderar desde la biblioteca. Las indicaciones
+docentes y el cierre de publicaciones están en **Indicaciones y permisos**.
+Los archivos son privados, de hasta 10 MB; los videos se comparten por HTTPS.
+
+El contenido de 0.31.0 continúa disponible; se retiró su pestaña del aula y su
+panel incrustado. La calculadora mantiene su espacio dentro de la materia.
+**Biblioteca de ejemplo** ofrece una demostración local con dos materias ficticias.
+[Funcionamiento y verificación](docs/tablero-contenidos.md).
 
 ## Visitas únicas (0.27.9)
 

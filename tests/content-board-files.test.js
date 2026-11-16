@@ -20,7 +20,7 @@ function app({ failUpload = false } = {}) {
     location: { hash: '', pathname: '/live.html', search: '', href: 'https://aula.example/live.html', origin: 'https://aula.example' },
     history: { replaceState() {} }, localStorage, sessionStorage: { removeItem() {} }, fetch, atob, Date, URL, URLSearchParams,
     crypto: { randomUUID: () => '00000000-0000-4000-8000-000000000004' }, AbortController, setTimeout, clearTimeout });
-  const api = vm.runInContext(code + '\n({contentBoardFiles})', context);
+  const api = vm.runInContext(code + '\n({contentBoardFiles,sessionUserId})', context);
   return { api, calls, values };
 }
 test('board upload chooses the matching student or teacher session and a separate chat namespace', async () => {
@@ -46,4 +46,15 @@ test('an interrupted upload tries to remove only that pending object without los
   assert.equal(page.calls.length, 2); assert.equal(page.calls[1].options.method, 'DELETE');
   const prefixes = JSON.parse(page.calls[1].options.body).prefixes; assert.equal(prefixes.length, 1); assert.ok(prefixes[0].startsWith(`${course}/board/${student}/`));
   assert.equal(page.values.size, 2);
+});
+
+test('library cache identity follows account changes and treats a token refresh as the same person', () => {
+  const page = app();
+  assert.equal(page.api.sessionUserId('teacher'), teacher); assert.equal(page.api.sessionUserId('student'), student);
+  page.values.set('aula-supabase-session', JSON.stringify({ access_token: token(teacher), expires_at: 4102444900 }));
+  assert.equal(page.api.sessionUserId('teacher'), teacher);
+  page.values.set('aula-supabase-session', JSON.stringify({ access_token: token(student), expires_at: 4102444900 }));
+  assert.equal(page.api.sessionUserId('teacher'), student);
+  page.values.delete('aula-supabase-session'); assert.equal(page.api.sessionUserId('teacher'), null);
+  assert.equal(page.calls.length, 0);
 });
