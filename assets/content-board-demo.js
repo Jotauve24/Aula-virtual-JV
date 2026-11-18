@@ -1,4 +1,4 @@
-import { BOARD_PAGE_SIZE, boardDraft, mergeBoardPosts } from './content-board-model.js?v=0.31.0';
+import { BOARD_PAGE_SIZE, boardDraft, mergeBoardPosts } from './content-board-model.js?v=0.32.0';
 
 // Every demo post and selected file stays in this browser instance.
 export function createContentBoardDemo({ crypto = globalThis.crypto, now = () => new Date().toISOString() } = {}) {

@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 
 const root=fileURLToPath(new URL('..',import.meta.url));
 const assetRoot=join(root,'assets');
-const htmlPages=['index.html','live.html','docente.html','docente-sala.html'];
+const htmlPages=['index.html','live.html','docente.html','docente-sala.html','biblioteca.html'];
 const walk=directory=>readdirSync(directory).flatMap(name=>{
   const path=join(directory,name);
   return statSync(path).isDirectory()?walk(path):[path];
@@ -101,7 +101,8 @@ test('each persistent host declares the original application modules in page ord
     'index.html':['app.js'],
     'live.html':['live.js','student-recovery.js','retro-audio.js'],
     'docente.html':['teacher.js'],
-    'docente-sala.html':['teacher-view.js','retro-audio.js']
+    'docente-sala.html':['teacher-view.js','retro-audio.js'],
+    'biblioteca.html':['library.js']
   };
   for(const html of htmlPages){
     const source=readFileSync(join(root,html),'utf8');

@@ -88,7 +88,7 @@ test('all internal pages live in one accessible frame with fullscreen permission
 test('navigation keeps the fullscreen owner and frame while updating the real address and title', async () => {
   const page = shell(); const frame = page.frame, root = page.document.documentElement;
   page.document.fullscreenElement = root;
-  for (const path of ['docente.html', 'docente-sala.html?materia=fictional', 'live.html?login=1', './']) {
+  for (const path of ['docente.html', 'docente-sala.html?materia=fictional', 'live.html?login=1', 'biblioteca.html?demo=1', './']) {
     await page.load(path, path);
     assert.equal(page.children[0], frame);
     assert.equal(page.document.fullscreenElement, root);

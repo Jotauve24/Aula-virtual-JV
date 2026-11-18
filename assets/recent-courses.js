@@ -1,4 +1,4 @@
-import { normalizeCode } from './model.js?v=0.31.0';
+import { normalizeCode } from './model.js?v=0.32.0';
 
 export const RECENT_COURSES_KEY = 'aula-recent-course-codes';
 const LAST_CODE = 'aula-student-course-code';

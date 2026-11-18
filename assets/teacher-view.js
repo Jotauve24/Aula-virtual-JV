@@ -1,14 +1,12 @@
-import './video-guide.js?v=0.31.0';
-import './embed.js?v=0.31.0';
-import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.31.0';
-import { configured, signedIn, rpc } from './supabase-client.js?v=0.31.0';
-import { drawWorld, roomTheme, avatarSVG } from './world.js?v=0.31.0';
-import { createTeacherGradePreview } from './teacher-grade-preview.js?v=0.31.0';
-import { createContentBoard } from './content-board.js?v=0.31.0';
-import { createContentBoardDemo } from './content-board-demo.js?v=0.31.0';
-import { createPeerMotion } from './peer-motion.js?v=0.31.0';
-import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.31.0';
-import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.31.0';
+import './video-guide.js?v=0.32.0';
+import './embed.js?v=0.32.0';
+import { configureTeacherInspector, inspectTopic, renderSelectedTeam, isDemoTeam, demoTopicName } from './teacher-inspector.js?v=0.32.0';
+import { configured, signedIn, rpc } from './supabase-client.js?v=0.32.0';
+import { drawWorld, roomTheme, avatarSVG } from './world.js?v=0.32.0';
+import { createTeacherGradePreview } from './teacher-grade-preview.js?v=0.32.0';
+import { createPeerMotion } from './peer-motion.js?v=0.32.0';
+import { createRoomLayout, findPath, canWalkSegment, isWalkable } from './world-layout.js?v=0.32.0';
+import { renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.32.0';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -17,8 +15,6 @@ const validId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const teacherAvatar = Object.freeze({ character:'zombie' });
 const gradePreview = createTeacherGradePreview({ host: $('#teacher-grade-preview'), rpc, signedIn,
   avatar: () => avatarSVG({ ...teacherAvatar, direction: 'down' }) });
-const boardDemo = createContentBoardDemo();
-const boardPreview = createContentBoard({ host: $('#teacher-board-preview'), rpc: boardDemo.request, files: boardDemo.files, signedIn, demo: true });
 let courseId = '', topics = [], layout = createRoomLayout(0), player = { x: 400, y: 300, direction: 'up' };
 let seated = [], peers = [], path = [], animation = 0, previousFrame = 0, lastDraw = 0;
 let lastPresence = 0, state = 'pending', pingRunning = false, roomRunning = false;
@@ -30,7 +26,6 @@ function fail(value) {
   destroyed = true; clearInterval(pingTimer); clearInterval(roomTimer);
   peerMotion.reset();
   gradePreview.setContext('');
-  boardPreview.reset(); boardDemo.setContext('');
   cancelAnimationFrame(animation);
   $('#loading').hidden = true; $('#room').hidden = true; $('#error-view').hidden = false;
   renderSelectedTeam();
@@ -267,7 +262,6 @@ async function initialize() {
     const rows = await rpc('course_room',{p_course_id:queryCourseId});
     courseId = queryCourseId;
     gradePreview.setContext(courseId);
-    boardDemo.setContext(courseId); boardPreview.setContext(courseId);
     $('#course-title').textContent = overview.course.name;
     document.title = 'Sala docente · ' + overview.course.name + ' · AulavirtualJV';
     $('#loading').hidden=true;$('#room').hidden=false;
@@ -281,6 +275,5 @@ async function initialize() {
 }
 configureTeacherInspector(()=>({ topics, layout, peers, state, courseId, walkTo, status, draw,
   openCalculator: () => gradePreview.open(), resetCalculator: () => gradePreview.reset(),
-  openBoard: () => boardPreview.open(), resetBoard: () => { boardDemo.reset(); boardPreview.reset(); boardPreview.setContext(courseId); },
   syncDemo:()=>{renderTopicButtons();renderRoster();} }));
 initialize();

@@ -1,8 +1,8 @@
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.31.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.31.0';
-import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.31.0';
-import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.31.0';
-import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.31.0';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.32.0';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.32.0';
+import { createDemoExperience, DEMO_STUDENT } from './teacher-demo-state.js?v=0.32.0';
+import { createTeamNameControl, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.32.0';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.32.0';
 
 // Same visual workflow as students, but entirely local to the teacher's browser.
 const $=selector=>document.querySelector(selector);
@@ -58,7 +58,7 @@ function closeTopic(){
 }
 function changeTab(tab) {
   if(tab==='chat'){floatingChat.open();return;}
-  if(!['aula','equipo','calculadora','tablero'].includes(tab))return;
+  if(!['aula','equipo','calculadora'].includes(tab))return;
   activeTab=tab;
   for(const button of document.querySelectorAll('[data-admin-tab]')) {
     const selected=button.dataset.adminTab===tab;
@@ -69,7 +69,6 @@ function changeTab(tab) {
   renderDemoNotice();
   if(tab==='aula')context().draw?.();
   if(tab==='calculadora')context().openCalculator?.();
-  if(tab==='tablero')context().openBoard?.();
 }
 document.querySelectorAll('[data-admin-tab]').forEach(button=>{
   button.addEventListener('click',()=>changeTab(button.dataset.adminTab));
@@ -92,7 +91,6 @@ export function resetDemonstration(){
   floatingChat.reset();
   demo.reset();
   context().resetCalculator?.();
-  context().resetBoard?.();
   nameControl=null;nameControlKey='';
   demoUnread=0;
   demoChatPaint=null;

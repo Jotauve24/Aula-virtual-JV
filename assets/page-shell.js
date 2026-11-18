@@ -4,7 +4,7 @@
 (() => {
   const scriptURL = document.currentScript.src;
   const baseURL = new URL('../', scriptURL);
-  const pages = new Set(['', 'index.html', 'live.html', 'docente.html', 'docente-sala.html']);
+  const pages = new Set(['', 'index.html', 'live.html', 'docente.html', 'docente-sala.html', 'biblioteca.html']);
   const isContent = (() => {
     try { return !!window.frameElement?.hasAttribute('data-aula-content'); }
     catch { return false; }

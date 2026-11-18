@@ -1,6 +1,6 @@
-import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.31.0';
-import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.31.0';
-import { createContentBoardSession } from './content-board-session.js?v=0.31.0';
+import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.32.0';
+import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.32.0';
+import { createContentBoardSession } from './content-board-session.js?v=0.32.0';
 
 export function createContentBoard({ host, rpc, files, signedIn, demo = false, root = document, win = window }) {
   let courseId = '', epoch = 0, nodes = null, searchTimer = 0, observer = null;
@@ -26,13 +26,13 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, r
     host.replaceChildren();
   }
   function build() {
-    const heading = el('div', '', 'cb-heading'), title = el('h2'); title.append(el('span', 'Tablero de '), el('em', 'contenidos'));
+    const heading = el('div', '', 'cb-heading'), title = el('h2'); title.append(el('span', 'Recursos '), el('em', 'compartidos'));
     const intro = el('div'); intro.append(title, el('p', 'Comparte lo que crea tu equipo. Descubre las ideas de los demás.'));
     const actions = el('div', '', 'cb-main-actions');
     const publish = button('Publicar contenido', () => openComposer(), 'button primary');
-    const refresh = button('↻', () => void session.load(), 'cb-refresh'); refresh.setAttribute('aria-label', 'Actualizar tablero'); refresh.title = 'Actualizar tablero';
+    const refresh = button('↻', () => void session.load(), 'cb-refresh'); refresh.setAttribute('aria-label', 'Actualizar recursos'); refresh.title = 'Actualizar recursos';
     actions.append(publish, refresh); heading.append(intro, actions);
-    const audience = el('p', demo ? 'Vista de prueba docente · Las publicaciones y los archivos de esta demostración son ficticios.'
+    const audience = el('p', demo ? 'Contenido de ejemplo · Tus pruebas no modifican las publicaciones reales.'
       : 'Compartido con todos los equipos de esta materia.', 'cb-audience');
     const settings = el('details', '', 'cb-settings'); settings.append(el('summary', 'Indicaciones y permisos'));
     const configForm = el('form', '', 'cb-settings-form'), instructionsField = field('cb-instructions', '¿Qué deben compartir los estudiantes?', 'textarea');
