@@ -83,7 +83,9 @@ function render(kind, state) {
 }
 function start() {
   const query = new URLSearchParams(location.search);
-  const roles = available(); signature = accountSignature();
+  const roles = available(), nextSignature = accountSignature();
+  if (signature && signature !== nextSignature) { filter = ''; $('#library-filter').value = ''; }
+  signature = nextSignature;
   const role = demo ? 'demo' : libraryRole(query.get('vista') === 'docente' ? 'teacher' : query.get('vista') === 'estudiante' ? 'student' : '', roles);
   const select = $('#library-role'); select.replaceChildren();
   for (const value of roles) { const option = document.createElement('option'); option.value = value; option.textContent = roleNames[value]; select.append(option); }
@@ -117,5 +119,5 @@ function checkAccount() {
 window.addEventListener('focus', checkAccount);
 window.addEventListener('pageshow', () => { if (catalog.snapshot().phase === 'idle') start(); });
 window.addEventListener('storage', event => { if (event.key === null || ['aula-supabase-session', 'aula-student-session'].includes(event.key)) checkAccount(); });
-window.addEventListener('pagehide', () => { catalog.reset(); for (const board of boards.values()) board.reset(); examples.clear(); });
+window.addEventListener('pagehide', () => { catalog.reset(); for (const board of boards.values()) board.reset(); boards.clear(); examples.clear(); });
 start();
