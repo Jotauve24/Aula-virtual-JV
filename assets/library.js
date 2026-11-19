@@ -1,9 +1,9 @@
-import './embed.js?v=0.33.0';
-import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.33.0';
-import { createContentBoard } from './content-board.js?v=0.33.0';
-import { createContentBoardDemo } from './content-board-demo.js?v=0.33.0';
-import { createLibrarySession, libraryRole } from './library-session.js?v=0.33.0';
-import { mergeBoardPosts } from './content-board-model.js?v=0.33.0';
+import './embed.js?v=0.33.1';
+import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.33.1';
+import { createContentBoard } from './content-board.js?v=0.33.1';
+import { createContentBoardDemo } from './content-board-demo.js?v=0.33.1';
+import { createLibrarySession, libraryRole } from './library-session.js?v=0.33.1';
+import { mergeBoardPosts } from './content-board-model.js?v=0.33.1';
 
 const $ = selector => document.querySelector(selector), params = new URLSearchParams(location.search);
 const demo = params.get('demo') === '1';
@@ -72,7 +72,7 @@ function render(kind, state) {
   if (['reset', 'loading', 'error'].includes(kind)) clearBoard();
   const ready = state.phase === 'ready';
   $('#library-workspace').hidden = !ready;
-  $('#library-status').textContent = state.phase === 'loading' ? 'Cargando tus materias…' : '';
+  $('#library-status').textContent = state.phase === 'loading' ? 'Cargando categorías…' : '';
   $('#library-error').hidden = state.phase !== 'error'; $('#library-error-text').textContent = state.error;
   $('#library-empty').hidden = true;
   if (!ready) return;
@@ -82,7 +82,7 @@ function render(kind, state) {
   select.value = state.selected; renderCourses(state);
   $('#library-selection-hint').hidden = !!state.selected;
   $('#library-selection-hint').textContent = state.unavailable
-    ? 'La materia de ese enlace no está disponible para esta cuenta. Elige una de tus materias.' : 'Elige una materia para explorar sus recursos.';
+    ? 'La categoría de ese enlace no está disponible para esta cuenta. Elige otra categoría o explora toda la biblioteca.' : 'Elige una categoría para explorar sus recursos.';
   const shared = state.selected === 'all';
   const course = shared ? { id: 'all', name: 'Contenido de toda la comunidad' } : state.courses.find(row => row.id === state.selected);
   if (!course) { clearBoard(); return; }

@@ -1,7 +1,7 @@
-import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.33.0';
-import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.33.0';
-import { createContentBoardSession } from './content-board-session.js?v=0.33.0';
-import { libraryCourseName } from './library-session.js?v=0.33.0';
+import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.33.1';
+import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.33.1';
+import { createContentBoardSession } from './content-board-session.js?v=0.33.1';
+import { libraryCourseName } from './library-session.js?v=0.33.1';
 
 export function createContentBoard({ host, rpc, files, signedIn, demo = false, showGroups = true, shared = false, root = document, win = window }) {
   let courseId = '', epoch = 0, nodes = null, searchTimer = 0, observer = null;
@@ -35,7 +35,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     const refresh = button('↻', () => void session.load(), 'cb-refresh'); refresh.setAttribute('aria-label', 'Actualizar recursos'); refresh.title = 'Actualizar recursos';
     actions.append(publish, refresh); heading.append(intro, actions);
     const audience = el('p', demo ? 'Contenido de ejemplo · Tus pruebas no modifican las publicaciones reales.'
-      : shared ? 'Contenido de todas las materias. Para compartir una creación, selecciona una de tus materias.' : 'Visible para los usuarios registrados de todas las materias.', 'cb-audience');
+      : shared ? 'Recursos de toda la comunidad. Elige una categoría para compartir una creación.' : 'Visible para toda la comunidad registrada.', 'cb-audience');
     const settings = el('details', '', 'cb-settings'); settings.append(el('summary', 'Orientaciones y publicaciones'));
     const configForm = el('form', '', 'cb-settings-form'), instructionsField = field('cb-instructions', 'Sugerencias para compartir en el mural (opcional)', 'textarea');
     instructionsField.input.rows = 4; instructionsField.input.maxLength = 4000; instructionsField.input.placeholder = 'Invita a compartir lecturas, ideas creativas, infografías o recursos que puedan inspirar a la comunidad…';
