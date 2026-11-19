@@ -1,9 +1,9 @@
-import './embed.js?v=0.34.1';
-import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.34.1';
-import { createContentBoard } from './content-board.js?v=0.34.1';
-import { createContentBoardDemo } from './content-board-demo.js?v=0.34.1';
-import { createLibrarySession, libraryRole } from './library-session.js?v=0.34.1';
-import { BOARD_CATEGORIES, mergeBoardPosts } from './content-board-model.js?v=0.34.1';
+import './embed.js?v=0.34.2';
+import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.34.2';
+import { createContentBoard } from './content-board.js?v=0.34.2';
+import { createContentBoardDemo } from './content-board-demo.js?v=0.34.2';
+import { createLibrarySession, libraryRole } from './library-session.js?v=0.34.2';
+import { BOARD_CATEGORIES, mergeBoardPosts } from './content-board-model.js?v=0.34.2';
 
 const $ = selector => document.querySelector(selector), params = new URLSearchParams(location.search);
 const demo = params.get('demo') === '1';

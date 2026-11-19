@@ -85,19 +85,21 @@ test('the community mural shows resources without course names, team names or de
   assert.equal(nodes.filter(node => node.className === 'cb-post-actions').length, 0);
 });
 
-test('a resource category carries into the authorized composer and publishes with that type', async () => {
+for (const kind of ['infographic', 'digital_tool']) test('a resource category carries into the composer and publishes: '+kind, async () => {
   const page = dom(), demo = createContentBoardDemo({ crypto: { randomUUID } }), course = randomUUID(); demo.setContext(course);
   const board = createContentBoard({ ...page, showGroups: false, signedIn: () => true, demo: true, files: demo.files, rpc: demo.request });
-  board.setContext(course); await board.compose({ kind: 'infographic' });
+  board.setContext(course); await board.compose({ kind });
   const dialog = descendants(page.root.body).find(node => node.tag === 'dialog');
   assert.equal(dialog.open, true);
   const fields = descendants(dialog);
-  assert.equal(fields.find(node => node.id === 'cb-post-kind').value, 'infographic');
+  assert.equal(fields.find(node => node.id === 'cb-post-kind').value, kind);
   fields.find(node => node.id === 'cb-title').value = 'Una infografía para aprender';
   fields.find(node => node.id === 'cb-body').value = 'Ideas para compartir con la comunidad.';
   await fields.find(node => node.tag === 'form').listeners.get('submit')({ preventDefault() {} }); await settle();
   const result = await demo.request('course_board', { p_course_id: course, p_scope: 'mine' });
-  assert.equal(result.posts.length, 1); assert.equal(result.posts[0].kind, 'infographic');
+  assert.equal(result.posts.length, 1); assert.equal(result.posts[0].kind, kind);
+  const filtered = await demo.request('course_board', { p_course_id: course, p_kind: kind, p_scope: 'mine' });
+  assert.equal(filtered.posts.length, 1); assert.equal(filtered.posts[0].kind, kind);
   assert.equal(descendants(page.root.body).filter(node => node.tag === 'dialog').length, 0);
 });
 

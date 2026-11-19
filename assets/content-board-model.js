@@ -1,7 +1,7 @@
-import { attachmentInfo, FILE_TYPES, MAX_ATTACHMENT_BYTES } from './attachments.js?v=0.34.1';
+import { attachmentInfo, FILE_TYPES, MAX_ATTACHMENT_BYTES } from './attachments.js?v=0.34.2';
 
-export const BOARD_KINDS = Object.freeze({ note: 'Nota', infographic: 'Infografía', document: 'Documento', presentation: 'Presentación', book: 'Libro', video: 'Video', link: 'Enlace' });
-export const BOARD_CATEGORIES = Object.freeze({ note: 'Notas', infographic: 'Infografías', document: 'Documentos', presentation: 'Presentaciones', book: 'Libros', video: 'Videos', link: 'Enlaces' });
+export const BOARD_KINDS = Object.freeze({ note: 'Nota', infographic: 'Infografía', document: 'Documento', presentation: 'Presentación', book: 'Libro', video: 'Video', link: 'Enlace', digital_tool: 'Herramientas digitales' });
+export const BOARD_CATEGORIES = Object.freeze({ note: 'Notas', infographic: 'Infografías', document: 'Documentos', presentation: 'Presentaciones', book: 'Libros', video: 'Videos', link: 'Enlaces', digital_tool: 'Herramientas digitales' });
 export const BOARD_PAGE_SIZE = 24;
 export const BOARD_FILE_HINT = 'Imágenes, PDF, Word, Excel, PowerPoint y ZIP · Hasta 10 MB. Para videos, comparte su enlace.';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
