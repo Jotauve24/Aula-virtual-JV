@@ -1,5 +1,13 @@
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export function libraryCourseName(value) {
+  return value.trim()
+    .replace(/^(?:(?:c[oó]digo|grupo)\s*[:#-]?\s*)?(?:\d{4,}|[a-z]{2,8}-\d[\d -]*|mat-[a-z0-9-]+)\s*[-–—:|·]\s*/iu, '')
+    .replace(/\s*[-–—|·]\s*(?:grupo\b.*|secci[oó]n\b.*|(?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\b.*)$/iu, '')
+    .replace(/\s*\((?:grupo|secci[oó]n)\s+[^)]*\)\s*$/iu, '')
+    .trim() || 'Asignatura';
+}
+
 export function libraryRole(requested, available) {
   return available.includes(requested) ? requested : available.includes('teacher') ? 'teacher' : available.includes('student') ? 'student' : '';
 }
@@ -11,7 +19,7 @@ export function normalizeLibraryCourses(value, role) {
     const name = role === 'student' ? row?.course_name : row?.name;
     if (!uuid.test(id) || typeof name !== 'string' || !name.trim() || name.length > 200 || ids.has(id))
       throw new Error('El listado de materias no es válido. Vuelve a cargar la biblioteca.');
-    ids.add(id); return { id, name: name.trim() };
+    ids.add(id); return { id, name: libraryCourseName(name) };
   }).sort((a, b) => a.name.localeCompare(b.name, 'es'));
 }
 export function createLibrarySession({ request, signedIn, identity = () => '', onChange = () => {} }) {

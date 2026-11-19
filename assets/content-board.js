@@ -1,8 +1,8 @@
-import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.32.0';
-import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.32.0';
-import { createContentBoardSession } from './content-board-session.js?v=0.32.0';
+import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.32.1';
+import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.32.1';
+import { createContentBoardSession } from './content-board-session.js?v=0.32.1';
 
-export function createContentBoard({ host, rpc, files, signedIn, demo = false, root = document, win = window }) {
+export function createContentBoard({ host, rpc, files, signedIn, demo = false, showGroups = true, root = document, win = window }) {
   let courseId = '', epoch = 0, nodes = null, searchTimer = 0, observer = null;
   let composer = null, reader = null, selectedFile = null, pending = null, attachment = null;
   let draftDirty = false, configDirty = false, configRevision = 0, busy = false;
@@ -56,7 +56,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, r
     const filters = el('details', '', 'cb-filters'); filters.append(el('summary', 'Más filtros'));
     const scope = field('cb-scope', 'Publicaciones', 'select'); scope.input.append(option('all', 'Todas'), option('mine', 'Mis publicaciones'), option('hidden', 'Ocultas o retiradas'));
     const topic = field('cb-topic', 'Equipo', 'select'); topic.input.append(option('', 'Todos los equipos'));
-    const filterFields = el('div', '', 'cb-filter-fields'); filterFields.append(scope.wrap, topic.wrap); filters.append(filterFields);
+    const filterFields = el('div', '', 'cb-filter-fields'); filterFields.append(scope.wrap); if (showGroups) filterFields.append(topic.wrap); filters.append(filterFields);
     toolbar.append(search.wrap, kind.wrap, filters);
     const summary = el('p', '', 'cb-list-summary'); summary.setAttribute('role', 'status');
     const errorBox = el('div', '', 'cb-error'); errorBox.hidden = true; errorBox.setAttribute('role', 'alert');
@@ -86,7 +86,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, r
     nodes.closed.hidden = state.actor.isTeacher || state.settings.postingOpen;
     if (!configDirty) { nodes.instructionsField.value = state.settings.instructions; nodes.postingOpen.checked = state.settings.postingOpen; configRevision = state.settings.revision; }
     const previous = nodes.topic.value;
-    nodes.topic.replaceChildren(option('', 'Todos los equipos'), ...state.groups.map(group => option(group.id, group.name)));
+    nodes.topic.replaceChildren(option('', 'Todos los equipos'), ...(showGroups ? state.groups.map(group => option(group.id, group.name)) : []));
     nodes.topic.value = state.groups.some(group => group.id === previous) ? previous : '';
   }
   function onChange(kind, state) {
@@ -145,7 +145,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, r
     if (post.body) card.append(el('p', post.body.length > 320 ? post.body.slice(0, 320) + '…' : post.body, 'cb-post-body'));
     if (post.body.length > 320) card.append(button('Leer publicación completa', () => openReader(post), 'cb-text-button'));
     appendResources(card, post);
-    const by = el('p', '', 'cb-byline'); by.append(el('strong', post.authorName), el('span', post.authorIsTeacher ? 'Docente' : post.topicName || 'Estudiante · sin equipo'));
+    const by = el('p', '', 'cb-byline'); by.append(el('strong', post.authorName), el('span', post.authorIsTeacher ? 'Docente' : showGroups ? post.topicName || 'Estudiante · sin equipo' : 'Estudiante'));
     const time = el('time', new Intl.DateTimeFormat('es-PA', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(post.createdAt)));
     time.dateTime = post.createdAt; by.append(time); card.append(by);
     if (post.state !== 'visible') card.append(el('p', post.state === 'hidden' ? 'Oculta por el docente' : 'Retirada por su autor', 'cb-visibility'));

@@ -1,8 +1,8 @@
-import './embed.js?v=0.32.0';
-import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.32.0';
-import { createContentBoard } from './content-board.js?v=0.32.0';
-import { createContentBoardDemo } from './content-board-demo.js?v=0.32.0';
-import { createLibrarySession, libraryRole } from './library-session.js?v=0.32.0';
+import './embed.js?v=0.32.1';
+import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.32.1';
+import { createContentBoard } from './content-board.js?v=0.32.1';
+import { createContentBoardDemo } from './content-board-demo.js?v=0.32.1';
+import { createLibrarySession, libraryRole } from './library-session.js?v=0.32.1';
 
 const $ = selector => document.querySelector(selector), params = new URLSearchParams(location.search);
 const demo = params.get('demo') === '1';
@@ -28,7 +28,7 @@ const demoFiles = {
 function boardFor(role) {
   const owner = identity(role);
   if (!boards.has(role)) boards.set(role, createContentBoard({ host: $('#library-content'),
-    demo: role === 'demo', signedIn: () => authorized(role) && owner === identity(role),
+    demo: role === 'demo', showGroups: false, signedIn: () => authorized(role) && owner === identity(role),
     rpc: role === 'demo' ? (name, args) => example(args.p_course_id).request(name, args) : role === 'teacher' ? rpc : studentRpc,
     files: role === 'demo' ? demoFiles : contentBoardFiles(role)
   }));
