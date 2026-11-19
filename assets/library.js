@@ -1,8 +1,9 @@
-import './embed.js?v=0.32.2';
-import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.32.2';
-import { createContentBoard } from './content-board.js?v=0.32.2';
-import { createContentBoardDemo } from './content-board-demo.js?v=0.32.2';
-import { createLibrarySession, libraryRole } from './library-session.js?v=0.32.2';
+import './embed.js?v=0.33.0';
+import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.33.0';
+import { createContentBoard } from './content-board.js?v=0.33.0';
+import { createContentBoardDemo } from './content-board-demo.js?v=0.33.0';
+import { createLibrarySession, libraryRole } from './library-session.js?v=0.33.0';
+import { mergeBoardPosts } from './content-board-model.js?v=0.33.0';
 
 const $ = selector => document.querySelector(selector), params = new URLSearchParams(location.search);
 const demo = params.get('demo') === '1';
@@ -25,20 +26,31 @@ const demoFiles = {
   cancel: path => example(path.split('/')[0]).files.cancel(path),
   blob: file => example(file.path.split('/')[0]).files.blob(file)
 };
-function boardFor(role) {
+async function sharedExample(args) {
+  const pages = await Promise.all(sampleCourses.map(async course => {
+    const page = await example(course.id).request('course_board', { ...args, p_course_id: course.id, p_topic_id: null, p_offset: 0, p_limit: 24 });
+    return page.posts.map(post => ({ ...post, courseId: course.id, courseName: course.name }));
+  }));
+  const posts = mergeBoardPosts([], pages.flat());
+  return { actor: { isTeacher: false, name: 'Demostración' }, settings: { instructions: '', postingOpen: false, revision: 0 },
+    groups: [], posts: posts.slice(args.p_offset, args.p_offset + args.p_limit), total: posts.length,
+    nextOffset: Math.min(args.p_offset + args.p_limit, posts.length), hasMore: args.p_offset + args.p_limit < posts.length };
+}
+function boardFor(role, shared) {
   const owner = identity(role);
-  if (!boards.has(role)) boards.set(role, createContentBoard({ host: $('#library-content'),
-    demo: role === 'demo', showGroups: false, signedIn: () => authorized(role) && owner === identity(role),
-    rpc: role === 'demo' ? (name, args) => example(args.p_course_id).request(name, args) : role === 'teacher' ? rpc : studentRpc,
+  const key = role + ':' + shared;
+  if (!boards.has(key)) boards.set(key, createContentBoard({ host: $('#library-content'),
+    demo: role === 'demo', showGroups: false, shared, signedIn: () => authorized(role) && owner === identity(role),
+    rpc: role === 'demo' ? (name, args) => name === 'shared_library' ? sharedExample(args) : example(args.p_course_id).request(name, args) : role === 'teacher' ? rpc : studentRpc,
     files: role === 'demo' ? demoFiles : contentBoardFiles(role)
   }));
-  return boards.get(role);
+  return boards.get(key);
 }
-const catalog = createLibrarySession({ signedIn: authorized, identity, onChange: render,
+const catalog = createLibrarySession({ signedIn: authorized, identity, onChange: render, shared: true,
   request: role => role === 'demo' ? Promise.resolve(sampleCourses) : role === 'teacher' ? rpc('my_courses') : studentRpc('student_owned_courses') });
 function clearBoard() { activeBoard?.reset(); activeBoard = null; activeRole = ''; $('#library-resources').hidden = true; }
 function discardChanges() {
-  return !activeBoard?.hasUnsaved() || confirm('Tienes cambios sin guardar en esta publicación o en las indicaciones. ¿Descartarlos y continuar?');
+  return !activeBoard?.hasUnsaved() || confirm('Tienes cambios sin guardar en esta publicación o en las orientaciones. ¿Descartarlos y continuar?');
 }
 function selectCourse(id) {
   if (id === catalog.snapshot().selected) return;
@@ -46,6 +58,7 @@ function selectCourse(id) {
   catalog.select(id);
 }
 function renderCourses(state) {
+  $('#library-all').setAttribute('aria-current', state.selected === 'all' ? 'page' : 'false');
   const rows = state.courses.filter(row => row.name.toLocaleLowerCase('es').includes(filter));
   $('#library-course-list').replaceChildren(...rows.map(row => {
     const button = document.createElement('button'); button.type = 'button'; button.textContent = row.name;
@@ -58,28 +71,31 @@ function renderCourses(state) {
 function render(kind, state) {
   if (['reset', 'loading', 'error'].includes(kind)) clearBoard();
   const ready = state.phase === 'ready';
-  $('#library-workspace').hidden = !ready || !state.courses.length;
+  $('#library-workspace').hidden = !ready;
   $('#library-status').textContent = state.phase === 'loading' ? 'Cargando tus materias…' : '';
   $('#library-error').hidden = state.phase !== 'error'; $('#library-error-text').textContent = state.error;
-  $('#library-empty').hidden = !ready || state.courses.length !== 0;
+  $('#library-empty').hidden = true;
   if (!ready) return;
   const select = $('#library-course'); select.replaceChildren();
-  const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.disabled = true; placeholder.textContent = 'Selecciona una materia'; select.append(placeholder);
+  const placeholder = document.createElement('option'); placeholder.value = 'all'; placeholder.textContent = 'Toda la biblioteca'; select.append(placeholder);
   for (const row of state.courses) { const option = document.createElement('option'); option.value = row.id; option.textContent = row.name; select.append(option); }
   select.value = state.selected; renderCourses(state);
   $('#library-selection-hint').hidden = !!state.selected;
   $('#library-selection-hint').textContent = state.unavailable
     ? 'La materia de ese enlace no está disponible para esta cuenta. Elige una de tus materias.' : 'Elige una materia para explorar sus recursos.';
-  const course = state.courses.find(row => row.id === state.selected);
+  const shared = state.selected === 'all';
+  const course = shared ? { id: 'all', name: 'Contenido de toda la comunidad' } : state.courses.find(row => row.id === state.selected);
   if (!course) { clearBoard(); return; }
-  if (activeRole !== state.role) { clearBoard(); activeBoard = boardFor(state.role); activeRole = state.role; }
+  const boardKey = state.role + ':' + shared;
+  if (activeRole !== boardKey) { clearBoard(); activeBoard = boardFor(state.role, shared); activeRole = boardKey; }
   $('#library-current-course').textContent = course.name; $('#library-resources').hidden = false;
   activeBoard.setContext(course.id); activeBoard.open();
   const url = new URL(location.href); url.search = '';
   if (demo) url.searchParams.set('demo', '1'); else url.searchParams.set('vista', state.role === 'teacher' ? 'docente' : 'estudiante');
-  url.searchParams.set('materia', course.id); history.replaceState(null, '', url.pathname + url.search);
-  const back = $('#library-back'); back.hidden = demo; back.textContent = state.role === 'teacher' ? 'Volver a mi materia' : 'Volver a mi aula';
-  back.href = demo ? './' : state.role === 'teacher' ? './docente.html?materia=' + course.id : './live.html?resume_id=' + course.id;
+  if (!shared) url.searchParams.set('materia', course.id); history.replaceState(null, '', url.pathname + url.search);
+  const back = $('#library-back'), ownId = shared ? state.courses[0]?.id : course.id;
+  back.hidden = demo; back.textContent = state.role === 'teacher' ? 'Volver al panel docente' : 'Volver a mi aula';
+  back.href = demo ? './' : state.role === 'teacher' ? './docente.html' + (ownId ? '?materia=' + ownId : '') : ownId ? './live.html?resume_id=' + ownId : './';
 }
 function start() {
   const query = new URLSearchParams(location.search);
@@ -97,6 +113,7 @@ function start() {
   if (role) void catalog.load(role, query.get('materia') || ''); else catalog.reset();
 }
 $('#library-course').addEventListener('change', event => selectCourse(event.target.value));
+$('#library-all').addEventListener('click', () => selectCourse('all'));
 $('#library-filter').addEventListener('input', event => { filter = event.target.value.trim().toLocaleLowerCase('es'); renderCourses(catalog.snapshot()); });
 $('#library-role').addEventListener('change', event => {
   if (!discardChanges()) { event.target.value = catalog.snapshot().role; return; }

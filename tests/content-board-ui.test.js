@@ -63,3 +63,22 @@ test('an unavailable board never reports a false zero publication count', async 
   assert.equal(summary.textContent, 'Publicaciones no disponibles');
   assert.equal(descendants(page.host).find(node => node.className === 'cb-error').hidden, false);
 });
+test('the community mural shows cross-course creations without team names or edit controls', async () => {
+  const page = dom(), demo = createContentBoardDemo({ crypto: { randomUUID } }), course = randomUUID();
+  demo.setContext(course);
+  const board = createContentBoard({ ...page, shared: true, showGroups: false, demo: true, signedIn: () => true, files: demo.files,
+    rpc: async () => {
+      const result = await demo.request('course_board', { p_course_id: course });
+      result.posts = result.posts.map(post => ({ ...post, courseId: course, courseName: '3519608 - Informática II - Martes' }));
+      result.actor.isTeacher = true;
+      return result;
+    } });
+  board.setContext('all'); board.open(); await settle();
+  const nodes = descendants(page.host);
+  assert.equal(board.snapshot().error, '');
+  assert.equal(nodes.filter(node => node.tag === 'article').length, 5);
+  assert.match(page.host.textContent, /Informática II/);
+  assert.doesNotMatch(page.host.textContent, /3519608|Equipo de ejemplo|Martes/);
+  assert.equal(nodes.find(node => node.tag === 'button' && node.textContent === 'Publicar contenido').hidden, true);
+  assert.equal(nodes.filter(node => node.className === 'cb-post-actions').length, 0);
+});

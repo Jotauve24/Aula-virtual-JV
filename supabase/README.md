@@ -117,6 +117,29 @@ de prueba y haber activado Manual Linking.
   El aula muestra posiciones compartidas y ZombieAdmin conserva una experiencia
   de demostración independiente, con chat ficticio.
 
+## Biblioteca compartida de la comunidad
+
+La biblioteca es un mural de creatividad y conocimiento, independiente de las
+entregas y calificaciones de la plataforma académica. Desde el panel principal
+abre primero «Toda la biblioteca»: reúne recursos publicados y visibles de todas
+las materias activas. El acceso requiere una inscripción completa en alguna
+materia activa o una cuenta docente autorizada. Una sesión de Auth sin registro
+en una materia no concede acceso al mural.
+
+«Mis materias» conserva el ámbito de publicación y moderación de cada cuenta.
+Seleccionar una materia propia permite compartir creaciones; la audiencia es
+la comunidad registrada. Leer el mural común no inscribe al visitante en otras
+materias ni le permite modificar publicaciones ajenas. La vista común ofrece
+búsqueda, tipos de contenido y publicaciones propias; los recursos mantienen
+su autoría y muestran el nombre de la asignatura sin códigos ni nombres de equipos.
+
+El RPC invocador `shared_library` delega en una función privada que valida la
+inscripción antes de consultar publicaciones. Los adjuntos se descargan desde
+el bucket privado únicamente cuando pertenecen a publicaciones visibles en una
+materia activa. Esta política no permite listar el bucket, leer subidas pendientes
+o acceder a archivos del chat. La prueba `tests/shared-library.integration.sql`
+usa identidades ficticias y revierte todos sus cambios.
+
 ## Adjuntos privados del chat
 
 La migración `20261011223933_flexible_classrooms_private_attachments.sql` crea

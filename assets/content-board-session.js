@@ -1,7 +1,7 @@
-import { BOARD_PAGE_SIZE, mergeBoardPosts, normalizeBoardPage, normalizeBoardPost } from './content-board-model.js?v=0.32.2';
+import { BOARD_PAGE_SIZE, mergeBoardPosts, normalizeBoardPage, normalizeBoardPost } from './content-board-model.js?v=0.33.0';
 
 const defaultFilters = () => ({ kind: '', scope: 'all', topicId: '', search: '' });
-export function createContentBoardSession({ rpc, signedIn, onChange = () => {} }) {
+export function createContentBoardSession({ rpc, signedIn, onChange = () => {}, shared = false }) {
   let epoch = 0, request = 0, state = fresh();
   function fresh(courseId = '') { return { courseId, phase: 'idle', actor: null, settings: null, posts: [], groups: [],
     total: 0, offset: 0, hasMore: false, filters: defaultFilters(), loading: false, saving: false, error: '', notice: '' }; }
@@ -15,8 +15,9 @@ export function createContentBoardSession({ rpc, signedIn, onChange = () => {} }
     const offset = more ? state.offset : 0, filters = { ...state.filters };
     state.loading = true; state.error = ''; emit('loading');
     try {
-      const data = normalizeBoardPage(await rpc('course_board', { p_course_id: id, p_kind: filters.kind, p_scope: filters.scope,
-        p_topic_id: filters.topicId || null, p_search: filters.search.trim(), p_offset: offset, p_limit: BOARD_PAGE_SIZE }), id);
+      const args = { p_kind: filters.kind, p_scope: filters.scope, p_search: filters.search.trim(), p_offset: offset, p_limit: BOARD_PAGE_SIZE };
+      if (!shared) Object.assign(args, { p_course_id: id, p_topic_id: filters.topicId || null });
+      const data = normalizeBoardPage(await rpc(shared ? 'shared_library' : 'course_board', args), id, { shared });
       if (!current(token, id) || fetchId !== request) return;
       Object.assign(state, { actor: data.actor, settings: data.settings, groups: data.groups,
         posts: more ? mergeBoardPosts(state.posts, data.posts) : data.posts, total: data.total, offset: data.nextOffset,
@@ -34,7 +35,7 @@ export function createContentBoardSession({ rpc, signedIn, onChange = () => {} }
     void load();
   }
   async function mutate(name, args, notice) {
-    if (!state.courseId || !signedIn() || state.saving) return null;
+    if (shared || !state.courseId || !signedIn() || state.saving) return null;
     const id = state.courseId, token = epoch;
     state.saving = true; state.error = ''; emit('saving');
     try {

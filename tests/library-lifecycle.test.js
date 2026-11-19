@@ -45,8 +45,12 @@ test('restoring the library after an account change creates a controller for the
   page.fire('pagehide'); page.changeUser(b); page.fire('pageshow'); await settle();
   assert.equal(page.get('#library-filter').value, '');
   page.get('#library-course').value = b; page.get('#library-course').fire('change'); await settle();
-  assert.equal(page.instances.length, 2);
-  assert.equal(page.instances[1].opened[0].course, b); assert.equal(page.instances[1].opened[0].authorized, true);
+  assert.equal(page.instances.length, 3);
+  assert.equal(page.instances[0].options.shared, true);
+  assert.equal(page.instances[1].options.shared, true);
+  assert.equal(page.instances[2].options.shared, false);
+  assert.equal(page.instances[2].opened[0].course, b); assert.equal(page.instances[2].opened[0].authorized, true);
+  assert.equal(page.instances[0].options.signedIn(), false);
 });
 
 test('focusing the library with the same account keeps its selected controller and catalog', async () => {

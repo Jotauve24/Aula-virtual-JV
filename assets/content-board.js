@@ -1,13 +1,14 @@
-import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.32.2';
-import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.32.2';
-import { createContentBoardSession } from './content-board-session.js?v=0.32.2';
+import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.33.0';
+import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.33.0';
+import { createContentBoardSession } from './content-board-session.js?v=0.33.0';
+import { libraryCourseName } from './library-session.js?v=0.33.0';
 
-export function createContentBoard({ host, rpc, files, signedIn, demo = false, showGroups = true, root = document, win = window }) {
+export function createContentBoard({ host, rpc, files, signedIn, demo = false, showGroups = true, shared = false, root = document, win = window }) {
   let courseId = '', epoch = 0, nodes = null, searchTimer = 0, observer = null;
   let composer = null, reader = null, selectedFile = null, pending = null, attachment = null;
   let draftDirty = false, configDirty = false, configRevision = 0, busy = false;
   const urls = new Set(), pictureURLs = new Set();
-  const session = createContentBoardSession({ rpc, signedIn, onChange });
+  const session = createContentBoardSession({ rpc, signedIn, onChange, shared });
   const el = (tag, text = '', css = '') => { const node = root.createElement(tag); node.textContent = text; if (css) node.className = css; return node; };
   function button(text, handler, css = 'button secondary') { const node = el('button', text, css); node.type = 'button'; node.addEventListener('click', handler); return node; }
   function field(name, label, tag = 'input') {
@@ -26,27 +27,28 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     host.replaceChildren();
   }
   function build() {
-    const heading = el('div', '', 'cb-heading'), title = el('h2'); title.append(el('span', 'Recursos '), el('em', 'compartidos'));
-    const intro = el('div'); intro.append(title, el('p', 'Comparte lo que crea tu equipo. Descubre las ideas de los demás.'));
+    const heading = el('div', '', 'cb-heading'), title = el('h2'); title.append(el('span', shared ? 'Creatividad y ' : 'Recursos '), el('em', shared ? 'conocimiento' : 'compartidos'));
+    const intro = el('div'); intro.append(title, el('p', shared ? 'Explora las ideas, los recursos y las creaciones que comparte la comunidad.' : 'Comparte ideas, recursos y creaciones para inspirar a otros estudiantes.'));
     const actions = el('div', '', 'cb-main-actions');
     const publish = button('Publicar contenido', () => openComposer(), 'button primary');
+    publish.hidden = shared;
     const refresh = button('↻', () => void session.load(), 'cb-refresh'); refresh.setAttribute('aria-label', 'Actualizar recursos'); refresh.title = 'Actualizar recursos';
     actions.append(publish, refresh); heading.append(intro, actions);
     const audience = el('p', demo ? 'Contenido de ejemplo · Tus pruebas no modifican las publicaciones reales.'
-      : 'Compartido con todos los equipos de esta materia.', 'cb-audience');
-    const settings = el('details', '', 'cb-settings'); settings.append(el('summary', 'Indicaciones y permisos'));
-    const configForm = el('form', '', 'cb-settings-form'), instructionsField = field('cb-instructions', '¿Qué deben compartir los estudiantes?', 'textarea');
-    instructionsField.input.rows = 4; instructionsField.input.maxLength = 4000; instructionsField.input.placeholder = 'Ej.: Cada equipo debe publicar su infografía de la Unidad II…';
+      : shared ? 'Contenido de todas las materias. Para compartir una creación, selecciona una de tus materias.' : 'Visible para los usuarios registrados de todas las materias.', 'cb-audience');
+    const settings = el('details', '', 'cb-settings'); settings.append(el('summary', 'Orientaciones y publicaciones'));
+    const configForm = el('form', '', 'cb-settings-form'), instructionsField = field('cb-instructions', 'Sugerencias para compartir en el mural (opcional)', 'textarea');
+    instructionsField.input.rows = 4; instructionsField.input.maxLength = 4000; instructionsField.input.placeholder = 'Invita a compartir lecturas, ideas creativas, infografías o recursos que puedan inspirar a la comunidad…';
     const openLabel = el('label', '', 'cb-check'), postingOpen = el('input'); postingOpen.type = 'checkbox'; postingOpen.name = 'cb-posting-open';
     openLabel.append(postingOpen, el('span', 'Permitir publicaciones de estudiantes'));
-    const configSave = el('button', 'Guardar indicaciones', 'button primary'); configSave.type = 'submit';
-    const configReload = button('Recargar indicaciones', () => {
-      if (configDirty && !win.confirm('¿Descartar tus cambios sin guardar en las indicaciones?')) return;
+    const configSave = el('button', 'Guardar orientaciones', 'button primary'); configSave.type = 'submit';
+    const configReload = button('Recargar orientaciones', () => {
+      if (configDirty && !win.confirm('¿Descartar tus cambios sin guardar en las orientaciones?')) return;
       configDirty = false; applySettings(session.snapshot()); void session.load();
     }, 'cb-text-button');
     const configStatus = el('p', '', 'cb-muted'); configStatus.setAttribute('role', 'status');
     configForm.append(instructionsField.wrap, openLabel, configSave, configReload, configStatus); settings.append(configForm); settings.hidden = true;
-    const instruction = el('section', '', 'cb-instruction'); instruction.append(el('h3', 'Indicaciones del docente'));
+    const instruction = el('section', '', 'cb-instruction'); instruction.append(el('h3', 'Sugerencias para compartir'));
     const instructionBody = el('p'); instruction.append(instructionBody); instruction.hidden = true;
     const closed = el('p', 'El docente cerró las publicaciones. Puedes seguir explorando el mural.', 'cb-closed'); closed.hidden = true;
     const toolbar = el('div', '', 'cb-toolbar'), search = field('cb-search', 'Buscar contenido'); search.input.type = 'search'; search.input.maxLength = 120;
@@ -54,7 +56,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     const kind = field('cb-kind', 'Tipo de contenido', 'select'); kind.input.append(option('', 'Todos los tipos'));
     for (const [value, label] of Object.entries(BOARD_KINDS)) kind.input.append(option(value, label));
     const filters = el('details', '', 'cb-filters'); filters.append(el('summary', 'Más filtros'));
-    const scope = field('cb-scope', 'Publicaciones', 'select'); scope.input.append(option('all', 'Todas'), option('mine', 'Mis publicaciones'), option('hidden', 'Ocultas o retiradas'));
+    const scope = field('cb-scope', 'Publicaciones', 'select'); scope.input.append(option('all', 'Todas'), option('mine', 'Mis publicaciones')); if (!shared) scope.input.append(option('hidden', 'Ocultas o retiradas'));
     const topic = field('cb-topic', 'Equipo', 'select'); topic.input.append(option('', 'Todos los equipos'));
     const filterFields = el('div', '', 'cb-filter-fields'); filterFields.append(scope.wrap); if (showGroups) filterFields.append(topic.wrap); filters.append(filterFields);
     toolbar.append(search.wrap, kind.wrap, filters);
@@ -81,9 +83,9 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
   }
   function applySettings(state) {
     if (!nodes || !state.actor || !state.settings) return;
-    nodes.settings.hidden = !state.actor.isTeacher;
+    nodes.settings.hidden = shared || !state.actor.isTeacher;
     nodes.instruction.hidden = !state.settings.instructions; nodes.instructionBody.textContent = state.settings.instructions;
-    nodes.closed.hidden = state.actor.isTeacher || state.settings.postingOpen;
+    nodes.closed.hidden = shared || state.actor.isTeacher || state.settings.postingOpen;
     if (!configDirty) { nodes.instructionsField.value = state.settings.instructions; nodes.postingOpen.checked = state.settings.postingOpen; configRevision = state.settings.revision; }
     const previous = nodes.topic.value;
     nodes.topic.replaceChildren(option('', 'Todos los equipos'), ...(showGroups ? state.groups.map(group => option(group.id, group.name)) : []));
@@ -115,7 +117,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
       const empty = el('div', '', 'cb-empty');
       const filtered = state.filters.kind || state.filters.scope !== 'all' || state.filters.topicId || state.filters.search;
       empty.append(el('h3', filtered ? 'No hay publicaciones con estos filtros' : 'El mural empieza con una idea'),
-        el('p', filtered ? 'Prueba otro tipo de contenido o busca con menos palabras.' : 'Comparte una nota, una infografía o un recurso para que los demás equipos puedan consultarlo.'));
+        el('p', filtered ? 'Prueba otro tipo de contenido o busca con menos palabras.' : 'Comparte una nota, una infografía o un recurso que inspire a la comunidad.'));
       if (filtered) empty.append(button('Quitar filtros', () => {
         nodes.search.value = nodes.kind.value = nodes.topic.value = ''; nodes.scope.value = 'all';
         session.filter({ kind: '', scope: 'all', topicId: '', search: '' });
@@ -134,6 +136,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     const top = el('div', '', 'cb-card-meta'); top.append(el('span', BOARD_KINDS[post.kind], 'cb-kind-label'));
     if (post.pinned) top.append(el('span', 'Destacado', 'cb-featured'));
     card.append(top);
+    if (shared) card.append(el('p', libraryCourseName(post.courseName), 'cb-muted'));
     if (post.attachment?.type.startsWith('image/') || demo && post.demoImage === 'teamwork') {
       const picture = el('div', '', 'cb-picture'), image = root.createElement('img');
       image.alt = post.title; image.width = 560; image.height = 360; image.loading = 'lazy'; image.decoding = 'async'; image.dataset.path = post.attachment?.path || '';
@@ -150,7 +153,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     time.dateTime = post.createdAt; by.append(time); card.append(by);
     if (post.state !== 'visible') card.append(el('p', post.state === 'hidden' ? 'Oculta por el docente' : 'Retirada por su autor', 'cb-visibility'));
     const rights = boardPostRights(post, actor);
-    if (rights.edit || rights.remove || rights.restore || rights.moderate) {
+    if (!shared && (rights.edit || rights.remove || rights.restore || rights.moderate)) {
       const actions = el('details', '', 'cb-post-actions'), summary = el('summary', '•••'); summary.setAttribute('aria-label', `Opciones de ${post.title}`); summary.title = 'Opciones de la publicación';
       actions.append(summary);
       function action(text, handler) { const control = button(text, handler, 'cb-text-button'); control.dataset.postAction = ''; actions.append(control); }
@@ -205,14 +208,14 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     try { await session.action(post, action); } catch { /* The board displays the error and preserves the current rows. */ }
   }
   function openComposer(post = null) {
-    if (busy || !session.snapshot().actor) return;
+    if (shared || busy || !session.snapshot().actor) return;
     composer?.dialog.remove(); cleanupPending(); selectedFile = null; attachment = post?.attachment ?? null;
     const dialog = el('dialog', '', 'cb-dialog'), form = el('form'); form.noValidate = true;
     const heading = el('h2', post ? 'Editar publicación' : 'Una idea para el mural'); heading.id = 'cb-composer-heading'; dialog.setAttribute('aria-labelledby', heading.id);
     const title = field('cb-title', 'Título'), kind = field('cb-post-kind', 'Tipo de contenido', 'select'), body = field('cb-body', 'Texto o descripción', 'textarea'), url = field('cb-url', 'Enlace del recurso o video (opcional)');
-    title.input.maxLength = 120; title.input.value = post?.title ?? ''; title.input.placeholder = 'Ej.: Nuestra infografía de la Unidad II…';
+    title.input.maxLength = 120; title.input.value = post?.title ?? ''; title.input.placeholder = 'Ej.: Una idea para aprender de otra manera…';
     for (const [value, label] of Object.entries(BOARD_KINDS)) kind.input.append(option(value, label)); kind.input.value = post?.kind ?? 'note';
-    body.input.rows = 5; body.input.maxLength = 3000; body.input.value = post?.body ?? ''; body.input.placeholder = 'Comparte una idea o explica qué encontrará tu equipo…';
+    body.input.rows = 5; body.input.maxLength = 3000; body.input.value = post?.body ?? ''; body.input.placeholder = 'Explica qué compartes y cómo puede ayudar a otros estudiantes…';
     url.input.type = 'url'; url.input.inputMode = 'url'; url.input.spellcheck = false; url.input.maxLength = 2000; url.input.placeholder = 'https://…'; url.input.value = post?.url ?? '';
     const file = field('cb-file', 'Archivo (opcional)'); file.input.type = 'file'; file.input.accept = ATTACHMENT_ACCEPT;
     const selected = el('p', attachment ? attachment.name + ' · ' + fileSizeLabel(attachment.size) : BOARD_FILE_HINT, 'cb-muted');
@@ -221,7 +224,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     const save = el('button', demo ? 'Publicar prueba' : post ? 'Guardar cambios' : 'Publicar contenido', 'button primary'); save.type = 'submit';
     const cancel = button('Cancelar', () => closeComposer(), 'button secondary'), status = el('p', '', 'cb-muted'); status.setAttribute('role', 'status');
     const actions = el('div', '', 'cb-composer-actions'); actions.append(cancel, save);
-    form.append(heading, el('p', demo ? 'Publicación ficticia. Solo cambia esta demostración.' : 'La verán los equipos de esta materia.', 'cb-muted'),
+    form.append(heading, el('p', demo ? 'Publicación ficticia. Solo cambia esta demostración.' : 'Tu creación será visible en la biblioteca para la comunidad registrada.', 'cb-muted'),
       title.wrap, kind.wrap, body.wrap, url.wrap, file.wrap, selected, removeFile, error, status, actions); dialog.append(form); root.body.append(dialog);
     composer = { dialog, form, title: title.input, kind: kind.input, body: body.input, url: url.input, file: file.input, save, cancel, error, status, removeFile };
     draftDirty = false; const draftId = post?.id ?? win.crypto.randomUUID(), token = epoch, id = courseId;

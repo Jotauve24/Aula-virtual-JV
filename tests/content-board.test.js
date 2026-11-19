@@ -48,6 +48,28 @@ test('page merging preserves newer revisions, orders teacher highlights first an
   const pinned = post({ id: other, createdAt: '2020-01-01T00:00:00Z', pinned: true, mine: false });
   const result = mergeBoardPosts([newer], [old, pinned]); assert.equal(result.length, 2); assert.equal(result[0].id, other); assert.equal(result[1].title, 'Editada');
 });
+test('shared pages validate each resource against its actual course and exclude unpublished content', () => {
+  const own = post({ courseId: c, courseName: 'Informática II', attachment });
+  const foreign = post({ id: other, courseId: other, courseName: 'Sistemas II', attachment: { ...attachment, path: path.replace(c, other) } });
+  assert.equal(normalizeBoardPage(page([own, foreign]), 'all', { shared: true }).posts.length, 2);
+  for (const invalid of [{ ...foreign, courseId: c }, { ...foreign, state: 'hidden' },
+    { ...foreign, courseName: '' }, { ...foreign, attachment: { ...attachment, path: path.replace('/board/', '/chat/') } }])
+    assert.throws(() => normalizeBoardPage(page([invalid]), 'all', { shared: true }));
+});
+test('the common library reads across courses and cannot send publication or moderation writes', async () => {
+  const calls = [];
+  const session = createContentBoardSession({ shared: true, signedIn: () => true, rpc: async (name, args) => {
+    calls.push({ name, args }); return page([post({ courseId: other, courseName: 'Otra materia' })]);
+  } });
+  session.setContext('all'); await session.load();
+  assert.equal(calls[0].name, 'shared_library');
+  assert.equal('p_course_id' in calls[0].args, false);
+  assert.equal(session.snapshot().posts[0].courseId, other);
+  assert.equal(await session.save(id, 0, {}), null);
+  assert.equal(await session.saveSettings('', true, 0), null);
+  assert.equal(await session.action(post(), 'hide'), null);
+  assert.equal(calls.length, 1);
+});
 test('student controls cannot reverse a teacher hide, while withdrawn work stays restorable', () => {
   const student = { isTeacher: false }, teacher = { isTeacher: true };
   assert.equal(boardPostRights(post({ mine: false }), student).edit, false);

@@ -1,5 +1,5 @@
-import { createStudentGradeCalculator } from './grade-calculator.js?v=0.32.2';
-import { DEFAULT_GRADE_ACTIVITIES, normalizeGradeDraft, parseGrade, validateGradeActivities } from './grade-calculator-model.js?v=0.32.2';
+import { createStudentGradeCalculator } from './grade-calculator.js?v=0.33.0';
+import { DEFAULT_GRADE_ACTIVITIES, normalizeGradeDraft, parseGrade, validateGradeActivities } from './grade-calculator-model.js?v=0.33.0';
 
 // The only remote operation is the owner's existing, read-only scheme lookup.
 // Student drafts and saves stay in this instance's memory, never in the database.

@@ -11,6 +11,14 @@ test('library selects only an available account scope', () => {
   assert.equal(libraryRole('', ['teacher']), 'teacher');
   assert.equal(libraryRole('teacher', []), '');
 });
+test('the shared library is the initial view without granting enrollment in another course', async () => {
+  const library = createLibrarySession({ shared: true, signedIn: () => true, request: async () => [{ course_id: a, course_name: 'Informática II' }] });
+  await library.load('student');
+  assert.equal(library.snapshot().selected, 'all');
+  assert.equal(library.select(b), false);
+  assert.equal(library.select(a), true);
+  assert.equal(library.select('all'), true);
+});
 test('teacher and student catalogs normalize their existing authorized responses without using remembered codes', () => {
   assert.deepEqual(normalizeLibraryCourses(teacher, 'teacher'), teacher);
   assert.deepEqual(normalizeLibraryCourses([{ course_id: a, course_name: ' Informática II ', topic_id: b }], 'student'), [teacher[0]]);

@@ -1,4 +1,4 @@
-import { attachmentInfo, FILE_TYPES, MAX_ATTACHMENT_BYTES } from './attachments.js?v=0.32.2';
+import { attachmentInfo, FILE_TYPES, MAX_ATTACHMENT_BYTES } from './attachments.js?v=0.33.0';
 
 export const BOARD_KINDS = Object.freeze({ note: 'Nota', infographic: 'Infografía', document: 'Documento', presentation: 'Presentación', book: 'Libro', video: 'Video', link: 'Enlace' });
 export const BOARD_PAGE_SIZE = 24;
@@ -43,13 +43,17 @@ export function normalizeBoardPost(value, courseId) {
     mine: value.mine === true, pinned: value.pinned === true, authorIsTeacher: value.authorIsTeacher === true,
     topicId: uuid.test(value.topicId) ? value.topicId : null, topicName: String(value.topicName ?? '') };
 }
-export function normalizeBoardPage(value, courseId) {
+export function normalizeBoardPage(value, courseId, { shared = false } = {}) {
   if (!value?.actor || typeof value.actor.isTeacher !== 'boolean' || !value.settings || typeof value.settings.postingOpen !== 'boolean'
     || typeof value.settings.instructions !== 'string' || !Number.isSafeInteger(value.settings.revision) || value.settings.revision < 0
     || !Array.isArray(value.posts) || !Array.isArray(value.groups) || !Number.isSafeInteger(value.total) || value.total < 0
     || !Number.isSafeInteger(value.nextOffset) || value.nextOffset < 0 || typeof value.hasMore !== 'boolean')
     throw new Error('No se pudo cargar el tablero. Vuelve a intentarlo.');
-  const posts = value.posts.map(row => normalizeBoardPost(row, courseId));
+  const posts = value.posts.map(row => {
+    if (shared && (!uuid.test(row.courseId) || typeof row.courseName !== 'string' || !row.courseName.trim()
+      || row.courseName.length > 200 || row.state !== 'visible')) throw new Error('La publicación de la biblioteca no es válida.');
+    return normalizeBoardPost(row, shared ? row.courseId : courseId);
+  });
   if (posts.length > BOARD_PAGE_SIZE || new Set(posts.map(p => p.id)).size !== posts.length || value.total < posts.length)
     throw new Error('El listado recibido no es válido. Actualiza el tablero.');
   return { ...value, posts, groups: value.groups.filter(row => uuid.test(row?.id) && typeof row.name === 'string') };

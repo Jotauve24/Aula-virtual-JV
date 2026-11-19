@@ -1,4 +1,4 @@
-import { BOARD_PAGE_SIZE, boardDraft, mergeBoardPosts } from './content-board-model.js?v=0.32.2';
+import { BOARD_PAGE_SIZE, boardDraft, mergeBoardPosts } from './content-board-model.js?v=0.33.0';
 
 // Every demo post and selected file stays in this browser instance.
 export function createContentBoardDemo({ crypto = globalThis.crypto, now = () => new Date().toISOString() } = {}) {
@@ -7,7 +7,7 @@ export function createContentBoardDemo({ crypto = globalThis.crypto, now = () =>
   function reset() {
     blobs.clear(); groups = [1, 2, 3].map(n => ({ id: crypto.randomUUID(), name: 'Equipo de ejemplo ' + n }));
     actor = { isTeacher: false, name: 'Tu perfil de prueba', topicId: groups[0].id, studentId: crypto.randomUUID() };
-    settings = { instructions: 'Ejemplo: cada equipo comparte una infografía y un recurso que ayude a comprender el tema. Revisa las publicaciones de los demás equipos.', postingOpen: true, revision: 1 };
+    settings = { instructions: 'Comparte una lectura, una idea creativa o un recurso que pueda inspirar a otros estudiantes. Cuida la autoría y participa con respeto.', postingOpen: true, revision: 1 };
     const sample = (kind, title, body, group, extra = {}) => ({ id: crypto.randomUUID(), kind, title, body, url: '', attachment: null,
       authorName: 'Compañero de ejemplo', authorIsTeacher: false, topicId: groups[group].id, topicName: groups[group].name,
       mine: false, pinned: false, state: 'visible', revision: 1, createdAt: now(), updatedAt: now(), ...extra });

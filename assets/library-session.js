@@ -22,7 +22,7 @@ export function normalizeLibraryCourses(value, role) {
     ids.add(id); return { id, name: libraryCourseName(name) };
   }).sort((a, b) => a.name.localeCompare(b.name, 'es'));
 }
-export function createLibrarySession({ request, signedIn, identity = () => '', onChange = () => {} }) {
+export function createLibrarySession({ request, signedIn, identity = () => '', onChange = () => {}, shared = false }) {
   let generation = 0, state = { role: '', phase: 'idle', courses: [], selected: '', error: '', unavailable: false };
   let owner = '';
   const emit = kind => onChange(kind, state);
@@ -36,8 +36,8 @@ export function createLibrarySession({ request, signedIn, identity = () => '', o
       const courses = normalizeLibraryCourses(await request(role), role);
       if (token !== generation) return;
       if (!signedIn(role) || requestedOwner !== identity(role)) { reset(); return; }
-      const wanted = uuid.test(preferred) ? preferred : '';
-      const selected = courses.some(row => row.id === wanted) ? wanted : wanted ? '' : courses[0]?.id || '';
+      const wanted = shared && preferred === 'all' ? 'all' : uuid.test(preferred) ? preferred : '';
+      const selected = shared && (!wanted || wanted === 'all') ? 'all' : courses.some(row => row.id === wanted) ? wanted : wanted ? '' : courses[0]?.id || '';
       Object.assign(state, { phase: 'ready', courses, selected, unavailable: !!wanted && !selected }); emit('loaded');
     } catch (error) {
       if (token !== generation) return;
@@ -47,7 +47,7 @@ export function createLibrarySession({ request, signedIn, identity = () => '', o
   }
   function select(id) {
     if (owner !== identity(state.role)) { reset(); return false; }
-    if (state.phase !== 'ready' || !signedIn(state.role) || !state.courses.some(row => row.id === id)) return false;
+    if (state.phase !== 'ready' || !signedIn(state.role) || !(shared && id === 'all') && !state.courses.some(row => row.id === id)) return false;
     state.selected = id; state.unavailable = false; emit('selected'); return true;
   }
   return { load, reset, select, snapshot: () => state };
