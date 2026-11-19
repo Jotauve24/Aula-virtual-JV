@@ -88,3 +88,5 @@ archivos y sus permisos se verificaron con pruebas automatizadas y SQL.
 En 0.34.2 se incorpora **Herramientas digitales** (`digital_tool`) al publicador, los filtros y las categorías de la biblioteca. Admite descripción, archivos permitidos y enlaces HTTPS; conserva los mismos permisos de publicación, edición y lectura.
 
 En 0.34.3 el mural distribuye las tarjetas con una cuadrícula adaptable: dos publicaciones ocupan el ancho disponible en escritorio y los recursos se apilan en teléfonos. Los títulos largos se resumen en dos líneas y siguen completos al abrir la publicación. Las opciones se muestran en un panel flotante que cierra al tocar fuera, pulsar Escape, abrir otra publicación o cambiar de contexto. No se repite el nombre genérico «Docente» como rol debajo del mismo nombre. No cambian recursos, archivos ni permisos.
+
+En 0.34.4 cada categoría tiene un icono y un color compartidos entre tarjetas, navegación y selectores. Los nombres se mantienen visibles; las etiquetas no dependen solo del color. El lector completo y el formulario de publicación conservan esa identificación. No se alteran categorías, contenidos ni permisos.

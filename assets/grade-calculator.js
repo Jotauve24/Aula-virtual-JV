@@ -1,6 +1,6 @@
-import { calculateGrades } from './grade-calculator-model.js?v=0.34.3';
-import { createGradeSession } from './grade-calculator-session.js?v=0.34.3';
-import { createGradeWhatIf } from './grade-what-if.js?v=0.34.3';
+import { calculateGrades } from './grade-calculator-model.js?v=0.34.4';
+import { createGradeSession } from './grade-calculator-session.js?v=0.34.4';
+import { createGradeWhatIf } from './grade-what-if.js?v=0.34.4';
 
 const format = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 2 });
 const n = value => format.format(value);

@@ -1,9 +1,10 @@
-import './embed.js?v=0.34.3';
-import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.34.3';
-import { createContentBoard } from './content-board.js?v=0.34.3';
-import { createContentBoardDemo } from './content-board-demo.js?v=0.34.3';
-import { createLibrarySession, libraryRole } from './library-session.js?v=0.34.3';
-import { BOARD_CATEGORIES, mergeBoardPosts } from './content-board-model.js?v=0.34.3';
+import './embed.js?v=0.34.4';
+import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.34.4';
+import { createContentBoard } from './content-board.js?v=0.34.4';
+import { createContentBoardDemo } from './content-board-demo.js?v=0.34.4';
+import { createLibrarySession, libraryRole } from './library-session.js?v=0.34.4';
+import { BOARD_CATEGORIES, mergeBoardPosts } from './content-board-model.js?v=0.34.4';
+import { categoryIcon, decorateCategorySelect } from './content-category.js?v=0.34.4';
 
 const $ = selector => document.querySelector(selector), params = new URLSearchParams(location.search);
 const demo = params.get('demo') === '1';
@@ -80,6 +81,7 @@ function renderCategories(state) {
   $('#library-all').setAttribute('aria-current', selected === 'all' ? 'page' : 'false');
   $('#library-category-list').replaceChildren(...Object.entries(BOARD_CATEGORIES).map(([id, name]) => {
     const button = document.createElement('button'); button.type = 'button'; button.textContent = name;
+    button.setAttribute('data-category', id); button.append(categoryIcon(id, document));
     button.className = 'library-course-button'; if (id === selected) button.setAttribute('aria-current', 'page');
     button.addEventListener('click', () => selectCategory(id)); return button;
   }));
@@ -90,7 +92,9 @@ function renderCategories(state) {
     const option = document.createElement('option'); option.value = value; option.textContent = label; select.append(option);
   }
   select.value = selected;
+  decorateCategorySelect($('.library-course-select'), selected, document);
   $('#library-current-category').textContent = state.selected !== 'all' ? 'Mi espacio de creación' : mine ? 'Mis publicaciones' : BOARD_CATEGORIES[category] || 'Contenido de toda la comunidad';
+  $('#library-current-category').setAttribute('data-category', state.selected === 'all' && !mine ? category : '');
 }
 function updateLocation(state) {
   const url = new URL(location.href); url.search = '';
