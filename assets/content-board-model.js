@@ -1,4 +1,4 @@
-import { attachmentInfo, FILE_TYPES, MAX_ATTACHMENT_BYTES } from './attachments.js?v=0.34.0';
+import { attachmentInfo, FILE_TYPES, MAX_ATTACHMENT_BYTES } from './attachments.js?v=0.34.1';
 
 export const BOARD_KINDS = Object.freeze({ note: 'Nota', infographic: 'Infografía', document: 'Documento', presentation: 'Presentación', book: 'Libro', video: 'Video', link: 'Enlace' });
 export const BOARD_CATEGORIES = Object.freeze({ note: 'Notas', infographic: 'Infografías', document: 'Documentos', presentation: 'Presentaciones', book: 'Libros', video: 'Videos', link: 'Enlaces' });

@@ -1,5 +1,5 @@
-import { openAuthPage } from './embed.js?v=0.34.0';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.34.0';
+import { openAuthPage } from './embed.js?v=0.34.1';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js?v=0.34.1';
 
 const sessionKey = 'aula-supabase-session';
 const studentSessionKey = 'aula-student-session';
@@ -144,39 +144,45 @@ export function signInWithGoogle() {
 function studentRedirect(mode) {
   const url = new URL('live.html', location.href);
   url.searchParams.set('student_auth', mode);
+  // Carry the recovery intent in the verified link: email apps often open a
+  // different browser, where the original browser's storage is unavailable.
+  const code = (localStorage.getItem('aula-student-recovery-code') || '').trim().toUpperCase().replace(/\s/g, '');
+  if (/^MAT-[A-Z2-9]{5}-[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(code)) url.searchParams.set('recovery_code', code);
+  if (localStorage.getItem('aula-student-document-recovery') === '1') url.searchParams.set('recovery_document', '1');
   return url.toString();
+}
+export function studentCallbackError() {
+  return callbackError ? 'Este enlace de acceso venció, ya se utilizó o fue rechazado. Solicita uno nuevo y abre el correo más reciente.' : '';
+}
+export function studentAuthError(error) {
+  if (error?.status === 429 || /over_email_send_rate_limit|over_request_rate_limit/.test(error?.code || '') || /email rate limit/i.test(error?.message || ''))
+    return 'Se alcanzó el límite de intentos o correos. Espera unos minutos antes de solicitar otro enlace y revisa también la carpeta de correo no deseado.';
+  if (error?.code === 'email_address_not_authorized')
+    return 'El servicio de correo no permite enviar a esa dirección. Comunícalo al docente para revisar la configuración del envío. Tu perfil se conserva.';
+  if (/email_exists|identity_already_exists|user_already_exists/.test(error?.code || ''))
+    return 'Ese correo ya está asociado a una cuenta. Conserva esta sesión y solicita ayuda al docente para unir el acceso sin perder tu equipo.';
+  if (error?.status >= 500 || /failed to fetch|network|load failed/i.test(error?.message || ''))
+    return 'No pudimos conectar con el aula. Tu sesión se conserva; revisa la conexión y vuelve a intentarlo.';
+  return error?.message || 'No pudimos comprobar tu acceso. Revisa la conexión y vuelve a intentarlo.';
 }
 export async function emailStudentLogin(email) {
   return request('/auth/v1/otp?redirect_to=' + encodeURIComponent(studentRedirect('login')),
     { email: email.trim().toLowerCase(), create_user: true });
 }
 export async function protectStudentAccount(email) {
-  const token = await accessToken(studentSessionKey);
-  const res = await fetch(endpoint('/auth/v1/user?redirect_to=' +
-    encodeURIComponent(studentRedirect('protected'))), {
-    method:'PUT', cache:'no-store',
-    headers:{ 'Content-Type':'application/json', apikey:SUPABASE_PUBLISHABLE_KEY,
-      Authorization:'Bearer '+token },
-    body:JSON.stringify({email:email.trim().toLowerCase()})
-  });
-  const body = await res.json().catch(()=>({}));
-  if (!res.ok) throw new Error(body.msg || body.message || body.error_description ||
-    'No se pudo enviar el correo de verificación. Consulta al docente.');
-  return body;
+  return sessionRequest(studentSessionKey, '/auth/v1/user?redirect_to=' +
+    encodeURIComponent(studentRedirect('protected')), {email:email.trim().toLowerCase()}, 'PUT');
 }
 export async function studentAuthUser() {
-  const token = await accessToken(studentSessionKey);
-  const res = await fetch(endpoint('/auth/v1/user'), {
-    headers:{apikey:SUPABASE_PUBLISHABLE_KEY, Authorization:'Bearer '+token},
-    cache:'no-store'
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(()=>({}));
-    if (invalidAuthSession(res.status, body.code || body.error_code) &&
-        session(studentSessionKey)?.access_token === token) saveSession(null, studentSessionKey);
-    throw new Error('Tu sesión no está disponible. Recupera el acceso con tu correo.');
+  const before = session(studentSessionKey);
+  try { return await sessionRequest(studentSessionKey, '/auth/v1/user', undefined, 'GET'); }
+  catch (error) {
+    if (invalidAuthSession(error.status, error.code)) {
+      if (session(studentSessionKey)?.refresh_token === before?.refresh_token) saveSession(null, studentSessionKey);
+      throw new Error('Tu sesión no está disponible. Recupera el acceso con tu correo.');
+    }
+    throw error;
   }
-  return res.json();
 }
 let anonymousSignIn = null, studentSignInGeneration = 0;
 export async function signInStudentAnonymously() {
@@ -198,16 +204,23 @@ export async function signInStudentAnonymously() {
 // Presence, chat and teacher dashboard can ask for a token simultaneously.
 // Share refreshes per session, never across student and teacher identities.
 const pendingRefreshes = new Map();
-async function accessToken(key = sessionKey) {
+async function accessToken(key = sessionKey, force = false, rejectedToken = null) {
+  const usable = value => value?.access_token &&
+    (!force || value.access_token !== rejectedToken) && value.expires_at * 1000 > Date.now() + 60000;
   const value = session(key);
   if (!value?.access_token) throw new Error('Inicia sesión con tu correo.');
-  if (value.expires_at && value.expires_at * 1000 > Date.now() + 60000) return value.access_token;
-  if (!value.refresh_token) {
-    saveSession(null, key);
-    throw new Error('Tu sesión venció. Recupera el acceso con tu correo.');
-  }
+  if (usable(value)) return value.access_token;
   if (pendingRefreshes.has(key)) return pendingRefreshes.get(key);
-  const refresh = (async () => {
+  const renew = async () => {
+    // Re-read after obtaining the browser-wide lock. Another tab may already
+    // have rotated the token, signed out, or completed an email login.
+    const value = session(key);
+    if (!value?.access_token) throw new Error('La sesión se cerró. Inicia sesión nuevamente.');
+    if (usable(value)) return value.access_token;
+    if (!value.refresh_token) {
+      saveSession(null, key);
+      throw new Error('Tu sesión venció. Recupera el acceso con tu correo.');
+    }
     let renewed;
     try {
       renewed = await request('/auth/v1/token?grant_type=refresh_token',
@@ -235,18 +248,29 @@ async function accessToken(key = sessionKey) {
     }
     saveSession(renewed, key);
     return renewed.access_token;
-  })();
+  };
+  const refresh = typeof navigator !== 'undefined' && navigator.locks?.request
+    ? navigator.locks.request('aula-auth-refresh:' + key, renew) : renew();
   pendingRefreshes.set(key, refresh);
   try { return await refresh; }
   finally { if (pendingRefreshes.get(key) === refresh) pendingRefreshes.delete(key); }
 }
+async function sessionRequest(key, path, body, method = 'POST') {
+  const token = await accessToken(key);
+  try { return await request(path, body, token, method); }
+  catch (error) {
+    // A sleeping tab or a device clock can leave a locally "valid" JWT that
+    // the server has expired. Only an authentication rejection is retried.
+    if (error.status !== 401 || !/^(PGRST301|PGRST303|bad_jwt|jwt_expired)$/.test(error.code || '')) throw error;
+    const renewed = await accessToken(key, true, token);
+    return request(path, body, renewed, method);
+  }
+}
 export async function rpc(name, body = {}) {
-  const token = await accessToken();
-  return request(`/rest/v1/rpc/${name}`, body, token);
+  return sessionRequest(sessionKey, `/rest/v1/rpc/${name}`, body);
 }
 export async function studentRpc(name, body = {}) {
-  const token = await accessToken(studentSessionKey);
-  return request(`/rest/v1/rpc/${name}`, body, token);
+  return sessionRequest(studentSessionKey, `/rest/v1/rpc/${name}`, body);
 }
 export function studentSignedIn() { return !!session(studentSessionKey)?.access_token; }
 export function studentSignOut() {

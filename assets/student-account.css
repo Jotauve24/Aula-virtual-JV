@@ -1,6 +1,6 @@
 /* AulavirtualJV · Recoverability without changing existing registration styling. */
 /* Keep the recovery option visible, but visually separate from first registration. */
-.student-returning-entry { margin-top:16px; padding-top:15px; border-top:1px solid var(--line); text-align:center; }
+.student-returning-entry { margin:0 0 16px; padding:0 0 15px; border-bottom:1px solid var(--line); text-align:center; }
 .student-returning-question { margin:0; color:var(--muted); font:500 13px/1.5 ui-sans-serif,system-ui,sans-serif; }
 .student-registered-link { display:inline-block; margin:5px auto 0; background:transparent; border:0; padding:9px 10px; color:var(--accent); font:700 13px/1.4 ui-sans-serif,system-ui,sans-serif; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
 .student-registered-link:hover,.student-registered-link:focus-visible { color:var(--deep); }
@@ -12,7 +12,7 @@
 .student-account-inner>p { font-size:13px; color:var(--muted); line-height:1.65; margin:0 0 17px; }
 .student-account-inner form { display:grid; gap:10px; }
 .student-account-inner label { font-size:12px; font-weight:750; color:var(--accent); }
-.student-account-inner input { display:block; width:100%; min-height:45px; box-sizing:border-box; padding:11px 12px; background:var(--surface); color:var(--accent); border:1px solid var(--line); border-radius:8px; font:500 14px ui-sans-serif,system-ui,sans-serif; }
+.student-account-inner input { display:block; width:100%; min-height:45px; box-sizing:border-box; padding:11px 12px; background:var(--surface); color:var(--accent); border:1px solid var(--line); border-radius:8px; font:inherit; font-size:16px; }
 .student-account-inner input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .student-account-inner button.button { min-height:43px; }
 .student-account-inner .student-account-hint { margin:3px 0 9px; font-size:12px; line-height:1.55; color:var(--muted); }
@@ -22,6 +22,18 @@
 .student-account-dialog .field-error { margin:14px 0 0; padding:11px 13px; border-radius:9px; background:var(--red-soft); border:1px solid var(--salmon); color:var(--red); font-size:12px; }
 .student-account-action { display:block; width:100%; margin:8px 0; text-align:center; }
 #protect-account { white-space:nowrap; }
+.student-account-reminder { display:flex; align-items:center; gap:12px; margin:0 0 18px; padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:var(--accent-soft); color:var(--ink); }
+.student-account-reminder[hidden] { display:none; }
+.student-account-reminder>div { flex:1; min-width:0; }
+.student-account-reminder strong { font-size:14px; }
+.student-account-reminder p { margin:4px 0 0; font-size:14px; line-height:1.5; color:var(--muted); }
+.student-account-reminder .button { flex-shrink:0; min-height:44px; }
+.account-reminder-dismiss { flex-shrink:0; width:44px; height:44px; border:0; border-radius:8px; background:transparent; color:var(--accent); font:inherit; font-size:24px; cursor:pointer; }
+.account-reminder-dismiss:hover { background:var(--surface); }
+.account-reminder-dismiss:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.student-account-dialog { overscroll-behavior:contain; }
+.student-account-inner .student-account-hint,.student-account-inner>p,.student-account-inner label { font-size:14px; overflow-wrap:anywhere; }
+@media(max-width:620px){.student-account-reminder{flex-wrap:wrap;gap:8px}.student-account-reminder>div{flex-basis:calc(100% - 52px)}.student-account-reminder .button{order:2;width:100%}}
 @media(max-width:620px){ .student-account-inner{padding:23px 18px}.student-account-inner h2{font-size:22px} #protect-account{white-space:normal;font-size:11px} }
 @media(prefers-reduced-motion:reduce){.student-account-dialog{scroll-behavior:auto}}
 

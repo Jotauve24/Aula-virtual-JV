@@ -1,21 +1,21 @@
-import './video-guide.js?v=0.34.0';
-import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.34.0';
-import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.34.0';
-import './embed.js?v=0.34.0';
-import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.34.0';
-import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.34.0';
-import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.34.0';
-import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.34.0';
-import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.34.0';
-import { createIncomingMessageTracker } from './chat-notification.js?v=0.34.0';
-import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.34.0';
-import { createChatPushSettings } from './chat-push.js?v=0.34.0';
-import { createRecentCourses } from './recent-courses.js?v=0.34.0';
-import { createPeerMotion } from './peer-motion.js?v=0.34.0';
-import { createClassroomBoard } from './classroom-board.js?v=0.34.0';
-import { createStudentNotices } from './student-notices.js?v=0.34.0';
-import { createStudentGradeCalculator } from './grade-calculator.js?v=0.34.0';
-import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.34.0';
+import './video-guide.js?v=0.34.1';
+import { normalizeStudentDocument, DOCUMENT_COUNTRIES } from './student-document.js?v=0.34.1';
+import { ATTACHMENT_ACCEPT, attachmentInfo, fileSizeLabel } from './attachments.js?v=0.34.1';
+import './embed.js?v=0.34.1';
+import { configured, signInStudentAnonymously, studentRpc, studentSignedIn, studentSignOut, uploadTeamFile, cancelTeamFile, downloadTeamFile } from './supabase-client.js?v=0.34.1';
+import { SKINS, SHIRTS, normalizeCode, normalizeStudentAge } from './model.js?v=0.34.1';
+import { avatarSVG, drawWorld, roomTheme } from './world.js?v=0.34.1';
+import { createRoomLayout, findPath, isWalkable, canWalkSegment, memberSeat } from './world-layout.js?v=0.34.1';
+import { createParticipantPalette, applyParticipantColor, participantAvatar, chatMessage } from './chat-ui.js?v=0.34.1';
+import { createIncomingMessageTracker } from './chat-notification.js?v=0.34.1';
+import { createFloatingChat, decorateChatForm } from './floating-chat.js?v=0.34.1';
+import { createChatPushSettings } from './chat-push.js?v=0.34.1';
+import { createRecentCourses } from './recent-courses.js?v=0.34.1';
+import { createPeerMotion } from './peer-motion.js?v=0.34.1';
+import { createClassroomBoard } from './classroom-board.js?v=0.34.1';
+import { createStudentNotices } from './student-notices.js?v=0.34.1';
+import { createStudentGradeCalculator } from './grade-calculator.js?v=0.34.1';
+import { createTeamNameControl, renderTeamLight, teamLockIcon, enrollmentReviewBadge, enrollmentReviewCount, enrollmentReviewSummary } from './team-ui.js?v=0.34.1';
 
 const $ = selector => document.querySelector(selector);
 const recentCourses = createRecentCourses();
@@ -89,6 +89,7 @@ function show(stage) {
   stopAnimation();
   stopAmbientAnimation();
   const onboarding = stage !== 'room';
+  if(onboarding)$('#student-account-reminder').hidden=true;
   floatingChat.setEnabled(!onboarding);
   if (onboarding) { clearPersonLocator(); $('#team-room-light').hidden = true; $('#enrollment-review-alert').hidden = true; }
   $('#in-room-dialog').hidden = !onboarding;
@@ -146,7 +147,7 @@ const questionText = {
   firstName: ['¡Hola! ¿Cómo te llamas?', 'Escribe tus nombres para comenzar a crear tu perfil.'],
   lastName: ['¿Y cuál es tu apellido?', 'Así aparecerás en la lista del docente.'],
   age: ['¿Cuántos años tienes?', 'Escribe tu edad actual en años cumplidos.'],
-  email: ['¿Qué correo podemos usar para contactarte?', 'Tu equipo podrá ver este correo. No tienes que abrir ningún enlace de confirmación.'],
+  email: ['¿Qué correo podemos usar para contactarte?', 'Usa un correo propio y revisa que esté bien escrito. Al entrar podrás verificarlo para recuperar tu cuenta desde otro dispositivo.'],
   documentNumber: ['Tu documento de identidad', 'Una sola cuenta por estudiante, aunque cambies de correo o dispositivo.'],
   phone: ['Por último, ¿tu número de teléfono?', 'Tu teléfono empieza privado. En «Mi equipo» decides si lo compartes.']
 };

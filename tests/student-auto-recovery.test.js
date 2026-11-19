@@ -13,14 +13,16 @@ class Element {
   addEventListener(type,callback){this.listeners.set(type,callback);}
   replaceChildren(...children){this.children=children;}
   append(...children){this.children.push(...children);}
+  querySelector(tag){return this.children.find(child=>child.tagName===tag)||null;}
   setAttribute(){}
   focus(){}
   showModal(){this.open=true;}
   close(){this.open=false;}
 }
-function browser({pending={status:'pending'},own=[],search='',storedCode='',recoveryCode='',documentRecovery=false,confirmed=true,anonymous=false,hasEnrollment=false,authFailure='',expireSession=false,authWait,rpcWait,loginWait}={}){
+function browser({pending={status:'pending'},own=[],search='',storedCode='',recoveryCode='',documentRecovery=false,confirmed=true,anonymous=false,hasEnrollment=false,authFailure='',expireSession=false,authWait,rpcWait,loginWait,callbackError='',formCode='',recoveredOwn=null}={}){
   const elements=new Map();
   const get=selector=>{if(!elements.has(selector))elements.set(selector,new Element());return elements.get(selector);};
+  get('#registration-form').elements={namedItem:name=>({value:name==='code'?formCode:''})};
   const memory=new Map(storedCode?[['aula-student-course-code',storedCode]]:[]);
   if(recoveryCode)memory.set('aula-student-recovery-code',recoveryCode);
   if(documentRecovery)memory.set('aula-student-document-recovery','1');
@@ -36,7 +38,7 @@ function browser({pending={status:'pending'},own=[],search='',storedCode='',reco
   const studentRpc=async(name,args)=>{
     rpcCalls.push({name,args});
     if(rpcWait)await rpcWait(name,args);
-    if(name==='student_recover_document_account')return {recovered:own.length};
+    if(name==='student_recover_document_account'){if(recoveredOwn)own=recoveredOwn;return {recovered:own.length};}
     if(name==='student_has_any_enrollment')return hasEnrollment;
     if(name==='student_owned_courses')return own;
     if(name==='student_complete_profile_recovery')return pending;
@@ -46,6 +48,7 @@ function browser({pending={status:'pending'},own=[],search='',storedCode='',reco
   let signedIn=true;
   const context=vm.createContext({
     document:{querySelector:get,createElement:tag=>new Element(tag)},
+    studentCallbackError:()=>callbackError,studentAuthError:error=>error.message,sessionUserId:()=>"verified",
     studentSignedIn:()=>signedIn,studentRpc,
     studentAuthUser:async()=>{
       if(authWait)await authWait();
@@ -244,4 +247,62 @@ test('comprobar recuperación no reabre el aula después de cerrar sesión',asyn
  const pending=page.check();await page.settle();page.get('#logout').listeners.get('click')();
  release();await pending;
  assert.equal(page.navigations.length,0);assert.equal(page.get('#student-account-dialog').open,false);
+});
+
+test('the email callback carries the chosen subject into a browser with no previous storage',async()=>{
+  const code='MAT-AAAAA-BBBBB-CCCCC';
+  const page=browser({search:'?student_auth=login&recovery_code='+code,
+    pending:{status:'recovered',course_id:ownedCourse}});
+  await page.settle();
+  assert.equal(page.rpcCalls.find(call=>call.name==='student_request_profile_recovery').args.p_code,code);
+  assert.match(page.navigations[0],new RegExp('resume_id='+ownedCourse));
+});
+test('ordinary recovery remembers the code consumed from the entrance form',async()=>{
+  const page=browser({anonymous:true,formCode:'MAT-AAAAA-BBBBB-CCCCC'});
+  await page.get('#student-sign-in').listeners.get('click')();
+  assert.equal(vm.runInContext("localStorage.getItem('aula-student-recovery-code')",page.context),'MAT-AAAAA-BBBBB-CCCCC');
+});
+test('an expired email link cannot be mistaken for an existing anonymous login',async()=>{
+  const page=browser({anonymous:true,search:'?student_auth=login',callbackError:'El enlace venció',
+    own:[{course_id:ownedCourse,course_name:'Materia original'}]});
+  await page.settle();
+  assert.equal(page.navigations.length,0);assert.equal(page.rpcCalls.length,0);
+  assert.equal(page.get('#account-dialog-title').textContent,'El enlace no se pudo completar');
+  assert.ok(page.get('#account-dialog-content').children.some(node=>node.textContent==='Solicitar otro enlace'));
+});
+test('a verified email can locate its original registered profile without remembered codes',async()=>{
+  const page=browser({search:'?student_auth=login',recoveredOwn:[{course_id:ownedCourse,course_name:'Mi materia'}]});
+  await page.settle();
+  assert.ok(page.rpcCalls.some(call=>call.name==='student_recover_document_account'));
+  assert.match(page.navigations[0],new RegExp('resume_id='+ownedCourse));
+});
+test('an empty verified account can correct the recovery email without registering again',async()=>{
+  const page=browser();await vm.runInContext('openRecoveryRequest()',page.context);
+  const change=page.get('#account-dialog-content').children.find(node=>node.textContent==='Usar otro correo');
+  await change.listeners.get('click')();await page.settle();
+  assert.equal(page.get('#account-dialog-title').textContent,'Recuperar mi cuenta');
+  assert.ok(page.get('#account-dialog-content').children.some(node=>node.tagName==='form'));
+  assert.equal(page.navigations.length,0);
+});
+test('changing recovery email preserves a verified session with an existing enrollment',async()=>{
+  const page=browser({hasEnrollment:true});await vm.runInContext('openRecoveryRequest()',page.context);
+  const change=page.get('#account-dialog-content').children.find(node=>node.textContent==='Usar otro correo');
+  await change.listeners.get('click')();await page.settle();
+  assert.equal(page.get('#account-dialog-title').textContent,'Recuperar mi perfil');
+  assert.match(page.get('#account-dialog-message').textContent,/ya conserva inscripciones/);
+});
+
+test('the unverified-access reminder can be dismissed for this account',async()=>{
+  const page=browser({anonymous:true});page.get('#room').dataset.stage='room';
+  await vm.runInContext('syncProtectButton()',page.context);
+  assert.equal(page.get('#student-account-reminder').hidden,false);
+  await page.get('#student-account-dismiss').listeners.get('click')();
+  await vm.runInContext('syncProtectButton()',page.context);
+  assert.equal(page.get('#student-account-reminder').hidden,true);
+});
+test('a protected account does not show the unverified-browser reminder',async()=>{
+  const page=browser();page.get('#room').dataset.stage='room';
+  await vm.runInContext('syncProtectButton()',page.context);
+  assert.equal(page.get('#student-account-reminder').hidden,true);
+  assert.equal(page.get('#protect-account').textContent,'Cuenta protegida ✓');
 });

@@ -392,6 +392,9 @@ Al abrir una materia, el docente encuentra su código en **Código de la materia
 
 El código de materia no verifica la identidad individual. En la primera inscripción el correo es de contacto, sin verificar. La sesión del navegador permite volver normalmente; antes de cerrar sesión o borrar datos, el alumno puede proteger su cuenta con correo verificado. Si pierde la sesión sin protegerla, la recuperación automática solo funciona cuando el correo verificado coincide con un único perfil anónimo y no conectado; los casos ambiguos requieren revisión. Para cambiar de equipo, el estudiante debe pedir al docente que libere su lugar. La presencia de estudiantes y docentes se consulta periódicamente y muestra sus últimas posiciones, con una caducidad breve para usuarios desconectados.
 
+La revisión de reingreso **0.34.1** mejora la recuperación al cambiar de navegador, explica la verificación del correo, identifica enlaces vencidos y coordina la renovación de sesiones entre pestañas. [Lógica, comprobaciones y orientación para estudiantes](docs/revision-acceso-estudiantes-2026-11-19.md).
+
+
 ## Compartir en E-ducativa
 
 Comparte el enlace del aula y el código de la materia, sin incrustar la página:
