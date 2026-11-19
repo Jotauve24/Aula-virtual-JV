@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { createLibrarySession, libraryRole } from '../assets/library-session.js';
 import { BOARD_CATEGORIES } from '../assets/content-board-model.js';
+import { categoryIcon, decorateCategorySelect } from '../assets/content-category.js';
 
 const source = readFileSync(new URL('../assets/library.js', import.meta.url), 'utf8').replace(/^import .*;\r?\n/gm, '');
 const a = '00000000-0000-4000-8000-000000000001', b = '00000000-0000-4000-8000-000000000002';
@@ -25,7 +26,7 @@ function app(url = 'https://aula.example/biblioteca.html?vista=docente') {
     window: { addEventListener: (name, handler) => events.set(name, handler) },
     location, history: { replaceState: (_, __, path) => { location.href = new URL(path, location).href; } },
     URL, URLSearchParams, configured: true, signedIn: () => true, studentSignedIn: () => false,
-    sessionUserId: () => user, contentBoardFiles: () => ({}), createLibrarySession, libraryRole, BOARD_CATEGORIES,
+    sessionUserId: () => user, contentBoardFiles: () => ({}), createLibrarySession, libraryRole, BOARD_CATEGORIES, categoryIcon, decorateCategorySelect,
     rpc: async name => { calls.push(name); return [{ id: user, name: user === a ? 'Primera materia' : 'Segunda materia' }]; },
     studentRpc: () => { throw Error('Unexpected student request'); },
     createContentBoardDemo: () => { throw Error('Unexpected demo request'); },

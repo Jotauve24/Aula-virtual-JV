@@ -47,13 +47,13 @@
 .library-page [hidden]{display:none!important}
 .library-page :is(a,button,input,select,summary):focus-visible{outline:3px solid var(--focus);outline-offset:3px}
 @media(min-width:1350px){.library-workspace{grid-template-columns:210px minmax(0,1fr);gap:28px}}
-@media(max-width:1000px){.library-workspace{grid-template-columns:180px minmax(0,1fr);gap:22px}.library-resources .cb-heading{flex-wrap:wrap}.library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) 155px auto}}
+@media(max-width:1000px){.library-workspace{grid-template-columns:180px minmax(0,1fr);gap:22px}.library-resources .cb-heading{flex-wrap:wrap}.library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) 210px auto}}
 @media(max-width:800px){
  .library-header{padding:14px 18px;align-items:flex-start;gap:12px;flex-wrap:wrap}.library-header nav{gap:14px}.library-header nav a{font-size:13px}
  .library-shell{padding:12px 18px 30px}.library-heading{gap:14px;margin-bottom:24px;flex-wrap:wrap}.library-heading h1{font-size:29px}
  .library-workspace{display:block}.library-collections{padding:0;border:0;margin:0 0 22px}.library-collections>h2,.library-collections>nav,.library-collections>p,.library-collections>.library-filter,.library-collections>.library-all-button,.library-collections>.library-my-posts{display:none!important}
  .library-course-select{display:grid;gap:7px;font-size:13px;font-weight:750}.library-current-course{font-size:14px;margin-bottom:14px}
- .library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) 155px auto}.library-footer{padding:18px}
+ .library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) 210px auto}.library-footer{padding:18px}
 }
 @media(max-width:650px){
  .library-header .brand-mark{width:34px;height:34px}.library-header .brand-name{font-size:20px}.library-header .brand small{font-size:11px}

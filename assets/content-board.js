@@ -1,6 +1,7 @@
-import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.34.3';
-import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.34.3';
-import { createContentBoardSession } from './content-board-session.js?v=0.34.3';
+import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.34.4';
+import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.34.4';
+import { createContentBoardSession } from './content-board-session.js?v=0.34.4';
+import { decorateCategoryLabel, decorateCategorySelect } from './content-category.js?v=0.34.4';
 
 export function createContentBoard({ host, rpc, files, signedIn, demo = false, showGroups = true, shared = false,
   onPublish = null, canPublish = () => true, onEdit = null, canEdit = () => false, onKindChange = () => {}, root = document, win = window }) {
@@ -70,6 +71,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     search.input.placeholder = 'Título, texto o autor…';
     const kind = field('cb-kind', 'Tipo de contenido', 'select'); kind.input.append(option('', 'Todos los tipos'));
     for (const [value, label] of Object.entries(BOARD_KINDS)) kind.input.append(option(value, label));
+    decorateCategorySelect(kind.wrap, '', root);
     const filters = el('details', '', 'cb-filters'); filters.append(el('summary', 'Más filtros'));
     const scope = field('cb-scope', 'Publicaciones', 'select'); scope.input.append(option('all', 'Todas'), option('mine', 'Mis publicaciones')); if (!shared) scope.input.append(option('hidden', 'Ocultas o retiradas'));
     const topic = field('cb-topic', 'Equipo', 'select'); topic.input.append(option('', 'Todos los equipos'));
@@ -83,7 +85,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     const more = button('Ver más publicaciones', () => void session.load(true), 'button secondary'); more.hidden = true;
     host.className = 'content-board'; host.replaceChildren(heading, audience, settings, instruction, closed, toolbar, summary, notice, errorBox, surface, more);
     nodes = { publish, refresh, settings, instructionsField: instructionsField.input, postingOpen, configSave, configStatus, configReload,
-      instruction, instructionBody, closed, search: search.input, kind: kind.input, scope: scope.input, topic: topic.input, summary, errorBox, errorText, notice, surface, feed, more };
+      instruction, instructionBody, closed, search: search.input, kind: kind.input, kindWrap: kind.wrap, scope: scope.input, topic: topic.input, summary, errorBox, errorText, notice, surface, feed, more };
     search.input.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => session.filter({ search: search.input.value }), 250); });
     for (const [input, key] of [[kind.input, 'kind'], [scope.input, 'scope'], [topic.input, 'topicId']]) input.addEventListener('change', () => {
       session.filter({ [key]: input.value }); if (key === 'kind') onKindChange(input.value);
@@ -111,6 +113,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
   function onChange(kind, state) {
     if (kind === 'reset') { dispose(); return; }
     if (!nodes) return;
+    decorateCategorySelect(nodes.kindWrap, state.filters.kind, root);
     const hasActor = !!state.actor;
     nodes.publish.hidden = shared && (!onPublish || !canPublish());
     nodes.publish.disabled = busy || state.saving || !hasActor || (shared ? !onPublish || !canPublish() : !state.actor.isTeacher && !state.settings?.postingOpen);
@@ -153,8 +156,9 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
   }
   function card(post, actor) {
     const card = el('article', '', 'cb-card'); card.id = 'board-post-' + post.id; card.dataset.kind = post.kind; card.dataset.state = post.state;
+    card.setAttribute('data-category', post.kind);
     const pin = el('span', '', 'cb-paper-pin'); pin.setAttribute('aria-hidden', 'true'); card.append(pin);
-    const top = el('div', '', 'cb-card-meta'); top.append(el('span', BOARD_KINDS[post.kind], 'cb-kind-label'));
+    const top = el('div', '', 'cb-card-meta'); top.append(decorateCategoryLabel(el('span', BOARD_KINDS[post.kind], 'cb-kind-label'), post.kind, root));
     if (post.pinned) top.append(el('span', 'Destacado', 'cb-featured'));
     card.append(top);
     if (post.attachment?.type.startsWith('image/') || demo && post.demoImage === 'teamwork') {
@@ -238,7 +242,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     reader.setAttribute('aria-labelledby', 'cb-reader-title');
     const close = button('Cerrar', () => { reader.close(); root.getElementById('board-post-' + post.id)?.querySelector('.cb-post-title')?.focus(); }, 'button secondary');
     const title = el('h2', post.title); title.id = 'cb-reader-title';
-    reader.append(el('p', BOARD_KINDS[post.kind], 'cb-muted'), title, el('p', post.body, 'cb-reader-body'));
+    reader.append(decorateCategoryLabel(el('p', BOARD_KINDS[post.kind], 'cb-kind-label'), post.kind, root), title, el('p', post.body, 'cb-reader-body'));
     appendResources(reader, post); reader.append(close); root.body.append(reader); reader.showModal();
   }
   async function act(post, action) {
@@ -255,6 +259,8 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     const title = field('cb-title', 'Título'), kind = field('cb-post-kind', 'Tipo de contenido', 'select'), body = field('cb-body', 'Texto o descripción', 'textarea'), url = field('cb-url', 'Enlace del recurso o video (opcional)');
     title.input.maxLength = 120; title.input.value = post?.title ?? ''; title.input.placeholder = 'Ej.: Una idea para aprender de otra manera…';
     for (const [value, label] of Object.entries(BOARD_KINDS)) kind.input.append(option(value, label)); kind.input.value = post?.kind ?? (Object.hasOwn(BOARD_KINDS, defaultKind) ? defaultKind : 'note');
+    decorateCategorySelect(kind.wrap, kind.input.value, root);
+    kind.input.addEventListener('change', () => decorateCategorySelect(kind.wrap, kind.input.value, root));
     body.input.rows = 5; body.input.maxLength = 3000; body.input.value = post?.body ?? ''; body.input.placeholder = 'Explica qué compartes y cómo puede ayudar a otros estudiantes…';
     url.input.type = 'url'; url.input.inputMode = 'url'; url.input.spellcheck = false; url.input.maxLength = 2000; url.input.placeholder = 'https://…'; url.input.value = post?.url ?? '';
     const file = field('cb-file', 'Archivo (opcional)'); file.input.type = 'file'; file.input.accept = ATTACHMENT_ACCEPT;
