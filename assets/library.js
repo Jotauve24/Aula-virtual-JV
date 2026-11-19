@@ -1,14 +1,14 @@
-import './embed.js?v=0.32.1';
-import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.32.1';
-import { createContentBoard } from './content-board.js?v=0.32.1';
-import { createContentBoardDemo } from './content-board-demo.js?v=0.32.1';
-import { createLibrarySession, libraryRole } from './library-session.js?v=0.32.1';
+import './embed.js?v=0.32.2';
+import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.32.2';
+import { createContentBoard } from './content-board.js?v=0.32.2';
+import { createContentBoardDemo } from './content-board-demo.js?v=0.32.2';
+import { createLibrarySession, libraryRole } from './library-session.js?v=0.32.2';
 
 const $ = selector => document.querySelector(selector), params = new URLSearchParams(location.search);
 const demo = params.get('demo') === '1';
 const roleNames = { teacher: 'Docente', student: 'Estudiante', demo: 'Demostración' };
-const sampleCourses = [{ id: '00000000-0000-4000-8000-000000000001', name: 'Informática II · Ejemplo' },
-  { id: '00000000-0000-4000-8000-000000000002', name: 'Sistemas II · Ejemplo' }];
+const sampleCourses = [{ id: '00000000-0000-4000-8000-000000000001', name: 'Informática II' },
+  { id: '00000000-0000-4000-8000-000000000002', name: 'Sistemas II' }];
 const examples = new Map(), boards = new Map();
 let activeBoard = null, activeRole = '', filter = '', signature = '';
 const available = () => demo ? ['demo'] : [signedIn() ? 'teacher' : '', studentSignedIn() ? 'student' : ''].filter(Boolean);

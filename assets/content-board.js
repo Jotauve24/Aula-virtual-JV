@@ -1,6 +1,6 @@
-import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.32.1';
-import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.32.1';
-import { createContentBoardSession } from './content-board-session.js?v=0.32.1';
+import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.32.2';
+import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.32.2';
+import { createContentBoardSession } from './content-board-session.js?v=0.32.2';
 
 export function createContentBoard({ host, rpc, files, signedIn, demo = false, showGroups = true, root = document, win = window }) {
   let courseId = '', epoch = 0, nodes = null, searchTimer = 0, observer = null;

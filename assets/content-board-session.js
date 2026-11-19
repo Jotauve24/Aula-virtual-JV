@@ -1,4 +1,4 @@
-import { BOARD_PAGE_SIZE, mergeBoardPosts, normalizeBoardPage, normalizeBoardPost } from './content-board-model.js?v=0.32.1';
+import { BOARD_PAGE_SIZE, mergeBoardPosts, normalizeBoardPage, normalizeBoardPost } from './content-board-model.js?v=0.32.2';
 
 const defaultFilters = () => ({ kind: '', scope: 'all', topicId: '', search: '' });
 export function createContentBoardSession({ rpc, signedIn, onChange = () => {} }) {
