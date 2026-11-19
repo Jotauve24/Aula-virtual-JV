@@ -1,4 +1,4 @@
-import { projectPendingGrades } from './grade-calculator-model.js?v=0.34.1';
+import { projectPendingGrades } from './grade-calculator-model.js?v=0.34.2';
 
 const number = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 2 });
 const precise = new Intl.NumberFormat('es-PA', { maximumFractionDigits: 6 });

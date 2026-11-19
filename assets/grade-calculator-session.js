@@ -1,4 +1,4 @@
-import { normalizeGradeDraft, parseGrade, projectPendingGrades, validateGradeActivities } from './grade-calculator-model.js?v=0.34.1';
+import { normalizeGradeDraft, parseGrade, projectPendingGrades, validateGradeActivities } from './grade-calculator-model.js?v=0.34.2';
 
 // A simulation belongs to a verified student/course, never to localStorage.
 export function createGradeSession({ rpc, signedIn, onChange = () => {} }) {

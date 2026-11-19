@@ -84,3 +84,5 @@ tableta y celular. La navegación a Biblioteca conserva el documento que posee l
 El paso a Biblioteca no modifica el esquema, los permisos ni los datos existentes: reutiliza los mismos RPC de publicaciones y Storage. Se retiraron las instancias incrustadas y sus manejadores del aula, de la sala docente y del panel. La prueba automatizada del selector nativo de archivos se
 interrumpió; no se considera una prueba visual de subida completada. La API de
 archivos y sus permisos se verificaron con pruebas automatizadas y SQL.
+
+En 0.34.2 se incorpora **Herramientas digitales** (`digital_tool`) al publicador, los filtros y las categorías de la biblioteca. Admite descripción, archivos permitidos y enlaces HTTPS; conserva los mismos permisos de publicación, edición y lectura.
