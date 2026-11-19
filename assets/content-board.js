@@ -1,12 +1,13 @@
-import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.34.2';
-import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.34.2';
-import { createContentBoardSession } from './content-board-session.js?v=0.34.2';
+import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.34.3';
+import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.34.3';
+import { createContentBoardSession } from './content-board-session.js?v=0.34.3';
 
 export function createContentBoard({ host, rpc, files, signedIn, demo = false, showGroups = true, shared = false,
   onPublish = null, canPublish = () => true, onEdit = null, canEdit = () => false, onKindChange = () => {}, root = document, win = window }) {
   let courseId = '', epoch = 0, nodes = null, searchTimer = 0, observer = null;
   let composer = null, reader = null, selectedFile = null, pending = null, attachment = null;
   let draftDirty = false, configDirty = false, configRevision = 0, busy = false;
+  let openedActions = null;
   const urls = new Set(), pictureURLs = new Set();
   const session = createContentBoardSession({ rpc, signedIn, onChange, shared });
   const el = (tag, text = '', css = '') => { const node = root.createElement(tag); node.textContent = text; if (css) node.className = css; return node; };
@@ -17,10 +18,24 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
   }
   function option(value, label) { const node = el('option', label); node.value = value; return node; }
   function message(error) { return error.message || 'No se pudo completar la operación. Vuelve a intentarlo.'; }
+  function closePostActions(restoreFocus = false) {
+    if (!openedActions) return;
+    const previous = openedActions; openedActions = null;
+    previous.details.open = false; delete previous.card.dataset.menuOpen;
+    root.removeEventListener('pointerdown', outsidePostActions);
+    root.removeEventListener('keydown', postActionsKey);
+    if (restoreFocus) previous.summary.focus();
+  }
+  function outsidePostActions(event) { if (openedActions && !openedActions.details.contains(event.target)) closePostActions(); }
+  function postActionsKey(event) {
+    if (event.key !== 'Escape' || !openedActions) return;
+    event.preventDefault(); event.stopPropagation(); closePostActions(true);
+  }
   function disposePictures() { observer?.disconnect(); observer = null; for (const url of pictureURLs) { win.URL.revokeObjectURL(url); urls.delete(url); } pictureURLs.clear(); }
   function localURL(blob, picture = false) { const url = win.URL.createObjectURL(blob); urls.add(url); if (picture) pictureURLs.add(url); return url; }
   function cleanupPending() { if (pending) { const path = pending.path; pending = null; void files.cancel(path).catch(() => {}); } }
   function dispose() {
+    closePostActions();
     clearTimeout(searchTimer); disposePictures(); cleanupPending(); composer?.dialog.remove(); reader?.remove();
     for (const url of urls) win.URL.revokeObjectURL(url); urls.clear();
     composer = reader = nodes = selectedFile = attachment = null; draftDirty = configDirty = busy = false;
@@ -109,12 +124,14 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     host.setAttribute('aria-busy', String(state.loading));
     if (kind === 'loaded') { applySettings(state); renderPosts(state); }
     if (kind === 'error' && !state.actor) {
+      closePostActions();
       disposePictures(); nodes.feed.replaceChildren(); nodes.settings.hidden = nodes.instruction.hidden = nodes.closed.hidden = true;
       nodes.topic.replaceChildren(option('', 'Todos los equipos'));
     }
     for (const control of nodes.feed.querySelectorAll('[data-post-action]')) control.disabled = state.saving || busy;
   }
   function renderPosts(state) {
+    closePostActions();
     disposePictures();
     if (!state.posts.length) {
       const empty = el('div', '', 'cb-empty');
@@ -147,11 +164,14 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
       if (demo && post.demoImage === 'teamwork') image.src = new URL('./board-example.svg', import.meta.url).href;
       else if (observer) observer.observe(image); else queueMicrotask(() => void loadPicture(image));
     }
-    const title = el('h3'); title.append(button(post.title, () => openReader(post), 'cb-post-title')); card.append(title);
+    const title = el('h3'), titleButton = button(post.title, () => openReader(post), 'cb-post-title');
+    titleButton.title = post.title; title.append(titleButton); card.append(title);
     if (post.body) card.append(el('p', post.body.length > 320 ? post.body.slice(0, 320) + '…' : post.body, 'cb-post-body'));
     if (post.body.length > 320) card.append(button('Leer publicación completa', () => openReader(post), 'cb-text-button'));
     appendResources(card, post);
-    const by = el('p', '', 'cb-byline'); by.append(el('strong', post.authorName), el('span', post.authorIsTeacher ? 'Docente' : showGroups ? post.topicName || 'Estudiante · sin equipo' : 'Estudiante'));
+    const by = el('p', '', 'cb-byline'); by.append(el('strong', post.authorName));
+    const authorRole = post.authorIsTeacher ? 'Docente' : showGroups ? post.topicName || 'Estudiante · sin equipo' : 'Estudiante';
+    if (post.authorName.trim().toLocaleLowerCase('es') !== authorRole.toLocaleLowerCase('es')) by.append(el('span', authorRole));
     const time = el('time', new Intl.DateTimeFormat('es-PA', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(post.createdAt)));
     time.dateTime = post.createdAt; by.append(time); card.append(by);
     if (post.state !== 'visible') card.append(el('p', post.state === 'hidden' ? 'Oculta por el docente' : 'Retirada por su autor', 'cb-visibility'));
@@ -159,8 +179,19 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     const sharedEdit = shared && post.mine && onEdit && canEdit(post);
     if (sharedEdit || !shared && (rights.edit || rights.remove || rights.restore || rights.moderate)) {
       const actions = el('details', '', 'cb-post-actions'), summary = el('summary', '•••'); summary.setAttribute('aria-label', `Opciones de ${post.title}`); summary.title = 'Opciones de la publicación';
-      actions.append(summary);
-      function action(text, handler) { const control = button(text, handler, 'cb-text-button'); control.dataset.postAction = ''; actions.append(control); }
+      const menu = el('div', '', 'cb-action-menu'); actions.append(summary, menu);
+      actions.addEventListener('toggle', () => {
+        if (!host.contains(actions)) return;
+        if (actions.open && openedActions?.details !== actions) {
+          closePostActions(); openedActions = { details: actions, summary, card }; card.dataset.menuOpen = 'true';
+          root.addEventListener('pointerdown', outsidePostActions);
+          root.addEventListener('keydown', postActionsKey);
+        } else if (!actions.open && openedActions?.details === actions) closePostActions();
+      });
+      function action(text, handler) {
+        const control = button(text, () => { closePostActions(); return handler(); }, 'cb-text-button');
+        control.dataset.postAction = ''; menu.append(control);
+      }
       if (sharedEdit) action('Editar', () => onEdit(post));
       if (!shared) {
         if (rights.edit) action('Editar', () => openComposer(post));
@@ -188,7 +219,9 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
       file.append(el('small', fileSizeLabel(post.attachment.size))); parent.append(file);
     }
     if (post.url) {
-      const link = el('a', post.kind === 'video' ? 'Ver video ↗' : 'Abrir recurso ↗', 'cb-link'); link.href = post.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      const label = post.kind === 'video' ? 'Ver video' : post.kind === 'digital_tool' ? 'Abrir herramienta' : 'Abrir recurso';
+      const link = el('a', label, 'cb-link'); link.href = post.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      link.title = 'Se abre en otra pestaña';
       link.append(el('small', boardLinkLabel(post.url))); parent.append(link);
     }
   }

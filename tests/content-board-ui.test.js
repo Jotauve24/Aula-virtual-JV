@@ -14,14 +14,17 @@ class Element {
   remove() { if (this.parent) this.parent.children = this.parent.children.filter(node => node !== this); }
   setAttribute(key, value) { this.attributes[key] = String(value); }
   addEventListener(name, handler) { this.listeners.set(name, handler); }
+  contains(node) { return descendants(this).includes(node); }
   showModal() { this.open = true; }
   close() { this.open = false; }
-  focus() {}
+  focus() { this.focused = true; }
   querySelectorAll(selector) { return selector === '[data-post-action]' ? descendants(this).filter(node => 'postAction' in node.dataset) : []; }
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
 function dom() {
-  const root = { createElement: tag => new Element(root, tag) };
+  const root = { createElement: tag => new Element(root, tag), listeners: new Map(),
+    addEventListener(name, handler) { this.listeners.set(name, handler); },
+    removeEventListener(name, handler) { if (this.listeners.get(name) === handler) this.listeners.delete(name); } };
   const host = new Element(root, 'div'); root.body = new Element(root, 'body'); root.body.append(host);
   return { root, host, win: { addEventListener() {}, crypto: { randomUUID }, URL: { revokeObjectURL() {} } } };
 }
@@ -110,4 +113,44 @@ test('a late publication-context response cannot open a composer in a different 
   board.setContext(course); const composing = board.compose({ kind: 'book' });
   board.setContext(randomUUID()); finish(result); await composing;
   assert.equal(descendants(page.root.body).filter(node => node.tag === 'dialog').length, 0);
+});
+
+test('publication options close on Escape, outside press and when another menu opens', async () => {
+  const page = dom(), demo = createContentBoardDemo({ crypto: { randomUUID } }), course = randomUUID(); demo.setContext(course);
+  const board = createContentBoard({ ...page, signedIn: () => true, files: demo.files, rpc: async (name, args) => {
+    const data = await demo.request(name, args);
+    data.posts = data.posts.slice(0, 2).map(post => ({ ...post, mine: true })); return data;
+  } });
+  board.setContext(course); board.open(); await settle();
+  const menus = descendants(page.host).filter(node => node.className === 'cb-post-actions');
+  const open = menu => { menu.open = true; menu.listeners.get('toggle')(); };
+  open(menus[0]); assert.equal(page.root.listeners.has('pointerdown'), true);
+  open(menus[1]); assert.equal(menus[0].open, false); assert.equal(menus[1].open, true);
+  let prevented = false;
+  page.root.listeners.get('keydown')({ key: 'Escape', preventDefault() { prevented = true; }, stopPropagation() {} });
+  assert.equal(prevented, true); assert.equal(menus[1].open, false); assert.equal(menus[1].children[0].focused, true);
+  assert.equal(page.root.listeners.size, 0);
+  open(menus[0]); page.root.listeners.get('pointerdown')({ target: page.host });
+  assert.equal(menus[0].open, false); assert.equal(page.root.listeners.size, 0);
+  open(menus[0]); board.reset();
+  assert.equal(menus[0].open, false); assert.equal(page.root.listeners.size, 0);
+  open(menus[0]); // A queued native toggle from a removed card is ignored.
+  assert.equal(page.root.listeners.size, 0);
+});
+
+test('opening edit closes its menu and avoids repeating the generic teacher name', async () => {
+  const page = dom(), demo = createContentBoardDemo({ crypto: { randomUUID } }), course = randomUUID(); demo.setContext(course);
+  const board = createContentBoard({ ...page, signedIn: () => true, files: demo.files, rpc: async (name, args) => {
+    const data = await demo.request(name, args);
+    data.posts = data.posts.slice(0, 1).map(post => ({ ...post, mine: true, authorName: 'Docente', authorIsTeacher: true })); return data;
+  } });
+  board.setContext(course); board.open(); await settle();
+  const nodes = descendants(page.host), menu = nodes.find(node => node.className === 'cb-post-actions');
+  const byline = nodes.find(node => node.className === 'cb-byline');
+  assert.equal(byline.children.filter(node => node.textContent === 'Docente').length, 1);
+  menu.open = true; menu.listeners.get('toggle')();
+  const edit = descendants(menu).find(node => node.tag === 'button' && node.textContent === 'Editar');
+  edit.listeners.get('click')();
+  assert.equal(menu.open, false); assert.equal(page.root.listeners.size, 0);
+  assert.equal(descendants(page.root.body).find(node => node.tag === 'dialog').open, true);
 });
