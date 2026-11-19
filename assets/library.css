@@ -18,6 +18,7 @@
 .library-collections{min-width:0;padding-right:20px;border-right:1px solid var(--line)}
 .library-collections h2{font:800 16px/1.5 var(--sans);margin:0 0 16px;color:var(--deep)}
 .library-all-button{margin-bottom:22px}
+.library-my-posts{margin-top:18px}
 .library-collections>p{font-size:12px;line-height:1.7;color:var(--muted);margin:18px 0}
 .library-collections nav{display:grid;gap:6px}
 .library-course-button{display:block;width:100%;min-height:48px;padding:12px;border:0;border-radius:8px;text-align:left;background:transparent;color:var(--muted);font:650 14px/1.6 var(--sans);overflow-wrap:anywhere;cursor:pointer}
@@ -50,7 +51,7 @@
 @media(max-width:800px){
  .library-header{padding:14px 18px;align-items:flex-start;gap:12px;flex-wrap:wrap}.library-header nav{gap:14px}.library-header nav a{font-size:13px}
  .library-shell{padding:12px 18px 30px}.library-heading{gap:14px;margin-bottom:24px;flex-wrap:wrap}.library-heading h1{font-size:29px}
- .library-workspace{display:block}.library-collections{padding:0;border:0;margin:0 0 22px}.library-collections>h2,.library-collections>nav,.library-collections>p,.library-collections>.library-filter,.library-collections>.library-all-button{display:none!important}
+ .library-workspace{display:block}.library-collections{padding:0;border:0;margin:0 0 22px}.library-collections>h2,.library-collections>nav,.library-collections>p,.library-collections>.library-filter,.library-collections>.library-all-button,.library-collections>.library-my-posts{display:none!important}
  .library-course-select{display:grid;gap:7px;font-size:13px;font-weight:750}.library-current-course{font-size:14px;margin-bottom:14px}
  .library-resources .cb-feed{columns:2 250px}.library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) 155px auto}.library-footer{padding:18px}
 }

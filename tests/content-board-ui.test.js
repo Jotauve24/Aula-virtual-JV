@@ -14,13 +14,16 @@ class Element {
   remove() { if (this.parent) this.parent.children = this.parent.children.filter(node => node !== this); }
   setAttribute(key, value) { this.attributes[key] = String(value); }
   addEventListener(name, handler) { this.listeners.set(name, handler); }
+  showModal() { this.open = true; }
+  close() { this.open = false; }
+  focus() {}
   querySelectorAll(selector) { return selector === '[data-post-action]' ? descendants(this).filter(node => 'postAction' in node.dataset) : []; }
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
 function dom() {
   const root = { createElement: tag => new Element(root, tag) };
   const host = new Element(root, 'div'); root.body = new Element(root, 'body'); root.body.append(host);
-  return { root, host, win: { addEventListener() {}, URL: { revokeObjectURL() {} } } };
+  return { root, host, win: { addEventListener() {}, crypto: { randomUUID }, URL: { revokeObjectURL() {} } } };
 }
 
 test('zombie mural renders every example, including its illustration without a remote attachment', async () => {
@@ -63,7 +66,7 @@ test('an unavailable board never reports a false zero publication count', async 
   assert.equal(summary.textContent, 'Publicaciones no disponibles');
   assert.equal(descendants(page.host).find(node => node.className === 'cb-error').hidden, false);
 });
-test('the community mural shows cross-course creations without team names or edit controls', async () => {
+test('the community mural shows resources without course names, team names or default edit controls', async () => {
   const page = dom(), demo = createContentBoardDemo({ crypto: { randomUUID } }), course = randomUUID();
   demo.setContext(course);
   const board = createContentBoard({ ...page, shared: true, showGroups: false, demo: true, signedIn: () => true, files: demo.files,
@@ -77,8 +80,32 @@ test('the community mural shows cross-course creations without team names or edi
   const nodes = descendants(page.host);
   assert.equal(board.snapshot().error, '');
   assert.equal(nodes.filter(node => node.tag === 'article').length, 5);
-  assert.match(page.host.textContent, /Informática II/);
-  assert.doesNotMatch(page.host.textContent, /3519608|Equipo de ejemplo|Martes/);
+  assert.doesNotMatch(page.host.textContent, /Informática II|3519608|Equipo de ejemplo|Martes/);
   assert.equal(nodes.find(node => node.tag === 'button' && node.textContent === 'Publicar contenido').hidden, true);
   assert.equal(nodes.filter(node => node.className === 'cb-post-actions').length, 0);
+});
+
+test('a resource category carries into the authorized composer and publishes with that type', async () => {
+  const page = dom(), demo = createContentBoardDemo({ crypto: { randomUUID } }), course = randomUUID(); demo.setContext(course);
+  const board = createContentBoard({ ...page, showGroups: false, signedIn: () => true, demo: true, files: demo.files, rpc: demo.request });
+  board.setContext(course); await board.compose({ kind: 'infographic' });
+  const dialog = descendants(page.root.body).find(node => node.tag === 'dialog');
+  assert.equal(dialog.open, true);
+  const fields = descendants(dialog);
+  assert.equal(fields.find(node => node.id === 'cb-post-kind').value, 'infographic');
+  fields.find(node => node.id === 'cb-title').value = 'Una infografía para aprender';
+  fields.find(node => node.id === 'cb-body').value = 'Ideas para compartir con la comunidad.';
+  await fields.find(node => node.tag === 'form').listeners.get('submit')({ preventDefault() {} }); await settle();
+  const result = await demo.request('course_board', { p_course_id: course, p_scope: 'mine' });
+  assert.equal(result.posts.length, 1); assert.equal(result.posts[0].kind, 'infographic');
+  assert.equal(descendants(page.root.body).filter(node => node.tag === 'dialog').length, 0);
+});
+
+test('a late publication-context response cannot open a composer in a different context', async () => {
+  const page = dom(), demo = createContentBoardDemo({ crypto: { randomUUID } }), course = randomUUID(); demo.setContext(course);
+  const result = await demo.request('course_board', { p_course_id: course }); let finish;
+  const board = createContentBoard({ ...page, signedIn: () => true, files: demo.files, rpc: () => new Promise(resolve => { finish = resolve; }) });
+  board.setContext(course); const composing = board.compose({ kind: 'book' });
+  board.setContext(randomUUID()); finish(result); await composing;
+  assert.equal(descendants(page.root.body).filter(node => node.tag === 'dialog').length, 0);
 });

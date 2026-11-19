@@ -1,9 +1,9 @@
-import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.33.1';
-import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.33.1';
-import { createContentBoardSession } from './content-board-session.js?v=0.33.1';
-import { libraryCourseName } from './library-session.js?v=0.33.1';
+import { ATTACHMENT_ACCEPT, fileSizeLabel } from './attachments.js?v=0.34.0';
+import { BOARD_KINDS, BOARD_FILE_HINT, boardDraft, boardLinkLabel, boardPostRights } from './content-board-model.js?v=0.34.0';
+import { createContentBoardSession } from './content-board-session.js?v=0.34.0';
 
-export function createContentBoard({ host, rpc, files, signedIn, demo = false, showGroups = true, shared = false, root = document, win = window }) {
+export function createContentBoard({ host, rpc, files, signedIn, demo = false, showGroups = true, shared = false,
+  onPublish = null, canPublish = () => true, onEdit = null, canEdit = () => false, onKindChange = () => {}, root = document, win = window }) {
   let courseId = '', epoch = 0, nodes = null, searchTimer = 0, observer = null;
   let composer = null, reader = null, selectedFile = null, pending = null, attachment = null;
   let draftDirty = false, configDirty = false, configRevision = 0, busy = false;
@@ -30,12 +30,12 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     const heading = el('div', '', 'cb-heading'), title = el('h2'); title.append(el('span', shared ? 'Creatividad y ' : 'Recursos '), el('em', shared ? 'conocimiento' : 'compartidos'));
     const intro = el('div'); intro.append(title, el('p', shared ? 'Explora las ideas, los recursos y las creaciones que comparte la comunidad.' : 'Comparte ideas, recursos y creaciones para inspirar a otros estudiantes.'));
     const actions = el('div', '', 'cb-main-actions');
-    const publish = button('Publicar contenido', () => openComposer(), 'button primary');
-    publish.hidden = shared;
+    const publish = button('Publicar contenido', () => shared ? onPublish?.(session.snapshot().filters.kind) : openComposer(), 'button primary');
+    publish.hidden = shared && (!onPublish || !canPublish());
     const refresh = button('↻', () => void session.load(), 'cb-refresh'); refresh.setAttribute('aria-label', 'Actualizar recursos'); refresh.title = 'Actualizar recursos';
     actions.append(publish, refresh); heading.append(intro, actions);
     const audience = el('p', demo ? 'Contenido de ejemplo · Tus pruebas no modifican las publicaciones reales.'
-      : shared ? 'Recursos de toda la comunidad. Elige una categoría para compartir una creación.' : 'Visible para toda la comunidad registrada.', 'cb-audience');
+      : 'Ideas y recursos para toda la comunidad registrada.', 'cb-audience');
     const settings = el('details', '', 'cb-settings'); settings.append(el('summary', 'Orientaciones y publicaciones'));
     const configForm = el('form', '', 'cb-settings-form'), instructionsField = field('cb-instructions', 'Sugerencias para compartir en el mural (opcional)', 'textarea');
     instructionsField.input.rows = 4; instructionsField.input.maxLength = 4000; instructionsField.input.placeholder = 'Invita a compartir lecturas, ideas creativas, infografías o recursos que puedan inspirar a la comunidad…';
@@ -70,7 +70,9 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     nodes = { publish, refresh, settings, instructionsField: instructionsField.input, postingOpen, configSave, configStatus, configReload,
       instruction, instructionBody, closed, search: search.input, kind: kind.input, scope: scope.input, topic: topic.input, summary, errorBox, errorText, notice, surface, feed, more };
     search.input.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => session.filter({ search: search.input.value }), 250); });
-    for (const [input, key] of [[kind.input, 'kind'], [scope.input, 'scope'], [topic.input, 'topicId']]) input.addEventListener('change', () => session.filter({ [key]: input.value }));
+    for (const [input, key] of [[kind.input, 'kind'], [scope.input, 'scope'], [topic.input, 'topicId']]) input.addEventListener('change', () => {
+      session.filter({ [key]: input.value }); if (key === 'kind') onKindChange(input.value);
+    });
     instructionsField.input.addEventListener('input', () => { configDirty = true; configStatus.textContent = 'Cambios sin guardar'; });
     postingOpen.addEventListener('change', () => { configDirty = true; configStatus.textContent = 'Cambios sin guardar'; });
     configForm.addEventListener('submit', async event => {
@@ -95,7 +97,8 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     if (kind === 'reset') { dispose(); return; }
     if (!nodes) return;
     const hasActor = !!state.actor;
-    nodes.publish.disabled = busy || state.saving || !hasActor || !state.actor.isTeacher && !state.settings?.postingOpen;
+    nodes.publish.hidden = shared && (!onPublish || !canPublish());
+    nodes.publish.disabled = busy || state.saving || !hasActor || (shared ? !onPublish || !canPublish() : !state.actor.isTeacher && !state.settings?.postingOpen);
     nodes.refresh.disabled = state.loading; nodes.more.disabled = state.loading; nodes.configSave.disabled = state.saving;
     nodes.more.hidden = !state.hasMore; nodes.more.textContent = state.loading ? 'Cargando…' : 'Ver más publicaciones';
     nodes.errorBox.hidden = !state.error || composer?.dialog.open === true; nodes.errorText.textContent = state.error;
@@ -121,6 +124,7 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
       if (filtered) empty.append(button('Quitar filtros', () => {
         nodes.search.value = nodes.kind.value = nodes.topic.value = ''; nodes.scope.value = 'all';
         session.filter({ kind: '', scope: 'all', topicId: '', search: '' });
+        onKindChange('');
       }, 'cb-text-button'));
       nodes.feed.replaceChildren(empty); nodes.surface.dataset.empty = 'true'; return;
     }
@@ -136,7 +140,6 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     const top = el('div', '', 'cb-card-meta'); top.append(el('span', BOARD_KINDS[post.kind], 'cb-kind-label'));
     if (post.pinned) top.append(el('span', 'Destacado', 'cb-featured'));
     card.append(top);
-    if (shared) card.append(el('p', libraryCourseName(post.courseName), 'cb-muted'));
     if (post.attachment?.type.startsWith('image/') || demo && post.demoImage === 'teamwork') {
       const picture = el('div', '', 'cb-picture'), image = root.createElement('img');
       image.alt = post.title; image.width = 560; image.height = 360; image.loading = 'lazy'; image.decoding = 'async'; image.dataset.path = post.attachment?.path || '';
@@ -153,15 +156,19 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
     time.dateTime = post.createdAt; by.append(time); card.append(by);
     if (post.state !== 'visible') card.append(el('p', post.state === 'hidden' ? 'Oculta por el docente' : 'Retirada por su autor', 'cb-visibility'));
     const rights = boardPostRights(post, actor);
-    if (!shared && (rights.edit || rights.remove || rights.restore || rights.moderate)) {
+    const sharedEdit = shared && post.mine && onEdit && canEdit(post);
+    if (sharedEdit || !shared && (rights.edit || rights.remove || rights.restore || rights.moderate)) {
       const actions = el('details', '', 'cb-post-actions'), summary = el('summary', '•••'); summary.setAttribute('aria-label', `Opciones de ${post.title}`); summary.title = 'Opciones de la publicación';
       actions.append(summary);
       function action(text, handler) { const control = button(text, handler, 'cb-text-button'); control.dataset.postAction = ''; actions.append(control); }
-      if (rights.edit) action('Editar', () => openComposer(post));
-      if (rights.moderate && post.state === 'visible') action(post.pinned ? 'Quitar destacado' : 'Destacar', () => void act(post, post.pinned ? 'unpin' : 'pin'));
-      if (rights.moderate && post.state === 'visible') action('Ocultar', () => void act(post, 'hide'));
-      if (rights.remove && post.state === 'visible') action('Retirar', () => void act(post, 'remove'));
-      if (rights.restore) action('Restaurar', () => void act(post, 'restore'));
+      if (sharedEdit) action('Editar', () => onEdit(post));
+      if (!shared) {
+        if (rights.edit) action('Editar', () => openComposer(post));
+        if (rights.moderate && post.state === 'visible') action(post.pinned ? 'Quitar destacado' : 'Destacar', () => void act(post, post.pinned ? 'unpin' : 'pin'));
+        if (rights.moderate && post.state === 'visible') action('Ocultar', () => void act(post, 'hide'));
+        if (rights.remove && post.state === 'visible') action('Retirar', () => void act(post, 'remove'));
+        if (rights.restore) action('Restaurar', () => void act(post, 'restore'));
+      }
       card.append(actions);
     }
     return card;
@@ -207,14 +214,14 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
       : `¿Retirar “${post.title}” del mural? Podrás restaurarla desde tus publicaciones.`)) return;
     try { await session.action(post, action); } catch { /* The board displays the error and preserves the current rows. */ }
   }
-  function openComposer(post = null) {
+  function openComposer(post = null, defaultKind = 'note') {
     if (shared || busy || !session.snapshot().actor) return;
     composer?.dialog.remove(); cleanupPending(); selectedFile = null; attachment = post?.attachment ?? null;
     const dialog = el('dialog', '', 'cb-dialog'), form = el('form'); form.noValidate = true;
     const heading = el('h2', post ? 'Editar publicación' : 'Una idea para el mural'); heading.id = 'cb-composer-heading'; dialog.setAttribute('aria-labelledby', heading.id);
     const title = field('cb-title', 'Título'), kind = field('cb-post-kind', 'Tipo de contenido', 'select'), body = field('cb-body', 'Texto o descripción', 'textarea'), url = field('cb-url', 'Enlace del recurso o video (opcional)');
     title.input.maxLength = 120; title.input.value = post?.title ?? ''; title.input.placeholder = 'Ej.: Una idea para aprender de otra manera…';
-    for (const [value, label] of Object.entries(BOARD_KINDS)) kind.input.append(option(value, label)); kind.input.value = post?.kind ?? 'note';
+    for (const [value, label] of Object.entries(BOARD_KINDS)) kind.input.append(option(value, label)); kind.input.value = post?.kind ?? (Object.hasOwn(BOARD_KINDS, defaultKind) ? defaultKind : 'note');
     body.input.rows = 5; body.input.maxLength = 3000; body.input.value = post?.body ?? ''; body.input.placeholder = 'Explica qué compartes y cómo puede ayudar a otros estudiantes…';
     url.input.type = 'url'; url.input.inputMode = 'url'; url.input.spellcheck = false; url.input.maxLength = 2000; url.input.placeholder = 'https://…'; url.input.value = post?.url ?? '';
     const file = field('cb-file', 'Archivo (opcional)'); file.input.type = 'file'; file.input.accept = ATTACHMENT_ACCEPT;
@@ -264,7 +271,27 @@ export function createContentBoard({ host, rpc, files, signedIn, demo = false, s
   win.addEventListener('beforeunload', event => { if (draftDirty || configDirty) { event.preventDefault(); event.returnValue = ''; } });
   return {
     setContext(id) { if (id === courseId) return; epoch++; courseId = id; session.setContext(id); },
-    open() { if (!courseId || !signedIn()) return; if (!nodes) build(); if (['idle', 'error'].includes(session.snapshot().phase)) void session.load(); },
+    open(filters = {}) {
+      if (!courseId || !signedIn()) return;
+      if (!nodes) build();
+      const patch = {};
+      if (typeof filters.kind === 'string' && (filters.kind === '' || Object.hasOwn(BOARD_KINDS, filters.kind)) && filters.kind !== session.snapshot().filters.kind) {
+        patch.kind = filters.kind; nodes.kind.value = filters.kind;
+      }
+      if (['all', 'mine', 'hidden'].includes(filters.scope) && filters.scope !== session.snapshot().filters.scope) {
+        patch.scope = filters.scope; nodes.scope.value = filters.scope;
+      }
+      if (Object.keys(patch).length) session.filter(patch);
+      else if (['idle', 'error'].includes(session.snapshot().phase) && !session.snapshot().loading) void session.load();
+    },
+    async compose({ post = null, kind = 'note' } = {}) {
+      if (shared || !courseId || !signedIn()) return;
+      const token = epoch, id = courseId;
+      if (!nodes) build();
+      if (!session.snapshot().actor) await session.load();
+      if (token !== epoch || id !== courseId || !signedIn()) return;
+      if (session.snapshot().actor && (session.snapshot().actor.isTeacher || session.snapshot().settings?.postingOpen)) openComposer(post, kind);
+    },
     reset() { epoch++; courseId = ''; session.reset(); },
     hasUnsaved: () => draftDirty || configDirty,
     snapshot: () => session.snapshot()

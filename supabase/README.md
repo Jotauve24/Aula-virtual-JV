@@ -126,12 +126,17 @@ las materias activas. El acceso requiere una inscripción completa en alguna
 materia activa o una cuenta docente autorizada. Una sesión de Auth sin registro
 en una materia no concede acceso al mural.
 
-«Mis materias» conserva el ámbito de publicación y moderación de cada cuenta.
-Seleccionar una materia propia permite compartir creaciones; la audiencia es
-la comunidad registrada. Leer el mural común no inscribe al visitante en otras
-materias ni le permite modificar publicaciones ajenas. La vista común ofrece
-búsqueda, tipos de contenido y publicaciones propias; los recursos mantienen
-su autoría y muestran el nombre de la asignatura sin códigos ni nombres de equipos.
+La navegación muestra categorías por tipo de recurso: notas, infografías,
+documentos, presentaciones, libros, videos y enlaces. Los nombres de las materias,
+sus códigos y los nombres de equipos no se muestran en el mural ni en las tarjetas.
+La búsqueda, los filtros de contenido y «Mis publicaciones» consultan el mural común.
+
+La inscripción sigue autorizando la publicación y los archivos internamente.
+«Publicar contenido» abre el editor con un ámbito propio autorizado; «Editar»
+solo ofrece publicaciones propias cuyo ámbito siga disponible para esa cuenta.
+Guardar, retirar y moderar siguen usando los RPC existentes con sus verificaciones
+de autoría y propiedad. Leer el mural no inscribe al visitante en otras materias
+ni le permite modificar publicaciones ajenas.
 
 El RPC invocador `shared_library` delega en una función privada que valida la
 inscripción antes de consultar publicaciones. Los adjuntos se descargan desde

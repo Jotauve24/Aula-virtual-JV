@@ -1,23 +1,28 @@
-import './embed.js?v=0.33.1';
-import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.33.1';
-import { createContentBoard } from './content-board.js?v=0.33.1';
-import { createContentBoardDemo } from './content-board-demo.js?v=0.33.1';
-import { createLibrarySession, libraryRole } from './library-session.js?v=0.33.1';
-import { mergeBoardPosts } from './content-board-model.js?v=0.33.1';
+import './embed.js?v=0.34.0';
+import { configured, rpc, signedIn, studentRpc, studentSignedIn, contentBoardFiles, sessionUserId } from './supabase-client.js?v=0.34.0';
+import { createContentBoard } from './content-board.js?v=0.34.0';
+import { createContentBoardDemo } from './content-board-demo.js?v=0.34.0';
+import { createLibrarySession, libraryRole } from './library-session.js?v=0.34.0';
+import { BOARD_CATEGORIES, mergeBoardPosts } from './content-board-model.js?v=0.34.0';
 
 const $ = selector => document.querySelector(selector), params = new URLSearchParams(location.search);
 const demo = params.get('demo') === '1';
 const roleNames = { teacher: 'Docente', student: 'Estudiante', demo: 'Demostración' };
-const sampleCourses = [{ id: '00000000-0000-4000-8000-000000000001', name: 'Informática II' },
-  { id: '00000000-0000-4000-8000-000000000002', name: 'Sistemas II' }];
+// Publication/file authorization uses these internal scopes; their names are never rendered.
+const sampleCourses = [{ id: '00000000-0000-4000-8000-000000000001', name: 'Colección de prueba A' },
+  { id: '00000000-0000-4000-8000-000000000002', name: 'Colección de prueba B' }];
 const examples = new Map(), boards = new Map();
-let activeBoard = null, activeRole = '', filter = '', signature = '';
+let activeBoard = null, activeRole = '', signature = '';
+let category = Object.hasOwn(BOARD_CATEGORIES, params.get('categoria')) ? params.get('categoria') : '';
+let mine = params.get('aportes') === '1';
+const preferredScope = params.get('materia') || '';
 const available = () => demo ? ['demo'] : [signedIn() ? 'teacher' : '', studentSignedIn() ? 'student' : ''].filter(Boolean);
 const authorized = role => role === 'demo' ? demo : role === 'teacher' ? signedIn() : role === 'student' && studentSignedIn();
 const identity = role => role === 'demo' ? 'demo' : sessionUserId(role);
 const accountSignature = () => available().map(role => role + ':' + identity(role)).join(',');
+const owns = id => catalog.snapshot().courses.some(row => row.id === id);
 function example(id) {
-  if (!sampleCourses.some(row => row.id === id)) throw new Error('Esta materia de ejemplo no está disponible.');
+  if (!sampleCourses.some(row => row.id === id)) throw new Error('Este espacio de prueba no está disponible.');
   if (!examples.has(id)) { const data = createContentBoardDemo(); data.setContext(id); examples.set(id, data); }
   return examples.get(id);
 }
@@ -37,12 +42,14 @@ async function sharedExample(args) {
     nextOffset: Math.min(args.p_offset + args.p_limit, posts.length), hasMore: args.p_offset + args.p_limit < posts.length };
 }
 function boardFor(role, shared) {
-  const owner = identity(role);
-  const key = role + ':' + shared;
+  const owner = identity(role), key = role + ':' + shared;
   if (!boards.has(key)) boards.set(key, createContentBoard({ host: $('#library-content'),
     demo: role === 'demo', showGroups: false, shared, signedIn: () => authorized(role) && owner === identity(role),
     rpc: role === 'demo' ? (name, args) => name === 'shared_library' ? sharedExample(args) : example(args.p_course_id).request(name, args) : role === 'teacher' ? rpc : studentRpc,
-    files: role === 'demo' ? demoFiles : contentBoardFiles(role)
+    files: role === 'demo' ? demoFiles : contentBoardFiles(role),
+    onPublish: shared ? kind => void publish(kind) : null, canPublish: () => catalog.snapshot().courses.length > 0,
+    onEdit: shared ? post => void edit(post) : null, canEdit: post => owns(post.courseId),
+    onKindChange: shared ? kind => { category = kind; renderCategories(catalog.snapshot()); updateLocation(catalog.snapshot()); } : undefined
   }));
   return boards.get(key);
 }
@@ -52,55 +59,68 @@ function clearBoard() { activeBoard?.reset(); activeBoard = null; activeRole = '
 function discardChanges() {
   return !activeBoard?.hasUnsaved() || confirm('Tienes cambios sin guardar en esta publicación o en las orientaciones. ¿Descartarlos y continuar?');
 }
-function selectCourse(id) {
-  if (id === catalog.snapshot().selected) return;
-  if (!discardChanges()) { $('#library-course').value = catalog.snapshot().selected; return; }
-  catalog.select(id);
+function selectCategory(value) {
+  if (!discardChanges()) { $('#library-category').value = selectedCategory(catalog.snapshot()); return; }
+  category = Object.hasOwn(BOARD_CATEGORIES, value) ? value : ''; mine = value === 'mine';
+  if (catalog.snapshot().selected === 'all') render('selected', catalog.snapshot()); else catalog.select('all');
 }
-function renderCourses(state) {
-  $('#library-all').setAttribute('aria-current', state.selected === 'all' ? 'page' : 'false');
-  const rows = state.courses.filter(row => row.name.toLocaleLowerCase('es').includes(filter));
-  $('#library-course-list').replaceChildren(...rows.map(row => {
-    const button = document.createElement('button'); button.type = 'button'; button.textContent = row.name;
-    button.className = 'library-course-button'; if (row.id === state.selected) button.setAttribute('aria-current', 'page');
-    button.addEventListener('click', () => selectCourse(row.id)); return button;
+function ownBoard(post = null) {
+  if (!discardChanges() || post && (!post.mine || !owns(post.courseId))) return null;
+  const state = catalog.snapshot();
+  const id = post?.courseId || (owns(state.selected) ? state.selected : owns(preferredScope) ? preferredScope : state.courses[0]?.id);
+  if (!id) return null;
+  if (state.selected !== id) catalog.select(id);
+  return activeBoard;
+}
+async function publish(kind) { const board = ownBoard(); if (board) await board.compose({ kind: kind || category || 'note' }); }
+async function edit(post) { const board = ownBoard(post); if (board) await board.compose({ post }); }
+function selectedCategory(state) { return state.selected !== 'all' || mine ? 'mine' : category || 'all'; }
+function renderCategories(state) {
+  const selected = selectedCategory(state);
+  $('#library-all').setAttribute('aria-current', selected === 'all' ? 'page' : 'false');
+  $('#library-category-list').replaceChildren(...Object.entries(BOARD_CATEGORIES).map(([id, name]) => {
+    const button = document.createElement('button'); button.type = 'button'; button.textContent = name;
+    button.className = 'library-course-button'; if (id === selected) button.setAttribute('aria-current', 'page');
+    button.addEventListener('click', () => selectCategory(id)); return button;
   }));
-  $('#library-filter-empty').hidden = rows.length !== 0 || !state.courses.length;
-  $('#library-filter-wrap').hidden = state.courses.length < 6;
+  const mineButton = $('#library-my-posts'); mineButton.hidden = !state.courses.length;
+  mineButton.setAttribute('aria-current', selected === 'mine' ? 'page' : 'false');
+  const select = $('#library-category'); select.replaceChildren();
+  for (const [value, label] of [['all', 'Toda la biblioteca'], ...Object.entries(BOARD_CATEGORIES), ...(state.courses.length ? [['mine', 'Mis publicaciones']] : [])]) {
+    const option = document.createElement('option'); option.value = value; option.textContent = label; select.append(option);
+  }
+  select.value = selected;
+  $('#library-current-category').textContent = state.selected !== 'all' ? 'Mi espacio de creación' : mine ? 'Mis publicaciones' : BOARD_CATEGORIES[category] || 'Contenido de toda la comunidad';
+}
+function updateLocation(state) {
+  const url = new URL(location.href); url.search = '';
+  if (demo) url.searchParams.set('demo', '1'); else url.searchParams.set('vista', state.role === 'teacher' ? 'docente' : 'estudiante');
+  if (category) url.searchParams.set('categoria', category);
+  if (mine) url.searchParams.set('aportes', '1');
+  history.replaceState(null, '', url.pathname + url.search);
 }
 function render(kind, state) {
   if (['reset', 'loading', 'error'].includes(kind)) clearBoard();
   const ready = state.phase === 'ready';
   $('#library-workspace').hidden = !ready;
-  $('#library-status').textContent = state.phase === 'loading' ? 'Cargando categorías…' : '';
+  $('#library-status').textContent = state.phase === 'loading' ? 'Abriendo la biblioteca…' : '';
   $('#library-error').hidden = state.phase !== 'error'; $('#library-error-text').textContent = state.error;
-  $('#library-empty').hidden = true;
   if (!ready) return;
-  const select = $('#library-course'); select.replaceChildren();
-  const placeholder = document.createElement('option'); placeholder.value = 'all'; placeholder.textContent = 'Toda la biblioteca'; select.append(placeholder);
-  for (const row of state.courses) { const option = document.createElement('option'); option.value = row.id; option.textContent = row.name; select.append(option); }
-  select.value = state.selected; renderCourses(state);
-  $('#library-selection-hint').hidden = !!state.selected;
-  $('#library-selection-hint').textContent = state.unavailable
-    ? 'La categoría de ese enlace no está disponible para esta cuenta. Elige otra categoría o explora toda la biblioteca.' : 'Elige una categoría para explorar sus recursos.';
-  const shared = state.selected === 'all';
-  const course = shared ? { id: 'all', name: 'Contenido de toda la comunidad' } : state.courses.find(row => row.id === state.selected);
-  if (!course) { clearBoard(); return; }
-  const boardKey = state.role + ':' + shared;
+  renderCategories(state);
+  const shared = state.selected === 'all', boardKey = state.role + ':' + shared;
+  if (!shared && !owns(state.selected)) { clearBoard(); return; }
   if (activeRole !== boardKey) { clearBoard(); activeBoard = boardFor(state.role, shared); activeRole = boardKey; }
-  $('#library-current-course').textContent = course.name; $('#library-resources').hidden = false;
-  activeBoard.setContext(course.id); activeBoard.open();
-  const url = new URL(location.href); url.search = '';
-  if (demo) url.searchParams.set('demo', '1'); else url.searchParams.set('vista', state.role === 'teacher' ? 'docente' : 'estudiante');
-  if (!shared) url.searchParams.set('materia', course.id); history.replaceState(null, '', url.pathname + url.search);
-  const back = $('#library-back'), ownId = shared ? state.courses[0]?.id : course.id;
+  $('#library-resources').hidden = false;
+  activeBoard.setContext(shared ? 'all' : state.selected);
+  activeBoard.open(shared ? { kind: category, scope: mine ? 'mine' : 'all' } : { scope: 'mine' });
+  updateLocation(state);
+  const back = $('#library-back'), ownId = owns(preferredScope) ? preferredScope : state.courses[0]?.id;
   back.hidden = demo; back.textContent = state.role === 'teacher' ? 'Volver al panel docente' : 'Volver a mi aula';
-  back.href = demo ? './' : state.role === 'teacher' ? './docente.html' + (ownId ? '?materia=' + ownId : '') : ownId ? './live.html?resume_id=' + ownId : './';
+  back.href = demo ? './' : state.role === 'teacher' ? './docente.html' : ownId ? './live.html?resume_id=' + ownId : './';
 }
 function start() {
-  const query = new URLSearchParams(location.search);
-  const roles = available(), nextSignature = accountSignature();
-  if (signature && signature !== nextSignature) { filter = ''; $('#library-filter').value = ''; }
+  const query = new URLSearchParams(location.search), roles = available(), nextSignature = accountSignature();
+  if (signature && signature !== nextSignature) { category = ''; mine = false; }
   signature = nextSignature;
   const role = demo ? 'demo' : libraryRole(query.get('vista') === 'docente' ? 'teacher' : query.get('vista') === 'estudiante' ? 'student' : '', roles);
   const select = $('#library-role'); select.replaceChildren();
@@ -110,20 +130,20 @@ function start() {
   $('#library-demo-notice').hidden = !demo; $('#library-gate').hidden = !!role;
   $('#library-reset-demo').hidden = !demo;
   if (!configured && !demo) { catalog.reset(); $('#library-status').textContent = 'La conexión del aula todavía no está configurada.'; return; }
-  if (role) void catalog.load(role, query.get('materia') || ''); else catalog.reset();
+  if (role) void catalog.load(role, 'all'); else catalog.reset();
 }
-$('#library-course').addEventListener('change', event => selectCourse(event.target.value));
-$('#library-all').addEventListener('click', () => selectCourse('all'));
-$('#library-filter').addEventListener('input', event => { filter = event.target.value.trim().toLocaleLowerCase('es'); renderCourses(catalog.snapshot()); });
+$('#library-category').addEventListener('change', event => selectCategory(event.target.value));
+$('#library-all').addEventListener('click', () => selectCategory('all'));
+$('#library-my-posts').addEventListener('click', () => selectCategory('mine'));
 $('#library-role').addEventListener('change', event => {
   if (!discardChanges()) { event.target.value = catalog.snapshot().role; return; }
-  filter = ''; $('#library-filter').value = ''; $('#library-role-label').textContent = roleNames[event.target.value];
-  void catalog.load(event.target.value);
+  $('#library-role-label').textContent = roleNames[event.target.value];
+  void catalog.load(event.target.value, 'all');
 });
-$('#library-retry').addEventListener('click', () => void catalog.load(catalog.snapshot().role, new URLSearchParams(location.search).get('materia') || ''));
+$('#library-retry').addEventListener('click', () => void catalog.load(catalog.snapshot().role, 'all'));
 $('#library-reset-demo').addEventListener('click', () => {
   if (!discardChanges()) return;
-  const selected = catalog.snapshot().selected; clearBoard(); examples.clear(); void catalog.load('demo', selected);
+  clearBoard(); examples.clear(); void catalog.load('demo', 'all');
 });
 document.addEventListener('click', event => {
   const link = event.target.closest?.('a[href]');
