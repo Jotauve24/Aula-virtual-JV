@@ -31,7 +31,7 @@
 .library-content-pane,.library-resources{min-width:0}
 .library-resources .content-board{max-width:none}
 .library-resources .cb-heading h2{font-size:24px}
-.library-resources .cb-feed{columns:2 270px}
+
 .library-resources .cb-surface{padding:20px}
 .library-state{max-width:680px;background:var(--surface);padding:28px;border:1px solid var(--line);border-radius:12px;margin:20px 0}
 .library-state h2{margin:0 0 10px;color:var(--deep);font-size:22px;line-height:1.4;text-wrap:balance}
@@ -46,19 +46,19 @@
 .library-footer{padding:20px 28px;box-sizing:border-box;color:var(--muted);font-size:12px}
 .library-page [hidden]{display:none!important}
 .library-page :is(a,button,input,select,summary):focus-visible{outline:3px solid var(--focus);outline-offset:3px}
-@media(min-width:1350px){.library-resources .cb-feed{columns:3 250px}.library-workspace{grid-template-columns:210px minmax(0,1fr);gap:28px}}
-@media(max-width:1000px){.library-workspace{grid-template-columns:180px minmax(0,1fr);gap:22px}.library-resources .cb-heading{flex-wrap:wrap}.library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) 155px auto}.library-resources .cb-feed{columns:2 210px}}
+@media(min-width:1350px){.library-workspace{grid-template-columns:210px minmax(0,1fr);gap:28px}}
+@media(max-width:1000px){.library-workspace{grid-template-columns:180px minmax(0,1fr);gap:22px}.library-resources .cb-heading{flex-wrap:wrap}.library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) 155px auto}}
 @media(max-width:800px){
  .library-header{padding:14px 18px;align-items:flex-start;gap:12px;flex-wrap:wrap}.library-header nav{gap:14px}.library-header nav a{font-size:13px}
  .library-shell{padding:12px 18px 30px}.library-heading{gap:14px;margin-bottom:24px;flex-wrap:wrap}.library-heading h1{font-size:29px}
  .library-workspace{display:block}.library-collections{padding:0;border:0;margin:0 0 22px}.library-collections>h2,.library-collections>nav,.library-collections>p,.library-collections>.library-filter,.library-collections>.library-all-button,.library-collections>.library-my-posts{display:none!important}
  .library-course-select{display:grid;gap:7px;font-size:13px;font-weight:750}.library-current-course{font-size:14px;margin-bottom:14px}
- .library-resources .cb-feed{columns:2 250px}.library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) 155px auto}.library-footer{padding:18px}
+ .library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) 155px auto}.library-footer{padding:18px}
 }
 @media(max-width:650px){
  .library-header .brand-mark{width:34px;height:34px}.library-header .brand-name{font-size:20px}.library-header .brand small{font-size:11px}
  .library-header nav{width:100%;justify-content:space-between;gap:8px}.library-header nav a{font-size:12px}.library-shell{padding-inline:14px}
  .library-heading h1{font-size:28px}.library-heading p{font-size:14px}.library-account{width:100%;justify-content:space-between}.library-heading{margin-top:8px}
- .library-resources .cb-heading h2{font-size:22px}.library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) auto}.library-resources .cb-feed{columns:1}.library-resources .cb-surface{padding:15px 12px}
+ .library-resources .cb-heading h2{font-size:22px}.library-resources .cb-toolbar{grid-template-columns:minmax(0,1fr) auto}.library-resources .cb-surface{padding:15px 12px}
  .library-state{padding:22px 18px}.library-state h2{font-size:21px}.library-state-actions>.button{flex:1;text-align:center}.library-demo-notice{padding:12px 14px}.library-demo-notice a{margin-left:0;display:flex}
 }
