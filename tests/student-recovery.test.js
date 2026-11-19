@@ -35,7 +35,7 @@ function start({pathname='/live.html',hash='',initial={},responseUser={id:'stude
     localStorage,sessionStorage,location,history:{replaceState(...a){historyCalls.push(a)}},
     fetch,Date,URL,URLSearchParams
   };
-  const api=vm.runInNewContext(source+'\n({studentSignedIn,studentSignOut,signedIn,protectStudentAccount,emailStudentLogin,studentAuthUser})',context);
+  const api=vm.runInNewContext(source+'\n({studentSignedIn,studentSignOut,signedIn,protectStudentAccount,emailStudentLogin,studentAuthUser,studentCallbackError,studentAuthError})',context);
   return {api,localStorage,called,historyCalls};
 }
 const session={access_token:'student-token',refresh_token:'student-refresh',expires_at:Math.floor(Date.now()/1000)+3600};
@@ -97,4 +97,32 @@ test('an unavailable user endpoint never clears a valid saved session',async()=>
   const x=start({initial:{'aula-student-session':JSON.stringify(session)},userFailure:{status:503}});
   await assert.rejects(x.api.studentAuthUser());
   assert.equal(x.api.studentSignedIn(),true);
+});
+
+test('recovery links preserve course and document intent across devices without disclosing identity data',async()=>{
+  const x=start({initial:{'aula-student-recovery-code':'MAT-AAAAA-BBBBB-CCCCC','aula-student-document-recovery':'1'}});
+  await x.api.emailStudentLogin('alumna@example.com');
+  const redirect=new URL(x.called[0].uri).searchParams.get('redirect_to');
+  const params=new URL(redirect).searchParams;
+  assert.equal(params.get('recovery_code'),'MAT-AAAAA-BBBBB-CCCCC');
+  assert.equal(params.get('recovery_document'),'1');
+  assert.equal(params.has('email'),false);
+  assert.equal(params.has('document_number'),false);
+});
+test('an expired student email link gives an explicit recovery message',()=>{
+  const x=start({hash:'#error=access_denied&error_code=otp_expired'});
+  assert.match(x.api.studentCallbackError(),/venció/);
+  assert.equal(x.api.studentSignedIn(),false);
+});
+test('email rate limits explain retry and spam-folder checks',()=>{
+  const x=start();
+  assert.match(x.api.studentAuthError({status:429}),/Espera unos minutos/);
+  assert.match(x.api.studentAuthError({code:'over_email_send_rate_limit'}),/correo no deseado/);
+});
+
+test('SMTP recipient restrictions are not reported as an existing account',()=>{
+  const x=start();
+  const message=x.api.studentAuthError({code:'email_address_not_authorized'});
+  assert.match(message,/configuración del envío/);
+  assert.doesNotMatch(message,/ya está asociado/);
 });

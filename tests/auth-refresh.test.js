@@ -16,12 +16,12 @@ function storage(seed={}){
     setItem:(key,value)=>data.set(key,String(value)),
     removeItem:key=>data.delete(key)};
 }
-function browser({student=true,teacher=false}={}){
+function browser({student=true,teacher=false,sharedLocalStorage=null,locks=null}={}){
   const initial={};
   if(student)initial['aula-student-session']=JSON.stringify(initialSession('student'));
   if(teacher)initial['aula-supabase-session']=JSON.stringify(initialSession('teacher'));
-  const localStorage=storage(initial),sessionStorage=storage();
-  let releases=[],refreshCount=0,rpcCount=0,signupCount=0,failNext=false;
+  const localStorage=sharedLocalStorage||storage(initial),sessionStorage=storage();
+  let releases=[],refreshCount=0,rpcCount=0,signupCount=0,failNext=false,rpcFailure=null;
   const fetch=async(uri,options={})=>{
     if(uri.includes('/auth/v1/token')){
       refreshCount++;
@@ -45,6 +45,7 @@ function browser({student=true,teacher=false}={}){
     }
     if(uri.includes('/rest/v1/rpc/')) {
       rpcCount++;
+      if(rpcFailure){const failure=rpcFailure;rpcFailure=null;return {ok:false,status:failure.status,json:async()=>({code:failure.code,message:failure.message||"JWT expired"})};}
       return {ok:true,json:async()=>({ok:true})};
     }
     throw Error('Unexpected request: '+uri);
@@ -52,7 +53,7 @@ function browser({student=true,teacher=false}={}){
   const context=vm.createContext({
     SUPABASE_URL:TEST_URL,SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test',
     location:{hash:'',pathname:'/Aula-virtual-JV/live.html',search:'',origin:'https://aula.example',href:'https://aula.example/live.html'},
-    history:{replaceState(){}},localStorage,sessionStorage,fetch,Date,URL,URLSearchParams
+    navigator:{locks},history:{replaceState(){}},localStorage,sessionStorage,fetch,Date,URL,URLSearchParams
   });
   const api=vm.runInContext(code+'\n({studentRpc,rpc,studentSignOut,signOut,studentSignedIn,signedIn,signInStudentAnonymously})',context);
   return {
@@ -61,7 +62,8 @@ function browser({student=true,teacher=false}={}){
     get rpcCount(){return rpcCount;},
     get signupCount(){return signupCount;},
     resolveNext(){const fn=releases.shift();assert.ok(fn,'expected refresh request');fn();},
-    failOnce(options={}){failNext=options;}
+    failOnce(options={}){failNext=options;},
+    failRpcOnce(options){rpcFailure=options;}
   };
 }
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
@@ -179,4 +181,48 @@ test('a new anonymous attempt after logout does not reuse the cancelled signup',
   assert.equal(app.api.studentSignedIn(),false);
   app.resolveNext(); await fresh;
   assert.equal(app.api.studentSignedIn(),true);
+});
+
+function serialLocks(){
+  const tails=new Map();
+  return {request(name,work){
+    const next=(tails.get(name)||Promise.resolve()).catch(()=>{}).then(work);
+    tails.set(name,next);return next;
+  }};
+}
+test('two tabs sharing a browser rotate a student token only once',async()=>{
+  const shared=storage({'aula-student-session':JSON.stringify(initialSession('student'))});
+  const locks=serialLocks();
+  const first=browser({sharedLocalStorage:shared,locks}),second=browser({sharedLocalStorage:shared,locks});
+  const a=first.api.studentRpc('my_profile'),b=second.api.studentRpc('course_room');
+  await settle();assert.equal(first.refreshCount+second.refreshCount,1);
+  first.resolveNext();await Promise.all([a,b]);
+  assert.equal(first.refreshCount+second.refreshCount,1);
+  assert.equal(first.rpcCount+second.rpcCount,2);
+});
+test('a queued tab cannot restore credentials after another tab signs out',async()=>{
+  const shared=storage({'aula-student-session':JSON.stringify(initialSession('student'))});
+  const locks=serialLocks();
+  const first=browser({sharedLocalStorage:shared,locks}),second=browser({sharedLocalStorage:shared,locks});
+  const finished=Promise.allSettled([first.api.studentRpc('my_profile'),second.api.studentRpc('course_room')]);
+  await settle();first.api.studentSignOut();first.resolveNext();
+  assert.ok((await finished).every(result=>result.status==='rejected'));
+  assert.equal(shared.getItem('aula-student-session'),null);
+  assert.equal(first.rpcCount+second.rpcCount,0);
+});
+test('a server-expired JWT refreshes once even when the device clock says it is valid',async()=>{
+  const page=browser();
+  page.localStorage.setItem('aula-student-session',JSON.stringify(initialSession('clock-skew',false)));
+  page.failRpcOnce({status:401,code:'PGRST301'});
+  const retry=page.api.studentRpc('my_profile');await settle();
+  assert.equal(page.refreshCount,1);page.resolveNext();await retry;
+  assert.equal(page.rpcCount,2);
+  assert.equal(page.api.studentSignedIn(),true);
+});
+test('business rule failures are never retried as authentication requests',async()=>{
+  const page=browser();
+  page.localStorage.setItem('aula-student-session',JSON.stringify(initialSession('valid',false)));
+  page.failRpcOnce({status:400,code:'P0001',message:'Este documento ya tiene una cuenta'});
+  await assert.rejects(page.api.studentRpc('enroll_student_profile'),/documento/);
+  assert.equal(page.refreshCount,0);assert.equal(page.rpcCount,1);
 });
